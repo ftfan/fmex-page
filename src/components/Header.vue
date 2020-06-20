@@ -1,15 +1,15 @@
 <template>
-  <header>
+  <div class="header">
     <div class="menu" :class="{ hover: hover.menu }" @click="hover.menu = !hover.menu">
       <p>
         <span>{{ $AppStore.state.Lyrics[0][0] }}</span>
         <span class="delay">{{ $AppStore.state.Lyrics[0][1] }}</span>
       </p>
       <ul class="clearfix">
-        <li class="index" @click.stop="Next('Index')">首页</li>
-        <li @click.stop="Next('Friend')">其他</li>
-        <li class="three">&nbsp;&nbsp;&nbsp;&nbsp;</li>
-        <li @click.stop="Next('About')">关于</li>
+        <li class="index GetTired" @click.stop="Next('Index')">首页</li>
+        <li class="GetTired" @click.stop="Next('Friend')">其他</li>
+        <li class="three GetTired">&nbsp;&nbsp;&nbsp;&nbsp;</li>
+        <li class="GetTired" @click.stop="Next('About')">关于</li>
       </ul>
     </div>
     <div class="auther" :class="{ hover: hover.auther }" @click="hover.auther = !hover.auther">
@@ -31,7 +31,7 @@
         <span class="delay">{{ $AppStore.state.Lyrics[3][1] }}</span>
       </p>
     </div>
-  </header>
+  </div>
 </template>
 
 <script lang="ts">
@@ -55,8 +55,8 @@ export default class Header extends Vue {
 }
 </script>
 
-<style lang="scss">
-header {
+<style lang="scss" scoped>
+.header {
   $header-div-width: 300px;
   // background-color: $bg-color - #333;
   & > div {
@@ -132,7 +132,7 @@ header {
           margin: 0 ($header-div-width - $header-menu-li-width * 3 - $header-menu-ul-padding * 2)/2;
         }
         &:hover {
-          transform: rotate(10deg);
+          // transform: rotate(10deg);
           background-color: #f8f8f8;
           color: #04a4cc;
           border-radius: 10px;

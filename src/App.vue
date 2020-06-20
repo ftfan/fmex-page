@@ -1,7 +1,7 @@
 <template>
   <div id="app">
     <Header />
-    <div class="uyan_frame min">^_^</div>
+    <div class="uyan_frame GetTired">^_^</div>
     <router-view></router-view>
   </div>
 </template>

@@ -84,7 +84,7 @@ html {
 
 .uyan_frame {
   z-index: $zIndex-uyan_frame + 1;
-  transition: all .3s ease;
+  // transition: all .3s ease;
   cursor: pointer;
   box-shadow: 0 0 4px $color-main;
   left: 10px;
@@ -103,7 +103,7 @@ html {
 
   &:hover {
     background-color: #5bcfec;
-    transform: scale(1.2);
+    // transform: scale(1.2) rotate(10deg);
   }
 }
 
@@ -119,6 +119,17 @@ h1 {
   color: #04a4cc;
 }
 
+// 累趴下了
+.GetTired {
+  transition: all 0.2s ease-in-out;
+
+  &:hover {
+    // transform: rotate(10deg);
+    transform: scale(1.2) rotate(370deg);
+    // box-shadow: 0 0 10px $color-main;
+  }
+}
+
 .main.about,
 .main.friend {
   width: 500px;
@@ -128,6 +139,10 @@ h1 {
   p {
     margin: 16px 0;
   }
+}
+
+a {
+  text-decoration: none;
 }
 
 .main.index {
@@ -153,7 +168,7 @@ h1 {
         background-color: $color-main;
         border: 4px solid #fff;
         box-shadow: 0 0 4px $color-main;
-        transition: background-color 0.4s ease-in-out;
+        transition: all 0.2s ease-in-out;
         float: left;
         overflow: hidden;
 

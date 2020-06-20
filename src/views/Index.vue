@@ -1,12 +1,12 @@
 <template>
   <div class="main index" transition="normal">
     <div class="center">
-      <h1>FMex.Fun</h1>
+      <h1 class="sitename">FMex.Fun</h1>
       <p><b>最近更新: </b>2020年6月20日</p>
     </div>
     <div class="section">
       <ul class="clearfix">
-        <li>
+        <li class="GetTired">
           <div class="content">
             <a href="https://github.com/ftfan/api-client" target="_blank">
               <h2>FMex交易软件(开发中~)</h2>
@@ -31,5 +31,13 @@ export default class IndexPage extends Vue {}
 <style lang="scss" scoped>
 h2 {
   color: #fff;
+}
+$time: 10s;
+.sitename {
+  transition: all $time ease-in-out;
+
+  &:hover {
+    transform: scale(1.2) rotate((3 * 360deg * $time / 1s) + 10deg);
+  }
 }
 </style>
