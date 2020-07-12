@@ -1,7 +1,7 @@
 export interface SnapshotItem {
   amount: number;
-  hash: number;
-  id: number;
+  hash: string;
+  id: string;
 }
 export interface Snapshot {
   current_elements: number;
