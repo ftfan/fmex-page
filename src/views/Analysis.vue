@@ -125,7 +125,8 @@ export default class AnalysisPage extends Vue {
 </script>
 
 <style lang="scss" scoped>
-.analysis {
+.analysis,
+.section {
   overflow: auto;
   padding: 140px 100px 0;
 }
@@ -145,6 +146,12 @@ $time: 10s;
   div {
     width: 100%;
     height: 300px;
+  }
+}
+@media screen and (max-width: 750px) {
+  .analysis,
+  .section {
+    padding: 100px 4px 0;
   }
 }
 </style>
