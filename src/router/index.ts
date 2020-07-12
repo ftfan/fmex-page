@@ -6,14 +6,13 @@ import { PageLoading } from '@/lib/page-loading';
 Vue.use(VueRouter);
 
 function AsyncLoader(resolve: any, reject: any, component: Promise<any>) {
-  const close = PageLoading();
   component
     .then(resolve)
     .catch(() => {
       alert('资源加载失败，请稍后再试');
       reject('net error');
     })
-    .finally(close);
+    .finally(PageLoading());
 }
 
 const routes: Array<RouteConfig> = [

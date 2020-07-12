@@ -22,8 +22,8 @@ function DataPop(close: LoadingClose) {
 
 function CheckData() {
   if (data.length === 0) {
-    el.className = '';
-  } else {
     el.className = 'hide';
+  } else {
+    el.className = '';
   }
 }
