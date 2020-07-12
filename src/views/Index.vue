@@ -2,7 +2,7 @@
   <div class="main index" transition="normal">
     <div class="center">
       <h1 class="sitename">FMex.Fun</h1>
-      <p><b>最近更新: </b>2020年6月20日</p>
+      <p><b>最近更新: </b>2020年7月12日</p>
     </div>
     <div class="section">
       <ul class="clearfix">
