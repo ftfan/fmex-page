@@ -8,7 +8,7 @@
       <ul class="clearfix">
         <li class="index GetTired" @click.stop="Next('Index')">首页</li>
         <li class="GetTired" @click.stop="Next('Friend')">其他</li>
-        <li class="three GetTired">&nbsp;&nbsp;&nbsp;&nbsp;</li>
+        <li class="three GetTired" @click.stop="Next('Analysis')">分析</li>
         <li class="GetTired" @click.stop="Next('About')">关于</li>
       </ul>
     </div>

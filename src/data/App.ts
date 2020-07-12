@@ -11,7 +11,9 @@ class Store extends Data {
     ],
   };
 
-  readonly sessionState = {};
+  readonly sessionState = {
+    cache: {} as { [index: string]: any },
+  };
 
   readonly localState = {};
 
