@@ -11,5 +11,3 @@ declare global {
     }
   }
 }
-
-declare let $: any;

@@ -2,7 +2,7 @@
   <div class="main index" transition="normal">
     <div class="center">
       <h1 class="sitename">FMex.Fun</h1>
-      <p><b>最近更新: </b>2020年7月12日</p>
+      <p><b>最近更新: </b>{{ BuildTime }}</p>
     </div>
     <div class="section">
       <ul class="clearfix">
@@ -21,11 +21,17 @@
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
+import { DateFormat } from '../lib/utils';
 
 @Component({
   components: {},
 })
-export default class IndexPage extends Vue {}
+export default class IndexPage extends Vue {
+  get BuildTime() {
+    const Time = window.__Build_Time === '__Build_Time__' ? Date.now() : parseInt(window.__Build_Time, 10);
+    return DateFormat(Time, 'yyyy-MM-dd hh:mm');
+  }
+}
 </script>
 
 <style lang="scss" scoped>
