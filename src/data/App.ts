@@ -15,7 +15,9 @@ class Store extends Data {
     cache: {} as { [index: string]: any },
   };
 
-  readonly localState = {};
+  readonly localState = {
+    topMenuShow: true,
+  };
 
   // 模块名称，【必须】不能重复
   // 格式为 AAA:BBB:CCC ，指当前模块属于 AAA.BBB 模块，名为 CCC

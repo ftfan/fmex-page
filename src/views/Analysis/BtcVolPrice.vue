@@ -49,7 +49,8 @@ export default class BtcVolPrice extends Vue {
         },
       },
       grid: {
-        right: '20%',
+        right: '160px',
+        left: '80px',
       },
       legend: {
         data: ['均价', '成交量', '成交额'],
@@ -115,8 +116,8 @@ export default class BtcVolPrice extends Vue {
       const amount = item.tickers[0].ticker[9];
       const vol = item.tickers[0].ticker[10];
       AvoPrice.data.push(parseFloat((amount / vol).toFixed(1)));
-      Btc.data.push(vol);
-      Usd.data.push(amount / 10000);
+      Btc.data.push(parseFloat(vol.toFixed(2)));
+      Usd.data.push(parseFloat((amount / 10000).toFixed(2)));
     });
     myChart.setOption({
       xAxis: {

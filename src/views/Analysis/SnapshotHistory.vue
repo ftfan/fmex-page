@@ -60,8 +60,8 @@ export default class AnalysisPage extends Vue {
         data: [...this.BtcNumber.map((num) => `<=${num}`), '>10'],
       },
       grid: {
-        left: '3%',
-        right: '4%',
+        left: '30px',
+        right: '30px',
         bottom: '3%',
         containLabel: true,
       },
@@ -73,6 +73,8 @@ export default class AnalysisPage extends Vue {
       yAxis: [
         {
           type: 'value',
+          // min: 'dataMin',
+          // max: 'dataMax',
         },
       ],
     });

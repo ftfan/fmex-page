@@ -1,6 +1,6 @@
 <template>
   <div class="header">
-    <div class="menu" :class="{ hover: hover.menu }" @click.self="hover.menu = !hover.menu">
+    <div class="menu" v-if="$AppStore.localState.topMenuShow" :class="{ hover: hover.menu }" @click.self="hover.menu = !hover.menu">
       <p>
         <span>{{ $AppStore.state.Lyrics[0][0] }}</span>
         <span class="delay">{{ $AppStore.state.Lyrics[0][1] }}</span>
@@ -30,6 +30,11 @@
         <span>{{ $AppStore.state.Lyrics[3][0] }}</span>
         <span class="delay">{{ $AppStore.state.Lyrics[3][1] }}</span>
       </p>
+    </div>
+
+    <div class="control-mobile">
+      <div class="close-it" v-if="$AppStore.localState.topMenuShow" @click="$AppStore.localState.topMenuShow = false">收起导航</div>
+      <div class="open-id" v-else @click="$AppStore.localState.topMenuShow = true">展示导航</div>
     </div>
   </div>
 </template>
@@ -187,6 +192,27 @@ export default class Header extends Vue {
     &:hover,
     &.hover {
       left: 0;
+    }
+  }
+  div.control-mobile {
+    display: none;
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    width: 30px;
+    height: 30px;
+    padding: 5px;
+    opacity: 1;
+    color: #fff;
+    font-size: 12px;
+  }
+}
+
+@media screen and (max-width: 750px) {
+  .header div.control-mobile {
+    display: block;
+    div {
+      display: block;
     }
   }
 }

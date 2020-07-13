@@ -33,7 +33,7 @@ export default class AnalysisPage extends Vue {}
 }
 @media screen and (max-width: 750px) {
   .analysis {
-    padding: 160px 0 0;
+    padding: 160px 4px 0;
   }
 }
 </style>
