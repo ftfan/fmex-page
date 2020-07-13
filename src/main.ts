@@ -7,6 +7,7 @@ Vue.config.productionTip = false;
 import '@/data/App';
 import '@/data/Analysis';
 import { PageLoading } from './lib/page-loading';
+import './plugins/element.js';
 
 // 加载数据中心
 const requireComponent = (require as any).context('@/data', true, /[\w]+\.ts$/);

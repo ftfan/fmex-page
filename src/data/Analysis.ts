@@ -1,6 +1,7 @@
 import Data from '@/lib/data';
 import Vue from 'vue';
 import { Snapshot } from '@/types/fmex';
+import axios from 'axios';
 
 class Store extends Data {
   readonly state = {};
@@ -18,6 +19,15 @@ class Store extends Data {
   constructor() {
     super();
     this.initilization();
+  }
+
+  async GetJson(url: string) {
+    const res = await axios
+      .get(url + '.json')
+      .then((res) => res.data)
+      .catch((e) => null);
+    if (!res) return null;
+    return res;
   }
 }
 

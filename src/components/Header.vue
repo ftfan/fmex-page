@@ -1,15 +1,15 @@
 <template>
   <div class="header">
-    <div class="menu" :class="{ hover: hover.menu }" @click="hover.menu = !hover.menu">
+    <div class="menu" :class="{ hover: hover.menu }" @click.self="hover.menu = !hover.menu">
       <p>
         <span>{{ $AppStore.state.Lyrics[0][0] }}</span>
         <span class="delay">{{ $AppStore.state.Lyrics[0][1] }}</span>
       </p>
       <ul class="clearfix">
-        <li class="index GetTired" @click.stop="Next('Index')">首页</li>
-        <li class="GetTired" @click.stop="Next('Friend')">其他</li>
-        <li class="three GetTired" @click.stop="Next('Analysis')">分析</li>
-        <li class="GetTired" @click.stop="Next('About')">关于</li>
+        <router-link tag="li" class="index GetTired" @click.stop :to="{ name: 'Index' }">首页</router-link>
+        <router-link tag="li" class="GetTired" @click.stop :to="{ name: 'Friend' }">其他</router-link>
+        <router-link tag="li" class="three GetTired" @click.stop :to="{ name: 'Analysis' }">分析</router-link>
+        <router-link tag="li" class="GetTired" @click.stop :to="{ name: 'About' }">关于</router-link>
       </ul>
     </div>
     <div class="auther" :class="{ hover: hover.auther }" @click="hover.auther = !hover.auther">
@@ -71,6 +71,7 @@ export default class Header extends Vue {
     border-radius: 100px;
     opacity: 0.5;
     z-index: $zIndex-header-div;
+
     p {
       color: #83ffe9;
       display: block;
@@ -137,6 +138,9 @@ export default class Header extends Vue {
           color: #04a4cc;
           border-radius: 10px;
           box-shadow: 0 0 10px #fff;
+        }
+        &.router-link-exact-active {
+          color: #82f3e8;
         }
       }
     }
