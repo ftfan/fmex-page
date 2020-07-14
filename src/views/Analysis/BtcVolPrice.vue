@@ -49,44 +49,58 @@ export default class BtcVolPrice extends Vue {
         },
       },
       grid: {
-        right: '160px',
-        left: '80px',
+        right: '90px',
+        left: '50px',
       },
       legend: {
         data: ['均价', '成交量', '成交额'],
       },
       title: {
-        text: `24小时成交走势`,
-        subtext: `${DateFormat(this.Times[0], 'yyyy-MM-dd')} ~ ${DateFormat(this.Times[1], 'yyyy-MM-dd')}`,
+        text: ``,
+        subtext: `24小时成交走势 ${DateFormat(this.Times[0], 'yyyy-MM-dd')} ~ ${DateFormat(this.Times[1], 'yyyy-MM-dd')}`,
+        top: 8,
       },
       xAxis: [{ type: 'category', boundaryGap: false }],
       yAxis: [
         {
           type: 'value',
-          min: 'dataMin',
-          max: 'dataMax',
+          // min: 'dataMin',
+          min: (value) => {
+            return Math.floor(value.min);
+          },
+          // max: 'dataMax',
+          offset: 50,
           position: 'right',
+          name: 'usd',
           axisLabel: {
-            formatter: '{value} usd',
+            formatter: '{value}',
+          },
+          splitLine: { show: false },
+        },
+        {
+          type: 'value',
+          // min: 'dataMin',
+          min: (value) => {
+            return Math.floor(value.min / 100) * 100;
+          },
+          // max: 'dataMax',
+          position: 'right',
+          name: '万usd',
+          axisLabel: {
+            formatter: '{value}',
           },
         },
         {
           type: 'value',
-          min: 'dataMin',
-          max: 'dataMax',
-          position: 'right',
-          offset: 80,
-          axisLabel: {
-            formatter: '{value} 万usd',
+          // min: 'dataMin',
+          min: (value) => {
+            return Math.floor(value.min / 100) * 100;
           },
-        },
-        {
-          type: 'value',
-          min: 'dataMin',
-          max: 'dataMax',
+          // max: 'dataMax',
           position: 'left',
+          name: '单位: btc',
           axisLabel: {
-            formatter: '{value} btc',
+            formatter: '{value}',
           },
         },
       ],
@@ -136,13 +150,11 @@ export default class BtcVolPrice extends Vue {
       return this.GetData(time, ++times);
     }
     Data.forEach((item: any) => {
-      item.TimeStr = DateFormat(item.ts, 'MM-dd hh:00');
+      item.TimeStr = DateFormat(item.ts, 'MM-dd\r\nhh:00');
     });
     this.SnapshotData.push(...Data);
     this.Render();
-    const next = new Date();
-    next.setDate(time.getDate() + 1);
-    console.log(DateFormat(time, 'yyyy-MM-dd'), DateFormat(next, 'yyyy-MM-dd'), DateFormat(this.Times[1], 'yyyy-MM-dd'), next.getTime() < this.Times[1].getTime());
+    const next = new Date(time.getTime() + 86400000);
     if (next.getTime() < this.Times[1].getTime()) {
       return this.GetData(next, ++times);
     }

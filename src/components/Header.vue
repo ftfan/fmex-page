@@ -34,7 +34,7 @@
 
     <div class="control-mobile">
       <div class="close-it" v-if="$AppStore.localState.topMenuShow" @click="$AppStore.localState.topMenuShow = false">收起导航</div>
-      <div class="open-id" v-else @click="$AppStore.localState.topMenuShow = true">展示导航</div>
+      <div class="open-it" v-else @click="$AppStore.localState.topMenuShow = true">导航</div>
     </div>
   </div>
 </template>
@@ -205,6 +205,9 @@ export default class Header extends Vue {
     opacity: 1;
     color: #fff;
     font-size: 12px;
+    .open-it {
+      line-height: 30px;
+    }
   }
 }
 
