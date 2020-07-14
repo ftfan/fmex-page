@@ -26,4 +26,15 @@ const router = new VueRouter({
   routes,
 });
 
+const czc = ((window as any)._czc = (window as any)._czc || []);
+czc.push(['_setAutoPageview', false]); // 关闭自动统计
+export const LogEvent = (type: string, event: string, log: string, value: number) => {
+  czc.push(['_trackEvent', type, event, log, value]);
+};
+
+router.beforeEach((to, from, next) => {
+  czc.push(['_trackPageview', to.fullPath, from ? location.origin + from.fullPath : document.referrer]);
+  next();
+});
+
 export default router;

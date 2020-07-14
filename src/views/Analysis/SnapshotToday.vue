@@ -33,7 +33,7 @@ export default class AnalysisPage extends Vue {
   }
 
   Render() {
-    const TimeName = DateFormat(Date.now(), '【yyyy-MM-dd】');
+    const TimeName = DateFormat(Date.now() - 86400000, '【yyyy-MM-dd】'); // 只有昨日的数据。
     const Top50 = this.SnapshotData.slice(0, 50);
     EchartsBar(document.getElementById('AnalysisSnapshotBarTop50') as any, {
       color: ['#04a4cc'],

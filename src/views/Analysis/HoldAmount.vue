@@ -9,7 +9,8 @@
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
 import echarts from 'echarts';
-import { DateFormat } from '../../lib/utils';
+import { DateFormat, sleep } from '../../lib/utils';
+import { FMexWss } from '../../lib/wss';
 
 const BaseTime = new Date(2020, 7 - 1, 13).getTime();
 
@@ -115,7 +116,26 @@ export default class HoldAmount extends Vue {
       return this.GetData(next, ++times);
     }
     this.loading = false;
+    this.GetFmexData();
     return true;
+  }
+
+  async GetFmexData(): Promise<any> {
+    // FMexWss.sub('ticker', 'BTCUSD_P').ondata((data) => {
+    //   const Data: any = {
+    //     TimeStr: DateFormat(data.ts, 'MM-dd\r\nhh:00'),
+    //     tickers: [data],
+    //     ts: data.ts,
+    //     type: 'wss',
+    //   };
+    //   const last = this.SnapshotData[this.SnapshotData.length - 1];
+    //   if (last.TimeStr === Data.TimeStr) {
+    //     this.SnapshotData[this.SnapshotData.length - 1] = Data;
+    //   } else {
+    //     this.SnapshotData.push(Data);
+    //   }
+    //   this.Render();
+    // });
   }
 }
 </script>

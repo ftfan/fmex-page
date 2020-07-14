@@ -22,8 +22,11 @@ class Store extends Data {
   }
 
   async GetJson(url: string) {
+    return this.GetData(url + '.json');
+  }
+  async GetData(url: string) {
     const res = await axios
-      .get(url + '.json')
+      .get(url)
       .then((res) => res.data)
       .catch((e) => null);
     if (!res) return null;

@@ -1,6 +1,6 @@
 <template>
   <div class="analysis g-abs" transition="normal">
-    <el-tabs type="border-card">
+    <el-tabs type="border-card" @tab-click="TabClick">
       <el-tab-pane lazy label="账户资产">
         <SnapshotToday></SnapshotToday>
       </el-tab-pane>
@@ -23,11 +23,16 @@ import SnapshotToday from './Analysis/SnapshotToday.vue';
 import SnapshotHistory from './Analysis/SnapshotHistory.vue';
 import BtcVolPrice from './Analysis/BtcVolPrice.vue';
 import HoldAmount from './Analysis/HoldAmount.vue';
+import { LogEvent } from '../router';
 
 @Component({
   components: { SnapshotToday, SnapshotHistory, BtcVolPrice, HoldAmount },
 })
-export default class AnalysisPage extends Vue {}
+export default class AnalysisPage extends Vue {
+  TabClick(tab: any) {
+    LogEvent(tab.label, 'click', 'tab', 1);
+  }
+}
 </script>
 
 <style lang="scss" scoped>
