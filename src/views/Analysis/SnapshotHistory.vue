@@ -2,6 +2,7 @@
   <div>
     <div class="data-analysis">
       <div ref="AnalysisPage"></div>
+      <div ref="AnalysisPageTop5"></div>
     </div>
   </div>
 </template>
@@ -15,6 +16,7 @@ import BigNumber from 'bignumber.js';
 const BaseTime = new Date(2020, 7 - 1, 11).getTime();
 
 let myChart: echarts.ECharts | null = null;
+let myChart2: echarts.ECharts | null = null;
 
 @Component({
   components: {},
@@ -28,6 +30,8 @@ export default class AnalysisPage extends Vue {
 
   // 资产区间
   BtcNumber = [1, 5, 10, 50];
+
+  Top5 = [0, 1, 2, 3, 4];
 
   // 默认选中最近100天
   Times = (() => {
@@ -80,14 +84,63 @@ export default class AnalysisPage extends Vue {
         },
       ],
     });
+
+    myChart2 = echarts.init(this.$refs.AnalysisPageTop5 as any);
+    myChart2.setOption({
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: {
+          type: 'cross',
+          label: {
+            backgroundColor: '#6a7985',
+          },
+        },
+      },
+      legend: {
+        data: this.Top5.map((val) => val + 1 + ''),
+        selected: {
+          1: true,
+          2: true,
+          3: false,
+          4: false,
+          5: false,
+        },
+      },
+      grid: {
+        left: '20px',
+        right: '14px',
+        bottom: '3%',
+        containLabel: true,
+      },
+      title: {
+        text: ``,
+        subtext: `TOP${this.Top5.length} 的资产变化`,
+        top: 4,
+      },
+      xAxis: [{ type: 'category', boundaryGap: false }],
+      yAxis: [
+        {
+          name: '单位: BTC',
+          type: 'value',
+          min: (value) => {
+            return Math.floor(value.min);
+          },
+          max: (value) => {
+            return Math.ceil(value.max);
+          },
+        },
+      ],
+    });
   }
 
   Render() {
     if (!myChart) return;
+    if (!myChart2) return;
     const color = (i: number) => {
       return 0.4 + (i / this.BtcNumber.length) * 0.6;
     };
-    // color: 'rgba(4, 164, 204, 0.5)', // 04a4cc
+
+    // 1111111111111111
     const NumArrData = this.BtcNumber.map((num, i) => {
       return {
         name: `${this.BtcNumber[i - 1] || 0}~${num}`,
@@ -135,6 +188,31 @@ export default class AnalysisPage extends Vue {
         data: this.SnapshotData.map((it) => it.FileName),
       },
       series: [...NumArrData, other],
+    });
+
+    // 2222222222222222222
+    const NumArrData2 = this.Top5.map((num, i) => {
+      return {
+        name: `${num + 1}`,
+        type: 'line',
+        data: [] as number[],
+        color: `rgba(4, 164, 204, ${color(i)})`,
+        areaStyle: {
+          color: `rgba(4, 164, 204, ${color(i)})`,
+        },
+      };
+    });
+    this.SnapshotData.map((item: any) => {
+      this.Top5.forEach((num, index) => {
+        const user = item.Data[item.Data.length - num - 1]; // 倒序的
+        NumArrData2[index].data.push(user.amount);
+      });
+    });
+    myChart2.setOption({
+      xAxis: {
+        data: this.SnapshotData.map((it) => it.FileName),
+      },
+      series: [...NumArrData2],
     });
   }
 
