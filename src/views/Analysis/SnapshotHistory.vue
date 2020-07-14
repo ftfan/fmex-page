@@ -13,7 +13,7 @@ import echarts from 'echarts';
 import { DateFormat } from '../../lib/utils';
 import BigNumber from 'bignumber.js';
 
-const BaseTime = new Date(2020, 7 - 1, 11).getTime();
+const BaseTime = new Date(2020, 7 - 1, 12).getTime();
 
 let myChart: echarts.ECharts | null = null;
 let myChart2: echarts.ECharts | null = null;
@@ -228,7 +228,10 @@ export default class AnalysisPage extends Vue {
       item.amount = parseFloat(item.amount);
     });
     Data.sort((a: any, b: any) => a.amount - b.amount);
-    this.SnapshotData.push({ FileName: DateFormat(time, 'MM-dd\r\nyyyy'), Data });
+
+    // 用户资产是备份前一天的。所以时间上是错开了一天。这里纠正回去
+    const ShowTime = new Date(time.getTime() - 86400000);
+    this.SnapshotData.push({ FileName: DateFormat(ShowTime, 'MM-dd\r\nyyyy'), Data });
     this.Render();
     const next = new Date(time.getTime() + 86400000);
     if (next.getTime() < this.Times[1].getTime()) {
