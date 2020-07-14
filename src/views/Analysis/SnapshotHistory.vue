@@ -68,12 +68,12 @@ export default class AnalysisPage extends Vue {
       title: {
         text: ``,
         subtext: `账户资产趋势 ${DateFormat(this.Times[0], 'yyyy-MM-dd')} ~ ${DateFormat(this.Times[1], 'yyyy-MM-dd')}`,
-        top: 8,
+        top: 4,
       },
       xAxis: [{ type: 'category', boundaryGap: false }],
       yAxis: [
         {
-          name: '单位: btc',
+          name: '单位: BTC',
           type: 'value',
           // min: 'dataMin',
           // max: 'dataMax',

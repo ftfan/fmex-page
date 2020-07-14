@@ -45,7 +45,7 @@ export default class AnalysisPage extends Vue {
         },
       },
       title: {
-        text: 'FMex 账户资产排名前50' + TimeName,
+        subtext: 'FMex 账户资产 TOP:50' + TimeName,
       },
       xAxis: {
         type: 'category',
@@ -75,7 +75,7 @@ export default class AnalysisPage extends Vue {
         },
       },
       title: {
-        text: `FMex 账户资产排名50~${this.SnapshotData.length}` + TimeName,
+        subtext: `FMex 账户资产排名 50~${this.SnapshotData.length}` + TimeName,
       },
       xAxis: {
         type: 'category',

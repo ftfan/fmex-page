@@ -10,6 +10,9 @@
       <el-tab-pane lazy label="数据走势">
         <BtcVolPrice></BtcVolPrice>
       </el-tab-pane>
+      <el-tab-pane lazy label="未平仓合约">
+        <HoldAmount></HoldAmount>
+      </el-tab-pane>
     </el-tabs>
   </div>
 </template>
@@ -19,9 +22,10 @@ import { Component, Vue } from 'vue-property-decorator';
 import SnapshotToday from './Analysis/SnapshotToday.vue';
 import SnapshotHistory from './Analysis/SnapshotHistory.vue';
 import BtcVolPrice from './Analysis/BtcVolPrice.vue';
+import HoldAmount from './Analysis/HoldAmount.vue';
 
 @Component({
-  components: { SnapshotToday, SnapshotHistory, BtcVolPrice },
+  components: { SnapshotToday, SnapshotHistory, BtcVolPrice, HoldAmount },
 })
 export default class AnalysisPage extends Vue {}
 </script>

@@ -58,7 +58,7 @@ export default class BtcVolPrice extends Vue {
       title: {
         text: ``,
         subtext: `24小时成交走势 ${DateFormat(this.Times[0], 'yyyy-MM-dd')} ~ ${DateFormat(this.Times[1], 'yyyy-MM-dd')}`,
-        top: 8,
+        top: 4,
       },
       xAxis: [{ type: 'category', boundaryGap: false }],
       yAxis: [
@@ -71,7 +71,7 @@ export default class BtcVolPrice extends Vue {
           // max: 'dataMax',
           offset: 50,
           position: 'right',
-          name: 'usd',
+          name: 'USD',
           axisLabel: {
             formatter: '{value}',
           },
@@ -85,7 +85,7 @@ export default class BtcVolPrice extends Vue {
           },
           // max: 'dataMax',
           position: 'right',
-          name: '万usd',
+          name: '万USD',
           axisLabel: {
             formatter: '{value}',
           },
@@ -98,7 +98,7 @@ export default class BtcVolPrice extends Vue {
           },
           // max: 'dataMax',
           position: 'left',
-          name: '单位: btc',
+          name: '单位: BTC',
           axisLabel: {
             formatter: '{value}',
           },
