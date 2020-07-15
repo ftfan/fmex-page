@@ -33,7 +33,7 @@ export const LogEvent = (type: string, event: string, log: string, value: number
 };
 
 router.beforeEach((to, from, next) => {
-  czc.push(['_trackPageview', to.fullPath, from ? location.origin + from.fullPath : document.referrer]);
+  czc.push(['_trackPageview', to.fullPath, from ? location.origin + '/#' + from.fullPath : document.referrer]);
   next();
 });
 
