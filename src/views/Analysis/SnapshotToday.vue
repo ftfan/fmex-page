@@ -1,15 +1,15 @@
 <template>
   <div>
-    <v-menu ref="menu" v-model="menu" :close-on-content-click="false" transition="scale-transition" offset-y min-width="290px">
+    <v-dialog ref="dialog" v-model="modal" color="primary" :return-value.sync="date" persistent>
       <template v-slot:activator="{ on, attrs }">
-        <v-text-field v-model="date" label="选择查看时间" prepend-icon="mdi-event" readonly v-bind="attrs" v-on="on"></v-text-field>
+        <v-text-field v-model="date" label="日期选择：部分日期暂无数据，联系邮箱：support@ft100.fun" prepend-icon="mdi-calendar-range" readonly v-bind="attrs" v-on="on"></v-text-field>
       </template>
-      <v-date-picker ref="picker" v-model="date" :max="new Date().toISOString().substr(0, 10)" min="1950-01-01" @change="SaveDate"></v-date-picker>
-    </v-menu>
-    <div class="section" v-if="loading">
-      正在加载：
-      <div v-for="item in OnLoadData" :key="item">{{ item }}</div>
-    </div>
+      <v-date-picker v-model="date" scrollable :allowed-dates="allowedDates" :min="DateMin" :max="DateMax">
+        <v-spacer></v-spacer>
+        <v-btn text color="primary" @click="modal = false">取消</v-btn>
+        <v-btn text color="primary" @click="$refs.dialog.save(date)">确定</v-btn>
+      </v-date-picker>
+    </v-dialog>
     <div class="data-analysis">
       <div id="AnalysisSnapshotBarTop50"></div>
       <div id="AnalysisSnapshotBarTop50End"></div>
@@ -19,34 +19,45 @@
 
 <script lang="ts">
 import { Component, Vue, Watch } from 'vue-property-decorator';
-import echarts from 'echarts';
 import { EchartsBar } from '@/lib/echarts-render';
 import { SnapshotItem, Snapshot } from '../../types/fmex';
 import { DateFormat } from '../../lib/utils';
 import axios from 'axios';
 
-const TimeName = DateFormat(Date.now() - 86400000, 'yyyy-MM-dd'); // 只有昨日的数据。
+const DateMax = DateFormat(Date.now() - 86400000, 'yyyy-MM-dd'); // 只有昨日的数据。
+const DateMin = DateFormat(new Date(2020, 7 - 1, 10), 'yyyy-MM-dd');
 
 @Component({
   components: {},
 })
 export default class AnalysisPage extends Vue {
-  menu = false;
-  date = TimeName;
+  modal = false;
+  date = DateMax;
+  DateMin = DateMin;
+  DateMax = DateMax;
+
   loading = true;
   OnLoadData = ['用户资产数据'];
   SnapshotData: SnapshotItem[] = [];
+  BaseUrl = 'https://fmex-database.oss-cn-qingdao.aliyuncs.com/fmex/api/broker/v3/zkp-assets/account/snapshot/BTC/';
 
-  @Watch('menu')
-  MenuChange(val: boolean) {
-    val && setTimeout(() => ((this.$refs.picker as any).activePicker = 'YEAR'));
-  }
   SaveDate() {
     //
   }
 
+  @Watch('date')
+  async OnDateChange() {
+    this.SnapshotData = [];
+    await this.GetData();
+    this.Render();
+  }
+
+  allowedDates(val: string) {
+    return ['2020-07-11'].indexOf(val) === -1;
+  }
+
   async mounted() {
-    await this.GetBtcSnapshot();
+    await this.GetData();
     this.Render();
   }
 
@@ -112,6 +123,19 @@ export default class AnalysisPage extends Vue {
     });
   }
 
+  async GetData(times = 0): Promise<any> {
+    const FileName = this.date.replace(/-/g, '/');
+    const Data = await this.$AnalysisStore.GetJson(this.BaseUrl + FileName);
+    if (!Data) {
+      return this.GetData(++times);
+    }
+    Data.forEach((item: any) => {
+      item.amount = parseFloat(item.amount);
+    });
+    Data.sort((a: any, b: any) => b.amount - a.amount);
+    this.SnapshotData = Data;
+  }
+
   async GetBtcSnapshot(id = ''): Promise<any> {
     const idStr = id ? `&id=${id}` : '';
     if (id) this.OnLoadData.push(`用户资产数据 【${id}】`);
@@ -132,7 +156,7 @@ export default class AnalysisPage extends Vue {
     const res = await axios
       .get(`https://fmex.com/api/broker/v3/zkp-assets/account/snapshot?currencyName=BTC${idStr}`)
       .then((res) => res.data)
-      .catch((e) => null);
+      .catch(() => null);
     console.log(res);
     if (!res || res.status !== 'ok') {
       this.OnLoadData[this.OnLoadData.length - 1] = `${this.OnLoadData[this.OnLoadData.length - 1]} 加载失败`;

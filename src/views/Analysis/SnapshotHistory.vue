@@ -1,19 +1,55 @@
 <template>
   <div>
+    <v-dialog ref="dialog" v-model="modal" color="primary" :return-value.sync="Dates" persistent>
+      <template v-slot:activator="{ on, attrs }">
+        <v-text-field v-model="Dates" label="日期选择" prepend-icon="mdi-calendar-range" readonly v-bind="attrs" v-on="on"></v-text-field>
+      </template>
+      <v-date-picker v-model="Dates" range scrollable :min="DateMin" :max="DateMax">
+        <v-spacer></v-spacer>
+        <v-btn text color="primary" @click="modal = false">取消</v-btn>
+        <v-btn text color="primary" @click="Submit">确定</v-btn>
+      </v-date-picker>
+    </v-dialog>
+    <v-card class="mx-auto text-center" color="primary" dark max-width="600">
+      <v-card-text>
+        <v-sheet color="rgba(4, 164, 204, .12)">
+          <v-sparkline :value="value" :line-width="2" color="rgba(255, 255, 255, .7)" height="80" padding="10">
+            <template v-slot:label="item">{{ item.value }}</template>
+            <!-- <template v-slot:label="item">{{ labelText[item.index] }}</template> -->
+          </v-sparkline>
+        </v-sheet>
+        <v-divider></v-divider>
+        <v-subheader>部分日期暂无数据，若有提供，联系邮箱：support@ft100.fun （感谢！）</v-subheader>
+      </v-card-text>
+
+      <v-card-text>
+        <div class="font-weight-thin">账户数量走势</div>
+      </v-card-text>
+    </v-card>
     <div class="data-analysis">
       <div ref="AnalysisPage"></div>
+      <v-divider></v-divider>
       <div ref="AnalysisPageTop5"></div>
     </div>
   </div>
 </template>
 
 <script lang="ts">
-import { Component, Vue } from 'vue-property-decorator';
+import { Component, Vue, Watch } from 'vue-property-decorator';
 import echarts from 'echarts';
 import { DateFormat } from '../../lib/utils';
 import BigNumber from 'bignumber.js';
 
-const BaseTime = new Date(2020, 7 - 1, 12).getTime();
+const DateMax = DateFormat(Date.now() - 86400000, 'yyyy-MM-dd'); // 只有昨日的数据。
+const DateMin = DateFormat(new Date(2020, 7 - 1, 11), 'yyyy-MM-dd');
+const GetTimes = () => {
+  const now = new Date();
+  const begin = new Date();
+  begin.setDate(now.getDate() - 100);
+  const MinTime = new Date(DateMin).getTime();
+  if (begin.getTime() < MinTime) begin.setTime(MinTime); // 开始时间不得大于目前已有的基础时间（有数据的时间）
+  return [DateFormat(begin, 'yyyy-MM-dd'), DateMax];
+};
 
 let myChart: echarts.ECharts | null = null;
 let myChart2: echarts.ECharts | null = null;
@@ -22,6 +58,13 @@ let myChart2: echarts.ECharts | null = null;
   components: {},
 })
 export default class AnalysisPage extends Vue {
+  modal = false;
+  DateMin = DateMin;
+  DateMax = DateMax;
+
+  value: number[] = [];
+  labelText: string[] = [];
+
   loading = true;
   OnLoadData = ['用户资产数据'];
   SnapshotData: any[] = [];
@@ -34,13 +77,16 @@ export default class AnalysisPage extends Vue {
   Top5 = [0, 1, 2, 3, 4];
 
   // 默认选中最近100天
-  Times = (() => {
-    const now = new Date();
-    const begin = new Date();
-    begin.setDate(now.getDate() - 100);
-    if (begin.getTime() < BaseTime) begin.setTime(BaseTime); // 开始时间不得大于目前已有的基础时间（有数据的时间）
-    return [begin, now];
-  })();
+  Times = GetTimes();
+  Dates = GetTimes();
+
+  async Submit() {
+    (this.$refs.dialog as any).save(this.Dates);
+    this.Times = this.Dates.map((i) => i);
+    this.SnapshotData = [];
+    await this.GetData(this.Times[0]);
+    this.Render();
+  }
 
   async mounted() {
     this.GetData(this.Times[0]);
@@ -71,7 +117,7 @@ export default class AnalysisPage extends Vue {
       },
       title: {
         text: ``,
-        subtext: `账户资产趋势 ${DateFormat(this.Times[0], 'yyyy-MM-dd')} ~ ${DateFormat(this.Times[1], 'yyyy-MM-dd')}`,
+        subtext: `账户资产趋势 ${this.Times[0]} ~ ${this.Times[1]}`,
         top: 4,
       },
       xAxis: [{ type: 'category', boundaryGap: false }],
@@ -140,6 +186,14 @@ export default class AnalysisPage extends Vue {
       return 0.4 + (i / this.BtcNumber.length) * 0.6;
     };
 
+    this.value = this.SnapshotData.map((it) => it.Data.length);
+    const labelText = this.SnapshotData.map((it) => it.FileName);
+    // this.labelText = labelText.map((it) =>
+    //   it
+    //     .split('\r\n')
+    //     .reverse()
+    //     .join('-')
+    // );
     // 1111111111111111
     const NumArrData = this.BtcNumber.map((num, i) => {
       return {
@@ -163,7 +217,7 @@ export default class AnalysisPage extends Vue {
         color: `rgba(4, 164, 204, 1)`,
       },
     };
-    const data = this.SnapshotData.map((item: any, timeIndex) => {
+    this.SnapshotData.forEach((item: any) => {
       // 因为amount是从小到大排序的
       let NumIndex = 0;
       const tempArr = NumArrData.map((nad) => new BigNumber(0));
@@ -185,7 +239,7 @@ export default class AnalysisPage extends Vue {
     });
     myChart.setOption({
       xAxis: {
-        data: this.SnapshotData.map((it) => it.FileName),
+        data: labelText,
       },
       series: [...NumArrData, other],
     });
@@ -210,15 +264,18 @@ export default class AnalysisPage extends Vue {
     });
     myChart2.setOption({
       xAxis: {
-        data: this.SnapshotData.map((it) => it.FileName),
+        data: labelText,
       },
       series: [...NumArrData2],
     });
   }
 
-  async GetData(time: Date, times = 1): Promise<any> {
+  async GetData(time: string, times = 1): Promise<any> {
     if (times > 5) return;
-    const FileName = DateFormat(time, 'yyyy/MM/dd');
+    const timeDate = new Date(time);
+    // 因为数据存储时，按照今天存储昨天的
+    const next = new Date(timeDate.getTime() + 86400000);
+    const FileName = DateFormat(next, 'yyyy/MM/dd');
     this.OnLoadData.push(`加载 ${FileName} ${times > 1 ? times : ''}`);
     const Data = await this.$AnalysisStore.GetJson(this.BaseUrl + FileName);
     if (!Data) {
@@ -230,12 +287,11 @@ export default class AnalysisPage extends Vue {
     Data.sort((a: any, b: any) => a.amount - b.amount);
 
     // 用户资产是备份前一天的。所以时间上是错开了一天。这里纠正回去
-    const ShowTime = new Date(time.getTime() - 86400000);
+    const ShowTime = new Date(time);
     this.SnapshotData.push({ FileName: DateFormat(ShowTime, 'MM-dd\r\nyyyy'), Data });
     this.Render();
-    const next = new Date(time.getTime() + 86400000);
-    if (next.getTime() < this.Times[1].getTime()) {
-      return this.GetData(next, ++times);
+    if (next.getTime() <= new Date(this.Times[1]).getTime()) {
+      return this.GetData(FileName.replace(/\//g, '-'), ++times);
     }
     this.loading = false;
     return true;
@@ -248,6 +304,7 @@ export default class AnalysisPage extends Vue {
   div {
     width: 100%;
     height: 500px;
+    padding-top: 40px;
   }
 }
 </style>

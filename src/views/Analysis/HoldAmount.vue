@@ -9,8 +9,7 @@
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
 import echarts from 'echarts';
-import { DateFormat, sleep } from '../../lib/utils';
-import { FMexWss } from '../../lib/wss';
+import { DateFormat } from '../../lib/utils';
 
 const BaseTime = new Date(2020, 7 - 1, 13).getTime();
 
@@ -87,7 +86,7 @@ export default class HoldAmount extends Vue {
       type: 'line',
       data: [] as number[],
     };
-    const data = this.SnapshotData.map((item: any, timeIndex) => {
+    this.SnapshotData.map((item: any) => {
       Amounts.data.push(item.BTCUSD_P / 10000);
     });
     myChart.setOption({
