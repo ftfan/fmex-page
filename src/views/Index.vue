@@ -1,5 +1,5 @@
 <template>
-  <div class="main index" transition="normal">
+  <div class="page-index">
     <div class="center">
       <h1 class="sitename">FMex.Fun</h1>
       <p><b>最近更新: </b>{{ BuildTime }}</p>
@@ -41,9 +41,59 @@ h2 {
 $time: 10s;
 .sitename {
   transition: all $time ease-in-out;
+  color: $color-primary;
 
   &:hover {
     transform: scale(1.2) rotate((3 * 360deg * $time / 1s) + 10deg);
+  }
+}
+p {
+  color: $color-primary;
+}
+.section {
+  margin-top: 20px;
+}
+.center {
+  text-align: center;
+}
+ul {
+  li {
+    $section-ul-li-width: 240px;
+    width: $section-ul-li-width;
+    height: $section-ul-li-width / 3;
+    padding: 12px;
+    margin: 4px;
+    background-color: $color-primary;
+    border: 4px solid #fff;
+    box-shadow: 0 0 4px $color-primary;
+    transition: all 0.2s ease-in-out;
+    float: left;
+    overflow: hidden;
+
+    h2 {
+      font-size: 1rem;
+      font-weight: 400;
+      text-align: center;
+    }
+
+    a {
+      color: #fff;
+    }
+
+    .des {
+      color: #dadada;
+      font-size: 0.8rem;
+    }
+
+    &:hover {
+      background-color: #00a499;
+      cursor: pointer;
+
+      a {
+        color: #83e9f5;
+        text-decoration: none;
+      }
+    }
   }
 }
 </style>

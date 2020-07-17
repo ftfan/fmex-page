@@ -56,6 +56,11 @@ export default class BtcVolPrice extends Vue {
       },
       legend: {
         data: ['均价', '成交量', '成交额'],
+        selected: {
+          均价: true,
+          成交量: false,
+          成交额: true,
+        },
       },
       title: {
         text: ``,
@@ -126,6 +131,7 @@ export default class BtcVolPrice extends Vue {
       name: `成交额`,
       type: 'line',
       yAxisIndex: 1,
+      color: `rgba(4, 164, 204, 1)`,
       data: [] as number[],
     };
     const data = this.SnapshotData.map((item: any, timeIndex) => {

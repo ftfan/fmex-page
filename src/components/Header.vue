@@ -68,14 +68,14 @@ export default class Header extends Vue {
     position: fixed;
     width: $header-div-width;
     height: $header-div-width / 2;
-    background-color: $color-main;
+    background-color: $color-primary;
     border: 4px solid #fff;
     text-align: center;
     box-shadow: 0 0 4px #04a4cc;
     transition: all 0.4s ease-in-out;
     border-radius: 100px;
     opacity: 0.5;
-    z-index: $zIndex-header-div;
+    z-index: 2;
 
     p {
       color: #83ffe9;

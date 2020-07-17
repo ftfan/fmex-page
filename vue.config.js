@@ -4,13 +4,7 @@ module.exports = {
   assetsDir: 'static/',
   productionSourceMap: true,
 
-  css: {
-    loaderOptions: {
-      sass: {
-        prependData: `@import "~@/assets/var.scss";`,
-      },
-    },
-  },
+  transpileDependencies: ['vuetify'],
 
   chainWebpack: (config) => {
     config.plugins.delete('preload');

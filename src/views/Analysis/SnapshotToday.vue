@@ -1,5 +1,11 @@
 <template>
   <div>
+    <v-menu ref="menu" v-model="menu" :close-on-content-click="false" transition="scale-transition" offset-y min-width="290px">
+      <template v-slot:activator="{ on, attrs }">
+        <v-text-field v-model="date" label="选择查看时间" prepend-icon="mdi-event" readonly v-bind="attrs" v-on="on"></v-text-field>
+      </template>
+      <v-date-picker ref="picker" v-model="date" :max="new Date().toISOString().substr(0, 10)" min="1950-01-01" @change="SaveDate"></v-date-picker>
+    </v-menu>
     <div class="section" v-if="loading">
       正在加载：
       <div v-for="item in OnLoadData" :key="item">{{ item }}</div>
@@ -12,20 +18,32 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue } from 'vue-property-decorator';
+import { Component, Vue, Watch } from 'vue-property-decorator';
 import echarts from 'echarts';
 import { EchartsBar } from '@/lib/echarts-render';
 import { SnapshotItem, Snapshot } from '../../types/fmex';
 import { DateFormat } from '../../lib/utils';
 import axios from 'axios';
 
+const TimeName = DateFormat(Date.now() - 86400000, 'yyyy-MM-dd'); // 只有昨日的数据。
+
 @Component({
   components: {},
 })
 export default class AnalysisPage extends Vue {
+  menu = false;
+  date = TimeName;
   loading = true;
   OnLoadData = ['用户资产数据'];
   SnapshotData: SnapshotItem[] = [];
+
+  @Watch('menu')
+  MenuChange(val: boolean) {
+    val && setTimeout(() => ((this.$refs.picker as any).activePicker = 'YEAR'));
+  }
+  SaveDate() {
+    //
+  }
 
   async mounted() {
     await this.GetBtcSnapshot();
@@ -33,7 +51,6 @@ export default class AnalysisPage extends Vue {
   }
 
   Render() {
-    const TimeName = DateFormat(Date.now() - 86400000, '【yyyy-MM-dd】'); // 只有昨日的数据。
     const Top50 = this.SnapshotData.slice(0, 50);
     EchartsBar(document.getElementById('AnalysisSnapshotBarTop50') as any, {
       color: ['#04a4cc'],
@@ -45,7 +62,7 @@ export default class AnalysisPage extends Vue {
         },
       },
       title: {
-        subtext: 'FMex 账户资产 TOP:50' + TimeName,
+        subtext: 'FMex 账户资产 TOP:50' + `【${this.date}】`,
       },
       xAxis: {
         type: 'category',
@@ -75,7 +92,7 @@ export default class AnalysisPage extends Vue {
         },
       },
       title: {
-        subtext: `FMex 账户资产排名 50~${this.SnapshotData.length}` + TimeName,
+        subtext: `FMex 账户资产排名 50~${this.SnapshotData.length}` + `【${this.date}】`,
       },
       xAxis: {
         type: 'category',

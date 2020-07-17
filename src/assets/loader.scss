@@ -1,7 +1,7 @@
 #page-loader-model {
   background-color: #fff;
   position: fixed;
-  z-index: $zIndex-loader;
+  z-index: 100;
   opacity: 1;
   transition: all 0.4s ease-in-out;
   top: 0;
@@ -23,7 +23,7 @@
     margin: auto;
     .cube1,
     .cube2 {
-      background-color: $color-main;
+      background-color: $color-primary;
       width: 30px;
       height: 30px;
       position: absolute;

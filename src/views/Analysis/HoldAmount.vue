@@ -50,7 +50,7 @@ export default class HoldAmount extends Vue {
         },
       },
       grid: {
-        right: '90px',
+        right: '50px',
         left: '50px',
       },
       legend: {

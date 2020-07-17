@@ -1,11 +1,27 @@
 <template>
-  <div class="main about" transition="normal">
-    <h1>关于这个网站</h1>
-    <p>本网站代码开源，使用 GitHub Pages 部署</p>
-    <p>欢迎提pr、issues</p>
-    <p>GitHub 源码: <a href="https://github.com/ftfan/fmex-page" target="_blank">https://github.com/ftfan/fmex-page</a></p>
-    <p>有其他数据视图想法，联系方式： imconfig@aliyun.com</p>
-  </div>
+  <v-list>
+    <v-subheader>站点介绍</v-subheader>
+    <v-list-item three-line>
+      <v-list-item-content>
+        <v-list-item-title>项目开发</v-list-item-title>
+        <v-list-item-subtitle>代码<v-chip link small href="https://github.com/ftfan/fmex-page">https://github.com/ftfan/fmex-page</v-chip></v-list-item-subtitle>
+        <v-list-item-subtitle>部署方式：<v-chip small>GitHub Pages</v-chip></v-list-item-subtitle>
+        <v-list-item-subtitle>国内镜像<v-chip link small color="primary" href="https://fmex.gitee.io">https://fmex.gitee.io</v-chip></v-list-item-subtitle>
+        <v-list-item-subtitle>
+          欢迎 pr、issues
+        </v-list-item-subtitle>
+      </v-list-item-content>
+    </v-list-item>
+
+    <v-list-item three-line>
+      <v-list-item-content>
+        <v-list-item-title>联系我们</v-list-item-title>
+        <v-list-item-subtitle>
+          <v-chip small color="primary">support@ft100.fun</v-chip>
+        </v-list-item-subtitle>
+      </v-list-item-content>
+    </v-list-item>
+  </v-list>
 </template>
 
 <style lang="scss" scoped>

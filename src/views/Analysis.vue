@@ -1,24 +1,20 @@
 <template>
-  <div class="analysis g-abs" transition="normal">
-    <el-tabs type="border-card" @tab-click="TabClick">
-      <el-tab-pane lazy label="账户资产">
-        <SnapshotToday></SnapshotToday>
-      </el-tab-pane>
-      <el-tab-pane lazy label="资产历史">
-        <SnapshotHistory></SnapshotHistory>
-      </el-tab-pane>
-      <el-tab-pane lazy label="数据走势">
-        <BtcVolPrice></BtcVolPrice>
-      </el-tab-pane>
-      <el-tab-pane lazy label="未平仓合约">
-        <HoldAmount></HoldAmount>
-      </el-tab-pane>
-    </el-tabs>
+  <div class="analysis">
+    <v-tabs grow contered background-color="primary" v-model="tab">
+      <v-tab v-for="item in Taps" :key="item.Name">{{ item.Name }}</v-tab>
+    </v-tabs>
+    <v-tabs-items v-model="tab">
+      <v-tab-item v-for="item in Taps" :key="item.Name">
+        <v-card flat>
+          <component :is="item.Component"></component>
+        </v-card>
+      </v-tab-item>
+    </v-tabs-items>
   </div>
 </template>
 
 <script lang="ts">
-import { Component, Vue } from 'vue-property-decorator';
+import { Component, Vue, Watch } from 'vue-property-decorator';
 import SnapshotToday from './Analysis/SnapshotToday.vue';
 import SnapshotHistory from './Analysis/SnapshotHistory.vue';
 import BtcVolPrice from './Analysis/BtcVolPrice.vue';
@@ -29,20 +25,21 @@ import { LogEvent } from '../router';
   components: { SnapshotToday, SnapshotHistory, BtcVolPrice, HoldAmount },
 })
 export default class AnalysisPage extends Vue {
+  tab = 0;
+
+  Taps = [
+    { Name: '昨日资产表', Component: SnapshotToday },
+    { Name: '资产走势', Component: SnapshotHistory },
+    { Name: '数据走势', Component: BtcVolPrice },
+    { Name: '未平仓合约', Component: HoldAmount },
+  ];
+
+  @Watch('tab')
   TabClick(tab: any) {
-    LogEvent(tab.label, 'click', 'tab', 1);
+    if (!this.Taps[tab]) return;
+    LogEvent(this.Taps[tab].Name, 'click', 'tab', 1);
   }
 }
 </script>
 
-<style lang="scss" scoped>
-.analysis {
-  overflow: auto;
-  padding: 160px 100px 0;
-}
-@media screen and (max-width: 750px) {
-  .analysis {
-    padding: 160px 4px 0;
-  }
-}
-</style>
+<style lang="scss" scoped></style>
