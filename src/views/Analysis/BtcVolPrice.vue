@@ -47,6 +47,7 @@ export default class BtcVolPrice extends Vue {
   }
 
   RenderInit() {
+    this.SnapshotData = [];
     myChart = echarts.init(this.$refs.BtcVolPrice as any);
     myChart.setOption({
       tooltip: {
@@ -61,8 +62,9 @@ export default class BtcVolPrice extends Vue {
         bottom: '80px',
       },
       legend: {
-        data: ['均价', '成交量', '成交额'],
+        data: ['24H均价', '现价', '成交量', '成交额'],
         selected: {
+          现价: true,
           均价: true,
           成交量: false,
           成交额: true,
@@ -77,7 +79,7 @@ export default class BtcVolPrice extends Vue {
       dataZoom: [
         {
           show: true,
-          start: 80,
+          start: 90,
           end: 100,
         },
       ],
@@ -129,10 +131,19 @@ export default class BtcVolPrice extends Vue {
 
   Render() {
     if (!myChart) return;
+    const last = this.SnapshotData[this.SnapshotData.length - 1];
     const AvoPrice = {
-      name: `均价`,
+      name: `24H均价`,
       type: 'line',
       data: [] as number[],
+    };
+    const CurrPrice = {
+      name: `现价`,
+      type: 'line',
+      data: [] as number[],
+      markPoint: {
+        data: [] as any[],
+      },
     };
     const Btc = {
       name: `成交量`,
@@ -148,20 +159,44 @@ export default class BtcVolPrice extends Vue {
       areaStyle: {
         color: `rgba(4, 164, 204, 0.2)`,
       },
+      markPoint: {
+        data: [] as any[],
+      },
       data: [] as number[],
     };
     const data = this.SnapshotData.map((item: any, timeIndex) => {
       const amount = item.tickers[0].ticker[9];
       const vol = item.tickers[0].ticker[10];
+      CurrPrice.data.push(item.tickers[0].ticker[0]);
       AvoPrice.data.push(parseFloat((amount / vol).toFixed(1)));
       Btc.data.push(parseFloat(vol.toFixed(2)));
       Usd.data.push(parseFloat((amount / 10000).toFixed(2)));
     });
+
+    const xAxis = this.SnapshotData.map((it) => it.TimeStr);
+
+    const curPrice = CurrPrice.data[CurrPrice.data.length - 1];
+    CurrPrice.markPoint.data.push({
+      symbol: 'pin',
+      symbolSize: 40,
+      name: '最新价格',
+      coord: [xAxis[xAxis.length - 1], curPrice],
+      value: curPrice,
+    });
+
+    const curAmount = Usd.data[Usd.data.length - 1];
+    Usd.markPoint.data.push({
+      symbol: 'pin',
+      symbolSize: 40,
+      name: '最新成交额',
+      coord: [xAxis[xAxis.length - 1], curAmount],
+      value: curAmount,
+    });
     myChart.setOption({
       xAxis: {
-        data: this.SnapshotData.map((it) => it.TimeStr),
+        data: xAxis,
       },
-      series: [AvoPrice, Btc, Usd],
+      series: [CurrPrice, AvoPrice, Btc, Usd],
     });
   }
 
@@ -177,13 +212,13 @@ export default class BtcVolPrice extends Vue {
       item.TimeStr = DateFormat(item.ts, 'MM-dd\r\nhh:00');
     });
     this.SnapshotData.push(...Data);
-    this.Render();
     const next = new Date(time.getTime() + 86400000);
     if (next.getTime() < this.Times[1].getTime()) {
       return this.GetData(next);
     }
     this.loading = false;
     this.GetFmexData();
+    this.Render();
     return true;
   }
 
@@ -191,8 +226,10 @@ export default class BtcVolPrice extends Vue {
     if (!this.first) return;
     if (this.first) this.first = false;
     FMexWss.sub('ticker', 'BTCUSD_P').ondata((data) => {
+      // 设置为下一个时间点的数据
+      const nextDate = data.ts + 3600000;
       const Data: any = {
-        TimeStr: DateFormat(data.ts, 'MM-dd\r\nhh:00'),
+        TimeStr: DateFormat(nextDate, 'MM-dd\r\nhh:00'),
         tickers: [data],
         ts: data.ts,
         type: 'wss',

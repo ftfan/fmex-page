@@ -41,7 +41,6 @@ export default class AnalysisPage extends Vue {
     const els = this.$refs[item.Name] as any;
     if (els) {
       const el = els[0];
-      console.log(el && el.mountedd);
       if (el && el.mountedd) el.mountedd(); // 初始化组件
     }
 

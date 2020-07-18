@@ -125,13 +125,13 @@ export default class HoldAmount extends Vue {
       item.TimeStr = DateFormat(item.ts, 'MM-dd\r\nhh:mm');
     });
     this.SnapshotData.push(...Data);
-    this.Render();
     const next = new Date(time.getTime() + 86400000);
     if (next.getTime() < this.Times[1].getTime()) {
       return this.GetData(next);
     }
     this.loading = false;
     this.GetFmexData();
+    this.Render();
     return true;
   }
 

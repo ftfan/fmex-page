@@ -302,11 +302,11 @@ export default class AnalysisPage extends Vue {
     // 用户资产是备份前一天的。所以时间上是错开了一天。这里纠正回去
     const ShowTime = new Date(time);
     this.SnapshotData.push({ FileName: DateFormat(ShowTime, 'MM-dd\r\nyyyy'), Data });
-    this.Render();
     if (next.getTime() <= new Date(this.Times[1]).getTime()) {
       return this.GetData(FileName.replace(/\//g, '-'));
     }
     this.loading = false;
+    this.Render();
     return true;
   }
 }
