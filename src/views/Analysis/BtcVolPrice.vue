@@ -20,23 +20,28 @@ let myChart: echarts.ECharts | null = null;
   components: {},
 })
 export default class BtcVolPrice extends Vue {
+  first = true;
   loading = true;
-  OnLoadData = ['用户资产数据'];
+  // OnLoadData = ['用户资产数据'];
   SnapshotData: any[] = [];
 
   BaseUrl = 'https://fmex-database.oss-cn-qingdao.aliyuncs.com/fmex/v2/market/all-tickers/';
   FmexCurrent = 'https://api.fmex.com/v2/market/all-tickers';
 
-  // 默认选中最近100天
+  // 默认选中最近 30 天
   Times = (() => {
     const now = new Date();
     const begin = new Date();
-    begin.setDate(now.getDate() - 100);
+    begin.setDate(now.getDate() - 30);
     if (begin.getTime() < BaseTime) begin.setTime(BaseTime); // 开始时间不得大于目前已有的基础时间（有数据的时间）
     return [begin, now];
   })();
 
-  async mounted() {
+  mounted() {
+    this.mountedd();
+  }
+
+  async mountedd() {
     this.GetData(this.Times[0]);
     this.RenderInit();
   }
@@ -53,6 +58,7 @@ export default class BtcVolPrice extends Vue {
       grid: {
         right: '90px',
         left: '50px',
+        bottom: '80px',
       },
       legend: {
         data: ['均价', '成交量', '成交额'],
@@ -68,6 +74,13 @@ export default class BtcVolPrice extends Vue {
         top: 4,
       },
       xAxis: [{ type: 'category', boundaryGap: false }],
+      dataZoom: [
+        {
+          show: true,
+          start: 80,
+          end: 100,
+        },
+      ],
       yAxis: [
         {
           type: 'value',
@@ -76,8 +89,7 @@ export default class BtcVolPrice extends Vue {
             return Math.floor(value.min);
           },
           // max: 'dataMax',
-          offset: 50,
-          position: 'right',
+          position: 'left',
           name: 'USD',
           axisLabel: {
             formatter: '{value}',
@@ -104,7 +116,8 @@ export default class BtcVolPrice extends Vue {
             return Math.floor(value.min / 100) * 100;
           },
           // max: 'dataMax',
-          position: 'left',
+          offset: 50,
+          position: 'right',
           name: '单位: BTC',
           axisLabel: {
             formatter: '{value}',
@@ -131,7 +144,10 @@ export default class BtcVolPrice extends Vue {
       name: `成交额`,
       type: 'line',
       yAxisIndex: 1,
-      color: `rgba(4, 164, 204, 1)`,
+      color: `rgba(4, 164, 204, 0.2)`,
+      areaStyle: {
+        color: `rgba(4, 164, 204, 0.2)`,
+      },
       data: [] as number[],
     };
     const data = this.SnapshotData.map((item: any, timeIndex) => {
@@ -152,7 +168,7 @@ export default class BtcVolPrice extends Vue {
   async GetData(time: Date, times = 1): Promise<any> {
     if (times > 5) return;
     const FileName = DateFormat(time, 'yyyy/MM/dd');
-    this.OnLoadData.push(`加载 ${FileName} ${times > 1 ? times : ''}`);
+    // this.OnLoadData.push(`加载 ${FileName} ${times > 1 ? times : ''}`);
     const Data = await this.$AnalysisStore.GetJson(this.BaseUrl + FileName);
     if (!Data) {
       return this.GetData(time, ++times);
@@ -164,7 +180,7 @@ export default class BtcVolPrice extends Vue {
     this.Render();
     const next = new Date(time.getTime() + 86400000);
     if (next.getTime() < this.Times[1].getTime()) {
-      return this.GetData(next, ++times);
+      return this.GetData(next);
     }
     this.loading = false;
     this.GetFmexData();
@@ -172,6 +188,8 @@ export default class BtcVolPrice extends Vue {
   }
 
   async GetFmexData(): Promise<any> {
+    if (!this.first) return;
+    if (this.first) this.first = false;
     FMexWss.sub('ticker', 'BTCUSD_P').ondata((data) => {
       const Data: any = {
         TimeStr: DateFormat(data.ts, 'MM-dd\r\nhh:00'),

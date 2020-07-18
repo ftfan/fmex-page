@@ -66,7 +66,7 @@ export default class AnalysisPage extends Vue {
   labelText: string[] = [];
 
   loading = true;
-  OnLoadData = ['用户资产数据'];
+  // OnLoadData = ['用户资产数据'];
   SnapshotData: any[] = [];
 
   BaseUrl = 'https://fmex-database.oss-cn-qingdao.aliyuncs.com/fmex/api/broker/v3/zkp-assets/account/snapshot/BTC/';
@@ -82,18 +82,31 @@ export default class AnalysisPage extends Vue {
 
   async Submit() {
     (this.$refs.dialog as any).save(this.Dates);
-    this.Times = this.Dates.map((i) => i);
+    const begin = new Date(this.Dates[0]);
+    const end = new Date(this.Dates[1]);
+    if (begin.getTime() > end.getTime()) {
+      const temp = begin.getTime();
+      begin.setTime(end.getTime());
+      end.setTime(temp);
+    }
+    this.Times = [DateFormat(begin, 'yyyy-MM-dd'), DateFormat(end, 'yyyy-MM-dd')];
     this.SnapshotData = [];
     await this.GetData(this.Times[0]);
     this.Render();
   }
 
-  async mounted() {
+  mounted() {
+    this.mountedd();
+  }
+
+  async mountedd() {
     this.GetData(this.Times[0]);
     this.RenderInit();
   }
 
   RenderInit() {
+    this.labelText = [];
+    this.SnapshotData = [];
     myChart = echarts.init(this.$refs.AnalysisPage as any);
     myChart.setOption({
       // color: ['#04a4cc'],
@@ -276,7 +289,7 @@ export default class AnalysisPage extends Vue {
     // 因为数据存储时，按照今天存储昨天的
     const next = new Date(timeDate.getTime() + 86400000);
     const FileName = DateFormat(next, 'yyyy/MM/dd');
-    this.OnLoadData.push(`加载 ${FileName} ${times > 1 ? times : ''}`);
+    // this.OnLoadData.push(`加载 ${FileName} ${times > 1 ? times : ''}`);
     const Data = await this.$AnalysisStore.GetJson(this.BaseUrl + FileName);
     if (!Data) {
       return this.GetData(time, ++times);

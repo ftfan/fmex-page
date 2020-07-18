@@ -52,7 +52,11 @@ export default class AnalysisPage extends Vue {
     return ['2020-07-11'].indexOf(val) === -1;
   }
 
-  async mounted() {
+  mounted() {
+    this.mountedd();
+  }
+
+  async mountedd() {
     await this.GetData();
     this.Render();
   }
@@ -120,7 +124,10 @@ export default class AnalysisPage extends Vue {
   }
 
   async GetData(times = 0): Promise<any> {
-    const FileName = this.date.replace(/-/g, '/');
+    const timeDate = new Date(this.date);
+    // 因为数据存储时，按照今天存储昨天的
+    const next = new Date(timeDate.getTime() + 86400000);
+    const FileName = DateFormat(next, 'yyyy/MM/dd');
     const Data = await this.$AnalysisStore.GetJson(this.BaseUrl + FileName);
     if (!Data) {
       return this.GetData(++times);

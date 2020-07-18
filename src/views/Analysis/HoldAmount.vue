@@ -20,26 +20,31 @@ let myChart: echarts.ECharts | null = null;
 })
 export default class HoldAmount extends Vue {
   loading = true;
-  OnLoadData = ['用户资产数据'];
+  // OnLoadData = ['用户资产数据'];
   SnapshotData: any[] = [];
 
   BaseUrl = 'https://fmex-database.oss-cn-qingdao.aliyuncs.com/fmex/api/contracts/web/v3/public/statistics/';
 
-  // 默认选中最近100天
+  // 默认选中最近 30 天
   Times = (() => {
     const now = new Date();
     const begin = new Date();
-    begin.setDate(now.getDate() - 100);
+    begin.setDate(now.getDate() - 30);
     if (begin.getTime() < BaseTime) begin.setTime(BaseTime); // 开始时间不得大于目前已有的基础时间（有数据的时间）
     return [begin, now];
   })();
 
-  async mounted() {
+  mounted() {
+    this.mountedd();
+  }
+
+  async mountedd() {
     this.GetData(this.Times[0]);
     this.RenderInit();
   }
 
   RenderInit() {
+    this.SnapshotData = [];
     myChart = echarts.init(this.$refs.HoldAmount as any);
     myChart.setOption({
       tooltip: {
@@ -51,6 +56,7 @@ export default class HoldAmount extends Vue {
       grid: {
         right: '50px',
         left: '50px',
+        bottom: '80px',
       },
       legend: {
         data: ['未平仓合约'],
@@ -60,6 +66,13 @@ export default class HoldAmount extends Vue {
         subtext: `${DateFormat(this.Times[0], 'yyyy-MM-dd')} ~ ${DateFormat(this.Times[1], 'yyyy-MM-dd')}`,
         top: 4,
       },
+      dataZoom: [
+        {
+          show: true,
+          start: 0,
+          end: 100,
+        },
+      ],
       xAxis: [{ type: 'category', boundaryGap: false }],
       yAxis: [
         {
@@ -82,9 +95,12 @@ export default class HoldAmount extends Vue {
     if (!myChart) return;
     const Amounts = {
       name: `未平仓合约`,
-      color: `rgba(4, 164, 204, 1)`,
       type: 'line',
       data: [] as number[],
+      color: `rgba(4, 164, 204, 0.2)`,
+      areaStyle: {
+        color: `rgba(4, 164, 204, 0.2)`,
+      },
     };
     this.SnapshotData.map((item: any) => {
       Amounts.data.push(item.BTCUSD_P / 10000);
@@ -100,7 +116,7 @@ export default class HoldAmount extends Vue {
   async GetData(time: Date, times = 1): Promise<any> {
     if (times > 5) return;
     const FileName = DateFormat(time, 'yyyy/MM/dd');
-    this.OnLoadData.push(`加载 ${FileName} ${times > 1 ? times : ''}`);
+    // this.OnLoadData.push(`加载 ${FileName} ${times > 1 ? times : ''}`);
     const Data = await this.$AnalysisStore.GetJson(this.BaseUrl + FileName);
     if (!Data) {
       return this.GetData(time, ++times);
@@ -112,7 +128,7 @@ export default class HoldAmount extends Vue {
     this.Render();
     const next = new Date(time.getTime() + 86400000);
     if (next.getTime() < this.Times[1].getTime()) {
-      return this.GetData(next, ++times);
+      return this.GetData(next);
     }
     this.loading = false;
     this.GetFmexData();

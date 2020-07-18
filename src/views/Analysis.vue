@@ -1,12 +1,12 @@
 <template>
   <div class="analysis">
-    <v-tabs grow contered background-color="primary" v-model="tab">
+    <v-tabs grow contered background-color="primary" v-model="tab" show-arrows>
       <v-tab v-for="item in Taps" :key="item.Name">{{ item.Name }}</v-tab>
     </v-tabs>
-    <v-tabs-items v-model="tab">
+    <v-tabs-items v-model="tab" touchless>
       <v-tab-item v-for="item in Taps" :key="item.Name">
-        <v-card flat>
-          <component :is="item.Component"></component>
+        <v-card>
+          <component :ref="item.Name" :is="item.Component"></component>
         </v-card>
       </v-tab-item>
     </v-tabs-items>
@@ -36,8 +36,16 @@ export default class AnalysisPage extends Vue {
 
   @Watch('tab')
   TabClick(tab: any) {
-    if (!this.Taps[tab]) return;
-    LogEvent(this.Taps[tab].Name, 'click', 'tab', 1);
+    const item = this.Taps[tab];
+    if (!item) return;
+    const els = this.$refs[item.Name] as any;
+    if (els) {
+      const el = els[0];
+      console.log(el && el.mountedd);
+      if (el && el.mountedd) el.mountedd(); // 初始化组件
+    }
+
+    LogEvent(item.Name, 'click', 'tab', 1);
   }
 }
 </script>
