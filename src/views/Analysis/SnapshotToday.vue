@@ -2,12 +2,12 @@
   <div>
     <v-dialog ref="dialog" v-model="modal" color="primary" :return-value.sync="date" persistent>
       <template v-slot:activator="{ on, attrs }">
-        <v-text-field v-model="date" label="日期选择：部分日期暂无数据，联系邮箱：support@ft100.fun" prepend-icon="mdi-calendar-range" readonly v-bind="attrs" v-on="on"></v-text-field>
+        <v-text-field v-model="date" label="部分日期暂无数据，若提供，联系邮箱：support@ft100.fun" prepend-icon="mdi-calendar-range" readonly v-bind="attrs" v-on="on"></v-text-field>
       </template>
       <v-date-picker v-model="date" scrollable :allowed-dates="allowedDates" :min="DateMin" :max="DateMax">
         <v-spacer></v-spacer>
         <v-btn text color="primary" @click="modal = false">取消</v-btn>
-        <v-btn text color="primary" @click="$refs.dialog.save(date)">确定</v-btn>
+        <v-btn text color="primary" @click="SaveDate">确定</v-btn>
       </v-date-picker>
     </v-dialog>
     <div class="data-analysis">
@@ -41,12 +41,8 @@ export default class AnalysisPage extends Vue {
   SnapshotData: SnapshotItem[] = [];
   BaseUrl = 'https://fmex-database.oss-cn-qingdao.aliyuncs.com/fmex/api/broker/v3/zkp-assets/account/snapshot/BTC/';
 
-  SaveDate() {
-    //
-  }
-
-  @Watch('date')
-  async OnDateChange() {
+  async SaveDate() {
+    (this.$refs.dialog as any).save(this.date);
     this.SnapshotData = [];
     await this.GetData();
     this.Render();

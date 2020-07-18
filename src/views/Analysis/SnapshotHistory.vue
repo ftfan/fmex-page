@@ -291,7 +291,7 @@ export default class AnalysisPage extends Vue {
     this.SnapshotData.push({ FileName: DateFormat(ShowTime, 'MM-dd\r\nyyyy'), Data });
     this.Render();
     if (next.getTime() <= new Date(this.Times[1]).getTime()) {
-      return this.GetData(FileName.replace(/\//g, '-'), ++times);
+      return this.GetData(FileName.replace(/\//g, '-'));
     }
     this.loading = false;
     return true;

@@ -28,7 +28,7 @@ export default class AnalysisPage extends Vue {
   tab = 0;
 
   Taps = [
-    { Name: '昨日资产表', Component: SnapshotToday },
+    { Name: '账户资产', Component: SnapshotToday },
     { Name: '资产走势', Component: SnapshotHistory },
     { Name: '数据走势', Component: BtcVolPrice },
     { Name: '未平仓合约', Component: HoldAmount },
