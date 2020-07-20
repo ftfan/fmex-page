@@ -2,7 +2,7 @@
   <div>
     <v-dialog ref="dialog" v-model="modal" color="primary" :return-value.sync="date" persistent>
       <template v-slot:activator="{ on, attrs }">
-        <v-text-field v-model="date" label="部分日期暂无数据，若提供，联系邮箱：support@ft100.fun" prepend-icon="mdi-calendar-range" readonly v-bind="attrs" v-on="on"></v-text-field>
+        <v-text-field v-model="date" label="日期选择" prepend-icon="mdi-calendar-range" readonly v-bind="attrs" v-on="on"></v-text-field>
       </template>
       <v-date-picker v-model="date" scrollable :allowed-dates="allowedDates" :min="DateMin" :max="DateMax">
         <v-spacer></v-spacer>
@@ -18,7 +18,7 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue, Watch } from 'vue-property-decorator';
+import { Component, Vue } from 'vue-property-decorator';
 import { EchartsBar } from '@/lib/echarts-render';
 import { SnapshotItem, Snapshot } from '../../types/fmex';
 import { DateFormat } from '../../lib/utils';
@@ -139,7 +139,8 @@ export default class AnalysisPage extends Vue {
     this.SnapshotData = Data;
   }
 
-  async GetBtcSnapshot(id = ''): Promise<any> {
+  async GetBtcSnapshot(id = '', times = 0): Promise<any> {
+    if (times > 5) return;
     const idStr = id ? `&id=${id}` : '';
     if (id) this.OnLoadData.push(`用户资产数据 【${id}】`);
 
@@ -163,7 +164,7 @@ export default class AnalysisPage extends Vue {
     console.log(res);
     if (!res || res.status !== 'ok') {
       this.OnLoadData[this.OnLoadData.length - 1] = `${this.OnLoadData[this.OnLoadData.length - 1]} 加载失败`;
-      return this.GetBtcSnapshot(id); // 获取下一页
+      return this.GetBtcSnapshot(id, ++times); // 获取下一页
     }
     return End(res.data);
   }

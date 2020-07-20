@@ -97,9 +97,9 @@ export default class HoldAmount extends Vue {
       name: `未平仓合约`,
       type: 'line',
       data: [] as number[],
-      color: `rgba(4, 164, 204, 0.2)`,
+      color: `rgba(4, 164, 204, 0.4)`,
       areaStyle: {
-        color: `rgba(4, 164, 204, 0.2)`,
+        color: `rgba(4, 164, 204, 0.4)`,
       },
     };
     this.SnapshotData.map((item: any) => {

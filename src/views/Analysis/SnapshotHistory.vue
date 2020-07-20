@@ -19,7 +19,7 @@
           </v-sparkline>
         </v-sheet>
         <v-divider></v-divider>
-        <v-subheader>部分日期暂无数据，若有提供，联系邮箱：support@ft100.fun （感谢！）</v-subheader>
+        <!-- <v-subheader>部分日期暂无数据，若有提供，联系邮箱：support@ft100.fun （感谢！）</v-subheader> -->
       </v-card-text>
 
       <v-card-text>
@@ -35,7 +35,7 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue, Watch } from 'vue-property-decorator';
+import { Component, Vue } from 'vue-property-decorator';
 import echarts from 'echarts';
 import { DateFormat } from '../../lib/utils';
 import BigNumber from 'bignumber.js';
@@ -72,7 +72,7 @@ export default class AnalysisPage extends Vue {
   BaseUrl = 'https://fmex-database.oss-cn-qingdao.aliyuncs.com/fmex/api/broker/v3/zkp-assets/account/snapshot/BTC/';
 
   // 资产区间
-  BtcNumber = [1, 5, 10, 50];
+  BtcNumber = [1, 10, 50];
 
   Top5 = [0, 1, 2, 3, 4];
 
@@ -120,7 +120,7 @@ export default class AnalysisPage extends Vue {
         },
       },
       legend: {
-        data: [...this.BtcNumber.map((num, i) => `${this.BtcNumber[i - 1] || 0}~${num}`), `${this.BtcNumber[this.BtcNumber.length - 1]}+`],
+        data: [...this.BtcNumber.map((num, i) => `${this.BtcNumber[i - 1] || 0}~${num}`), `${this.BtcNumber[this.BtcNumber.length - 1]}+`, '总资产'],
       },
       grid: {
         left: '20px',
@@ -230,10 +230,16 @@ export default class AnalysisPage extends Vue {
         color: `rgba(4, 164, 204, 1)`,
       },
     };
+    const sum = {
+      name: `总资产`,
+      type: 'line',
+      data: [] as number[],
+      color: `rgba(4, 164, 204, 1)`,
+    };
     this.SnapshotData.forEach((item: any) => {
       // 因为amount是从小到大排序的
       let NumIndex = 0;
-      const tempArr = NumArrData.map((nad) => new BigNumber(0));
+      const tempArr = NumArrData.map(() => new BigNumber(0));
       tempArr.push(new BigNumber(0)); // 其他，多余 10 BTC的账户
       item.Data.forEach((val: any) => {
         const NumRange = this.BtcNumber[NumIndex];
@@ -249,12 +255,13 @@ export default class AnalysisPage extends Vue {
         nad.data.push(tempArr[index].toNumber());
       });
       other.data.push(tempArr[tempArr.length - 1].toNumber());
+      sum.data.push(tempArr.reduce((a, b) => a.plus(b), new BigNumber(0)).toNumber());
     });
     myChart.setOption({
       xAxis: {
         data: labelText,
       },
-      series: [...NumArrData, other],
+      series: [...NumArrData, other, sum],
     });
 
     // 2222222222222222222

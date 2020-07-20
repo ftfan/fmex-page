@@ -9,7 +9,7 @@
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
 import echarts from 'echarts';
-import { DateFormat, sleep } from '../../lib/utils';
+import { DateFormat } from '../../lib/utils';
 import { FMexWss } from '../../lib/wss';
 
 const BaseTime = new Date(2020, 7 - 1, 13).getTime();
@@ -92,7 +92,7 @@ export default class BtcVolPrice extends Vue {
           },
           // max: 'dataMax',
           position: 'left',
-          name: 'USD',
+          name: '单位: USD',
           axisLabel: {
             formatter: '{value}',
           },
@@ -120,7 +120,7 @@ export default class BtcVolPrice extends Vue {
           // max: 'dataMax',
           offset: 50,
           position: 'right',
-          name: '单位: BTC',
+          name: 'BTC',
           axisLabel: {
             formatter: '{value}',
           },
@@ -131,7 +131,6 @@ export default class BtcVolPrice extends Vue {
 
   Render() {
     if (!myChart) return;
-    const last = this.SnapshotData[this.SnapshotData.length - 1];
     const AvoPrice = {
       name: `24H均价`,
       type: 'line',
@@ -155,16 +154,16 @@ export default class BtcVolPrice extends Vue {
       name: `成交额`,
       type: 'line',
       yAxisIndex: 1,
-      color: `rgba(4, 164, 204, 0.2)`,
+      color: `rgba(4, 164, 204, 0.4)`,
       areaStyle: {
-        color: `rgba(4, 164, 204, 0.2)`,
+        color: `rgba(4, 164, 204, 0.4)`,
       },
       markPoint: {
         data: [] as any[],
       },
       data: [] as number[],
     };
-    const data = this.SnapshotData.map((item: any, timeIndex) => {
+    this.SnapshotData.forEach((item: any) => {
       const amount = item.tickers[0].ticker[9];
       const vol = item.tickers[0].ticker[10];
       CurrPrice.data.push(item.tickers[0].ticker[0]);
