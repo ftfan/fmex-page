@@ -16,8 +16,6 @@ import '@mdi/font/css/materialdesignicons.css';
 const requireComponent = (require as any).context('@/data', true, /[\w]+\.ts$/);
 requireComponent.keys().forEach(async (fileName: any) => requireComponent(fileName));
 
-(window as any).FMexFun = {};
-
 const close = PageLoading();
 new Vue({
   router,
