@@ -18,7 +18,7 @@ class Store extends Data {
 
   readonly localState = {
     topMenuShow: true,
-    EnterUrl: new URIJS(location.href),
+    AppUrl: new URIJS(location.href),
   };
 
   // 模块名称，【必须】不能重复
