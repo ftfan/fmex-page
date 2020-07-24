@@ -10,6 +10,7 @@ class Store extends Data {
       [`让那些下车的人 都累趴下`, `别催，累趴下了`],
       [`想多了心就痛 说多了都是泪！`, `别问，问就是累趴下了`],
     ],
+    AppUrl: new URIJS(location.href),
   };
 
   readonly sessionState = {
@@ -18,7 +19,6 @@ class Store extends Data {
 
   readonly localState = {
     topMenuShow: true,
-    AppUrl: new URIJS(location.href),
   };
 
   // 模块名称，【必须】不能重复

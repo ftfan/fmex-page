@@ -42,8 +42,8 @@ export default class App extends Vue {
   }
 
   get FMexFunApp() {
-    if (!this.$AppStore.localState.AppUrl) return false;
-    return this.$AppStore.localState.AppUrl.hasQuery('FMexFunApp');
+    if (!this.$AppStore.state.AppUrl) return false;
+    return this.$AppStore.state.AppUrl.hasQuery('FMexFunApp');
   }
 }
 </script>
