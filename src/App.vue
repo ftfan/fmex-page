@@ -1,10 +1,11 @@
 <template>
   <v-app>
+    <div class="app-sys-nav"></div>
     <v-main>
       <router-view></router-view>
     </v-main>
 
-    <v-bottom-navigation v-model="bottomNav" color="primary" app grow shift>
+    <v-bottom-navigation v-if="!FMexFunApp" v-model="bottomNav" color="primary" app grow shift>
       <v-btn class="my-btn" href="/#/">
         <span>FMex.fun</span>
         <v-icon>mdi-home</v-icon>
@@ -39,11 +40,19 @@ export default class App extends Vue {
     if (this.$route.name === 'Analysis') return (this.bottomNav = 1);
     if (this.$route.name === 'About') return (this.bottomNav = 2);
   }
+
+  get FMexFunApp() {
+    return window.FMexFun;
+  }
 }
 </script>
 
 <style lang="scss" scpoed>
 .my-btn {
   height: inherit !important;
+}
+.app-sys-nav {
+  height: 16px;
+  background-color: #04a4cc;
 }
 </style>

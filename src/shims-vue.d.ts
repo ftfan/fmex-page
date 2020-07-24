@@ -4,3 +4,6 @@ declare module '*.vue' {
 }
 
 declare var __Build_Time: string;
+declare var FMexFun: {
+  version: string;
+};
