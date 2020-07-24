@@ -1,3 +1,7 @@
+import URIJS from 'urijs';
+
+export { URIJS };
+
 export const sleep = (time: number) => {
   return new Promise((resolve) => {
     setTimeout(resolve, time || 20);

@@ -1,6 +1,6 @@
 <template>
   <v-app>
-    <div class="app-sys-nav"></div>
+    <div class="app-sys-nav" v-if="FMexFunApp"></div>
     <v-main>
       <router-view></router-view>
     </v-main>
@@ -42,7 +42,7 @@ export default class App extends Vue {
   }
 
   get FMexFunApp() {
-    return window.FMexFun;
+    return this.$AppStore.localState.EnterUrl.hasQuery('FMexFunApp');
   }
 }
 </script>
@@ -52,7 +52,7 @@ export default class App extends Vue {
   height: inherit !important;
 }
 .app-sys-nav {
-  height: 16px;
+  height: 20px;
   background-color: #04a4cc;
 }
 </style>

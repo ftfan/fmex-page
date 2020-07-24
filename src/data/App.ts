@@ -1,5 +1,6 @@
 import Data from '@/lib/data';
 import Vue from 'vue';
+import { URIJS } from '@/lib/utils';
 
 class Store extends Data {
   readonly state = {
@@ -17,6 +18,7 @@ class Store extends Data {
 
   readonly localState = {
     topMenuShow: true,
+    EnterUrl: new URIJS(location.href),
   };
 
   // 模块名称，【必须】不能重复
