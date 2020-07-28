@@ -41,7 +41,7 @@ import { DateFormat } from '../../lib/utils';
 import BigNumber from 'bignumber.js';
 
 const DateMax = DateFormat(Date.now() - 86400000, 'yyyy-MM-dd'); // 只有昨日的数据。
-const DateMin = DateFormat(new Date(2020, 7 - 1, 11), 'yyyy-MM-dd');
+const DateMin = DateFormat(new Date(2020, 7 - 1, 8), 'yyyy-MM-dd');
 const GetTimes = () => {
   const now = new Date();
   const begin = new Date();

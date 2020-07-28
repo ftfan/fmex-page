@@ -25,7 +25,7 @@ import { DateFormat } from '../../lib/utils';
 import axios from 'axios';
 
 const DateMax = DateFormat(Date.now() - 86400000, 'yyyy-MM-dd'); // 只有昨日的数据。
-const DateMin = DateFormat(new Date(2020, 7 - 1, 10), 'yyyy-MM-dd');
+const DateMin = DateFormat(new Date(2020, 7 - 1, 8), 'yyyy-MM-dd');
 
 @Component({
   components: {},
@@ -49,7 +49,8 @@ export default class AnalysisPage extends Vue {
   }
 
   allowedDates(val: string) {
-    return ['2020-07-11'].indexOf(val) === -1;
+    // return ['2020-07-11'].indexOf(val) === -1;
+    return true;
   }
 
   mounted() {

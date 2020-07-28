@@ -23,7 +23,7 @@
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
-import { DateFormat } from '../lib/utils';
+// import { DateFormat } from '../lib/utils';
 
 @Component({
   components: {},
