@@ -242,14 +242,18 @@ export default class AnalysisPage extends Vue {
       const tempArr = NumArrData.map(() => new BigNumber(0));
       tempArr.push(new BigNumber(0)); // 其他，多余 10 BTC的账户
       item.Data.forEach((val: any) => {
-        const NumRange = this.BtcNumber[NumIndex];
-        const max = NumRange || Infinity; // 如果找不到，那就去无限大。
-        const AddVal = (index: number) => {
-          tempArr[index] = tempArr[index].plus(val.amount);
+        const PutItem = () => {
+          const NumRange = this.BtcNumber[NumIndex];
+          const max = NumRange || Infinity; // 如果找不到，那就去无限大。
+          const AddVal = (index: number) => {
+            tempArr[index] = tempArr[index].plus(val.amount);
+          };
+
+          if (val.amount < max) return AddVal(NumIndex);
+          NumIndex++;
+          PutItem();
         };
-        if (val.amount <= max) return AddVal(NumIndex);
-        NumIndex++;
-        AddVal(NumIndex);
+        PutItem();
       });
       NumArrData.forEach((nad, index) => {
         nad.data.push(tempArr[index].toNumber());
