@@ -11,21 +11,130 @@
       </v-date-picker>
     </v-dialog>
     <div class="data-analysis">
-      <div id="AnalysisSnapshotBarTop50"></div>
-      <div id="AnalysisSnapshotBarTop50End"></div>
+      <div v-for="(item, index) in ShowDataOrigin" :key="index" v-show="$AnalysisStore.localState.UserSNChooseHistory.indexOf(index) > -1" ref="echartref"></div>
     </div>
+
+    <v-dialog v-model="dialog">
+      <template v-slot:activator="{ on, attrs }">
+        <v-btn color="primary" style="top:80px" fixed top right small fab v-bind="attrs" v-on="on">
+          <v-icon>mdi-view-dashboard-outline</v-icon>
+        </v-btn>
+      </template>
+
+      <v-card>
+        <v-card-title class="headline grey lighten-2">
+          选择要查看的图表
+          <v-icon @click="dialog = false" style="position: absolute;right: 10px;top: 10px;">mdi-window-close</v-icon>
+        </v-card-title>
+
+        <v-card-text>
+          <v-item-group multiple v-model="$AnalysisStore.localState.UserSNChooseHistory">
+            <v-container>
+              <v-row>
+                <v-col v-for="(data, index) in ShowDataOrigin" :key="index" cols="12">
+                  <v-item v-slot:default="{ active, toggle }">
+                    <v-card :color="active ? 'primary' : '#ccc'" class="d-flex align-center" dark height="30" @click="toggle">
+                      <v-scroll-y-transition>
+                        <div class="flex-grow-1 text-left" style="padding-left: 10px">
+                          <v-icon v-if="active">mdi-check-circle-outline</v-icon>
+                          {{ data.Name(thisNick) }}
+                        </div>
+                      </v-scroll-y-transition>
+                    </v-card>
+                  </v-item>
+                </v-col>
+              </v-row>
+            </v-container>
+          </v-item-group>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
 <script lang="ts">
-import { Component, Vue } from 'vue-property-decorator';
+import { Component, Vue, Watch } from 'vue-property-decorator';
 import { EchartsBar } from '@/lib/echarts-render';
 import { SnapshotItem, Snapshot } from '../../types/fmex';
 import { DateFormat } from '../../lib/utils';
 import axios from 'axios';
 
+interface ShowDataOrigin {
+  Name: (vm: AnalysisPage) => string;
+  Render: (vm: AnalysisPage) => any;
+}
+
 const DateMax = DateFormat(Date.now() - 86400000, 'yyyy-MM-dd'); // 只有昨日的数据。
 const DateMin = DateFormat(new Date(2020, 7 - 1, 8), 'yyyy-MM-dd');
+
+const CreateNumChoose = (num: number, index: number) => {
+  return [
+    {
+      Name: (vm: AnalysisPage) => `资产 < ${num} BTC 的账户`,
+      Render: (vm: AnalysisPage) => {
+        const echartref = vm.$refs.echartref as any;
+        const database = vm.SnapshotData.filter((item) => item.amount < num);
+        EchartsBar(echartref[index], {
+          color: ['#04a4cc'],
+          tooltip: {
+            trigger: 'axis',
+            axisPointer: { type: 'shadow' },
+          },
+          title: {
+            subtext: `FMex 账户资产 < ${num} BTC 的${database.length}个账户`,
+          },
+          xAxis: {
+            type: 'category',
+            data: database.map((item, i) => i + vm.SnapshotData.length - database.length + 1),
+            name: '名次',
+          },
+          yAxis: {
+            type: 'value',
+            name: '单位：BTC',
+          },
+          series: [
+            {
+              data: database.map((item) => item.amount),
+              type: 'bar',
+            },
+          ],
+        });
+      },
+    },
+    {
+      Name: (vm: AnalysisPage) => `资产 >= ${num} BTC 的账户`,
+      Render: (vm: AnalysisPage) => {
+        const echartref = vm.$refs.echartref as any;
+        const database = vm.SnapshotData.filter((item) => item.amount >= num);
+        EchartsBar(echartref[index + 1], {
+          color: ['#04a4cc'],
+          tooltip: {
+            trigger: 'axis',
+            axisPointer: { type: 'shadow' },
+          },
+          title: {
+            subtext: `FMex 账户资产 >= ${num} BTC 的${database.length}个账户`,
+          },
+          xAxis: {
+            type: 'category',
+            data: database.map((item, i) => i + 1),
+            name: '名次',
+          },
+          yAxis: {
+            type: 'value',
+            name: '单位：BTC',
+          },
+          series: [
+            {
+              data: database.map((item) => item.amount),
+              type: 'bar',
+            },
+          ],
+        });
+      },
+    },
+  ];
+};
 
 @Component({
   components: {},
@@ -36,10 +145,92 @@ export default class AnalysisPage extends Vue {
   DateMin = DateMin;
   DateMax = DateMax;
 
+  get thisNick() {
+    return this;
+  }
+
+  ShowDataOrigin: ShowDataOrigin[] = [
+    {
+      Name: (vm: AnalysisPage) => '资产排名 TOP:50 的账户',
+      Render: (vm: AnalysisPage) => {
+        const echartref = vm.$refs.echartref as any;
+        const database = vm.SnapshotData.slice(0, 50);
+        EchartsBar(echartref[0], {
+          color: ['#04a4cc'],
+          tooltip: {
+            trigger: 'axis',
+            axisPointer: { type: 'shadow' },
+          },
+          title: {
+            subtext: 'FMex 账户资产 TOP:50',
+          },
+          xAxis: {
+            type: 'category',
+            data: database.map((item, i) => i + 1),
+            name: '名次',
+          },
+          yAxis: {
+            type: 'value',
+            name: '单位：BTC',
+          },
+          series: [
+            {
+              data: database.map((item) => item.amount),
+              type: 'bar',
+            },
+          ],
+        });
+      },
+    },
+    {
+      Name: (vm: AnalysisPage) => `资产排名 50~${vm.SnapshotData.length} 的账户`,
+      Render: (vm: AnalysisPage) => {
+        const echartref = vm.$refs.echartref as any;
+        const database = vm.SnapshotData.slice(50);
+        EchartsBar(echartref[1], {
+          color: ['#04a4cc'],
+          tooltip: {
+            trigger: 'axis',
+            axisPointer: { type: 'shadow' },
+          },
+          title: {
+            subtext: `FMex 账户资产排名 50~${vm.SnapshotData.length}`,
+          },
+          xAxis: {
+            type: 'category',
+            data: database.map((item, i) => i + 51),
+            name: '名次',
+          },
+          yAxis: {
+            type: 'value',
+            name: '单位：BTC',
+          },
+          series: [
+            {
+              data: database.map((item) => item.amount),
+              type: 'bar',
+            },
+          ],
+        });
+      },
+    },
+    ...CreateNumChoose(1, 2),
+    ...CreateNumChoose(5, 4),
+    ...CreateNumChoose(10, 6),
+  ];
+
+  dialog = false;
+
   loading = true;
   OnLoadData = ['用户资产数据'];
   SnapshotData: SnapshotItem[] = [];
   BaseUrl = 'https://fmex-database.oss-cn-qingdao.aliyuncs.com/fmex/api/broker/v3/zkp-assets/account/snapshot/BTC/';
+
+  @Watch('dialog')
+  OnDialogChange() {
+    if (this.dialog === true) return;
+    this.Render();
+  }
 
   async SaveDate() {
     (this.$refs.dialog as any).save(this.date);
@@ -63,64 +254,9 @@ export default class AnalysisPage extends Vue {
   }
 
   Render() {
-    const Top50 = this.SnapshotData.slice(0, 50);
-    EchartsBar(document.getElementById('AnalysisSnapshotBarTop50') as any, {
-      color: ['#04a4cc'],
-      tooltip: {
-        trigger: 'axis',
-        axisPointer: {
-          // 坐标轴指示器，坐标轴触发有效
-          type: 'shadow', // 默认为直线，可选为：'line' | 'shadow'
-        },
-      },
-      title: {
-        subtext: 'FMex 账户资产 TOP:50' + `【${this.date}】`,
-      },
-      xAxis: {
-        type: 'category',
-        data: Top50.map((item, i) => i + 1),
-        name: '名次',
-      },
-      yAxis: {
-        type: 'value',
-        name: '单位：BTC',
-      },
-      series: [
-        {
-          data: Top50.map((item) => item.amount),
-          type: 'bar',
-        },
-      ],
-    });
-
-    const Top50End = this.SnapshotData.slice(50);
-    EchartsBar(document.getElementById('AnalysisSnapshotBarTop50End') as any, {
-      color: ['#04a4cc'],
-      tooltip: {
-        trigger: 'axis',
-        axisPointer: {
-          // 坐标轴指示器，坐标轴触发有效
-          type: 'shadow', // 默认为直线，可选为：'line' | 'shadow'
-        },
-      },
-      title: {
-        subtext: `FMex 账户资产排名 50~${this.SnapshotData.length}` + `【${this.date}】`,
-      },
-      xAxis: {
-        type: 'category',
-        data: Top50End.map((item, i) => i + 51),
-        name: '名次',
-      },
-      yAxis: {
-        type: 'value',
-        name: '单位：BTC',
-      },
-      series: [
-        {
-          data: Top50End.map((item) => item.amount),
-          type: 'bar',
-        },
-      ],
+    this.ShowDataOrigin.forEach((item, index) => {
+      if (this.$AnalysisStore.localState.UserSNChooseHistory.indexOf(index) === -1) return;
+      item.Render(this);
     });
   }
 

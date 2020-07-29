@@ -26,6 +26,9 @@
         <div class="font-weight-thin">账户数量走势</div>
       </v-card-text>
     </v-card>
+    <v-card-text class="pt-0 pb-0">
+      <v-range-slider style="margin-top:40px;margin-bottom:-20px;" v-model="$AnalysisStore.localState.BtcRange" label="统计范围" thumb-label="always" :step="0.1" min="0" max="50"></v-range-slider>
+    </v-card-text>
     <div class="data-analysis">
       <div ref="AnalysisPage"></div>
       <v-divider></v-divider>
@@ -35,11 +38,11 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue } from 'vue-property-decorator';
+import { Component, Vue, Watch } from 'vue-property-decorator';
 import echarts from 'echarts';
 import { DateFormat } from '../../lib/utils';
 import BigNumber from 'bignumber.js';
-
+import { debounce, throttle } from 'ts-debounce-throttle';
 const DateMax = DateFormat(Date.now() - 86400000, 'yyyy-MM-dd'); // 只有昨日的数据。
 const DateMin = DateFormat(new Date(2020, 7 - 1, 8), 'yyyy-MM-dd');
 const GetTimes = () => {
@@ -94,6 +97,13 @@ export default class AnalysisPage extends Vue {
     await this.GetData(this.Times[0]);
     this.Render();
   }
+
+  @Watch('$AnalysisStore.localState.BtcRange', { deep: true, immediate: true })
+  OnBtcRangeChange = debounce(function(this: AnalysisPage) {
+    this.BtcNumber[0] = this.$AnalysisStore.localState.BtcRange[0];
+    this.BtcNumber[1] = this.$AnalysisStore.localState.BtcRange[1];
+    this.Render();
+  }, 300);
 
   mounted() {
     this.mountedd();
@@ -160,9 +170,9 @@ export default class AnalysisPage extends Vue {
         selected: {
           1: true,
           2: true,
-          3: false,
-          4: false,
-          5: false,
+          3: true,
+          4: true,
+          5: true,
         },
       },
       grid: {
@@ -244,7 +254,7 @@ export default class AnalysisPage extends Vue {
       item.Data.forEach((val: any) => {
         const PutItem = () => {
           const NumRange = this.BtcNumber[NumIndex];
-          const max = NumRange || Infinity; // 如果找不到，那就去无限大。
+          const max = NumIndex in this.BtcNumber ? NumRange : Infinity; // 如果找不到，那就去无限大。
           const AddVal = (index: number) => {
             tempArr[index] = tempArr[index].plus(val.amount);
           };
@@ -262,6 +272,9 @@ export default class AnalysisPage extends Vue {
       sum.data.push(tempArr.reduce((a, b) => a.plus(b), new BigNumber(0)).toNumber());
     });
     myChart.setOption({
+      legend: {
+        data: [...this.BtcNumber.map((num, i) => `${this.BtcNumber[i - 1] || 0}~${num}`), `${this.BtcNumber[this.BtcNumber.length - 1]}+`, '总资产'],
+      },
       xAxis: {
         data: labelText,
       },

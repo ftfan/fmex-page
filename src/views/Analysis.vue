@@ -1,8 +1,10 @@
 <template>
-  <div class="analysis">
-    <v-tabs grow contered background-color="primary" v-model="tab" show-arrows>
-      <v-tab v-for="item in Taps" :key="item.Name">{{ item.Name }}</v-tab>
-    </v-tabs>
+  <div>
+    <v-app-bar app>
+      <v-tabs grow contered background-color="primary" v-model="tab" show-arrows>
+        <v-tab v-for="item in Taps" :key="item.Name">{{ item.Name }}</v-tab>
+      </v-tabs>
+    </v-app-bar>
     <v-tabs-items v-model="tab" touchless>
       <v-tab-item v-for="item in Taps" :key="item.Name">
         <v-card>

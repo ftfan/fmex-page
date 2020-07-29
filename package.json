@@ -14,6 +14,7 @@
     "core-js": "^3.6.5",
     "echarts": "^4.7.0",
     "roboto-fontface": "*",
+    "ts-debounce-throttle": "^1.0.0",
     "urijs": "^1.19.2",
     "vue": "^2.6.11",
     "vue-class-component": "^7.2.3",

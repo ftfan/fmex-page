@@ -10,7 +10,10 @@ class Store extends Data {
     snapshot: {} as { [index: string]: Snapshot },
   };
 
-  readonly localState = {};
+  readonly localState = {
+    UserSNChooseHistory: [0, 1],
+    BtcRange: [1, 10],
+  };
 
   // 模块名称，【必须】不能重复
   // 格式为 AAA:BBB:CCC ，指当前模块属于 AAA.BBB 模块，名为 CCC

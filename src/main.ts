@@ -17,10 +17,12 @@ const requireComponent = (require as any).context('@/data', true, /[\w]+\.ts$/);
 requireComponent.keys().forEach(async (fileName: any) => requireComponent(fileName));
 
 window.onerror = (message, source, lineno, colno, error) => {
+  console.error(message, source, lineno, colno, error);
   LogEvent('Error', 'window', `${JSON.stringify({ message, source, lineno, colno, error })}`, 1);
 };
 
 Vue.config.errorHandler = function(err, vm, info) {
+  console.error(err, vm, info);
   LogEvent(
     'Error',
     'vue',
