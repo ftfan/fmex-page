@@ -26,13 +26,26 @@
         <div class="font-weight-thin">账户数量走势</div>
       </v-card-text>
     </v-card>
-    <v-card-text class="pt-0 pb-0">
-      <v-range-slider style="margin-top:40px;margin-bottom:-20px;" v-model="$AnalysisStore.localState.BtcRange" label="统计范围" thumb-label="always" :step="0.1" min="0" max="50"></v-range-slider>
-    </v-card-text>
+
     <div class="data-analysis">
-      <div ref="AnalysisPage"></div>
+      <div style="padding-top:10px" class="echarts" ref="AnalysisPage"></div>
+      <v-card-text class="pt-0 pb-0">
+        <v-range-slider style="margin-top:40px;margin-bottom:-20px;" v-model="$AnalysisStore.localState.BtcRange" label="统计范围" thumb-label="always" :step="0.1" min="0" max="50">
+          <template v-slot:prepend>
+            <v-icon color="primary" @click="decrement">
+              mdi-minus
+            </v-icon>
+          </template>
+
+          <template v-slot:append>
+            <v-icon color="primary" @click="increment">
+              mdi-plus
+            </v-icon>
+          </template>
+        </v-range-slider>
+      </v-card-text>
       <v-divider></v-divider>
-      <div ref="AnalysisPageTop5"></div>
+      <div style="padding-top:40px" class="echarts" ref="AnalysisPageTop5"></div>
     </div>
   </div>
 </template>
@@ -83,6 +96,9 @@ export default class AnalysisPage extends Vue {
   Times = GetTimes();
   Dates = GetTimes();
 
+  LastChangeIndex = 0; // $AnalysisStore.localState.BtcRange 最近在使用的索引
+  old = [...Vue.AnalysisStore.localState.BtcRange];
+
   async Submit() {
     (this.$refs.dialog as any).save(this.Dates);
     const begin = new Date(this.Dates[0]);
@@ -99,11 +115,30 @@ export default class AnalysisPage extends Vue {
   }
 
   @Watch('$AnalysisStore.localState.BtcRange', { deep: true, immediate: true })
-  OnBtcRangeChange = debounce(function(this: AnalysisPage) {
+  OnBtcRangeChange(val: number[]) {
+    console.log(val, this.old);
+    if (val && val[0] === this.old[0]) {
+      this.LastChangeIndex = 1;
+    } else {
+      this.LastChangeIndex = 0;
+    }
+    this.old = [...this.$AnalysisStore.localState.BtcRange];
+    this.OnBtcRangeChanged();
+  }
+  OnBtcRangeChanged = debounce(function(this: AnalysisPage, val: number[]) {
     this.BtcNumber[0] = this.$AnalysisStore.localState.BtcRange[0];
     this.BtcNumber[1] = this.$AnalysisStore.localState.BtcRange[1];
     this.Render();
   }, 300);
+
+  decrement() {
+    const val = new BigNumber(this.$AnalysisStore.localState.BtcRange[this.LastChangeIndex]).minus(0.1);
+    this.$set(this.$AnalysisStore.localState.BtcRange, this.LastChangeIndex, val.toNumber());
+  }
+  increment() {
+    const val = new BigNumber(this.$AnalysisStore.localState.BtcRange[this.LastChangeIndex]).plus(0.1);
+    this.$set(this.$AnalysisStore.localState.BtcRange, this.LastChangeIndex, val.toNumber());
+  }
 
   mounted() {
     this.mountedd();
@@ -136,6 +171,7 @@ export default class AnalysisPage extends Vue {
         left: '20px',
         right: '14px',
         bottom: '3%',
+        // top: '40px',
         containLabel: true,
       },
       title: {
@@ -338,10 +374,9 @@ export default class AnalysisPage extends Vue {
 
 <style lang="scss" scoped>
 .data-analysis {
-  div {
+  .echarts {
     width: 100%;
-    height: 500px;
-    padding-top: 40px;
+    height: 400px;
   }
 }
 </style>
