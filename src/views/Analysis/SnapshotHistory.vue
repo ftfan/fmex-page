@@ -10,40 +10,59 @@
         <v-btn text color="primary" @click="Submit">确定</v-btn>
       </v-date-picker>
     </v-dialog>
-    <v-card class="mx-auto text-center" color="primary" dark max-width="600">
-      <v-card-text>
-        <v-sheet color="rgba(4, 164, 204, .12)">
-          <v-sparkline :value="value" :line-width="2" color="rgba(255, 255, 255, .7)" height="80" padding="10">
-            <template v-slot:label="item">{{ item.value }}</template>
-            <!-- <template v-slot:label="item">{{ labelText[item.index] }}</template> -->
-          </v-sparkline>
-        </v-sheet>
-        <v-divider></v-divider>
-        <!-- <v-subheader>部分日期暂无数据，若有提供，联系邮箱：support@ft100.fun （感谢！）</v-subheader> -->
-      </v-card-text>
 
-      <v-card-text>
-        <div class="font-weight-thin">账户数量走势</div>
-      </v-card-text>
-    </v-card>
+    <v-dialog v-model="dialog">
+      <template v-slot:activator="{ on, attrs }">
+        <v-btn color="primary" style="top:80px" fixed top right small fab v-bind="attrs" v-on="on">
+          <v-icon>mdi-view-dashboard-outline</v-icon>
+        </v-btn>
+      </template>
+
+      <v-card>
+        <v-card-title class="headline grey lighten-2">
+          设置统计范围
+          <v-icon @click="dialog = false" style="position: absolute;right: 10px;top: 10px;">mdi-window-close</v-icon>
+        </v-card-title>
+
+        <v-card-text>
+          分析:
+          <br />
+          <v-chip class="ma-2" color="primary" small outlined>
+            <i class="txt-i">0</i> ~ <i class="txt-i">{{ $AnalysisStore.localState.BtcRange[0] }}</i> 个 BTC
+          </v-chip>
+          <br />
+          <v-chip class="ma-2" color="primary" small outlined>
+            <i class="txt-i">{{ $AnalysisStore.localState.BtcRange[0] }}</i> ~ <i class="txt-i">{{ $AnalysisStore.localState.BtcRange[1] }}</i> 个 BTC
+          </v-chip>
+          <br />
+          <v-chip class="ma-2" color="primary" small outlined>
+            <i class="txt-i">{{ $AnalysisStore.localState.BtcRange[1] }}</i> ~ <i class="txt-i">{{ 50 }}</i> 个 BTC
+          </v-chip>
+          <br />
+          的账户数量/资产统计
+          <v-range-slider style="margin-top:60px;" v-model="$AnalysisStore.localState.BtcRange" thumb-label="always" :step="0.1" min="0" max="50">
+            <template v-slot:prepend>
+              <v-icon color="primary" @click="decrement">
+                mdi-minus
+              </v-icon>
+            </template>
+
+            <template v-slot:append>
+              <v-icon color="primary" @click="increment">
+                mdi-plus
+              </v-icon>
+            </template>
+          </v-range-slider>
+
+          <v-chip class="ma-2" @click="TryClick(val)" v-for="val in Ranges" :key="val" :color="$AnalysisStore.localState.BtcRange.indexOf(val) > -1 ? 'primary' : 'success'" small>{{ val }}</v-chip>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
 
     <div class="data-analysis">
       <div style="padding-top:10px" class="echarts" ref="AnalysisPage"></div>
-      <v-card-text class="pt-0 pb-0">
-        <v-range-slider style="margin-top:40px;margin-bottom:-20px;" v-model="$AnalysisStore.localState.BtcRange" label="统计范围" thumb-label="always" :step="0.1" min="0" max="50">
-          <template v-slot:prepend>
-            <v-icon color="primary" @click="decrement">
-              mdi-minus
-            </v-icon>
-          </template>
-
-          <template v-slot:append>
-            <v-icon color="primary" @click="increment">
-              mdi-plus
-            </v-icon>
-          </template>
-        </v-range-slider>
-      </v-card-text>
+      <v-divider></v-divider>
+      <div style="padding-top:40px" class="echarts" ref="AnalysisNum"></div>
       <v-divider></v-divider>
       <div style="padding-top:40px" class="echarts" ref="AnalysisPageTop5"></div>
     </div>
@@ -69,6 +88,7 @@ const GetTimes = () => {
 
 let myChart: echarts.ECharts | null = null;
 let myChart2: echarts.ECharts | null = null;
+let myChart3: echarts.ECharts | null = null;
 
 @Component({
   components: {},
@@ -78,10 +98,13 @@ export default class AnalysisPage extends Vue {
   DateMin = DateMin;
   DateMax = DateMax;
 
+  Ranges = [1, 2, 3, 4, 5, 8, 10, 15, 20, 25, 30, 40];
+
   value: number[] = [];
   labelText: string[] = [];
 
   loading = true;
+  dialog = false;
   // OnLoadData = ['用户资产数据'];
   SnapshotData: any[] = [];
 
@@ -98,6 +121,29 @@ export default class AnalysisPage extends Vue {
 
   LastChangeIndex = 0; // $AnalysisStore.localState.BtcRange 最近在使用的索引
   old = [...Vue.AnalysisStore.localState.BtcRange];
+
+  LabelOutput(item: { index: number; value: string }) {
+    if (item.index === 0) return item.value; // 第一个显示
+    if (item.index === this.SnapshotData.length - 1) return item.value; // 最后一个也显示
+    return '';
+  }
+
+  TryClick(val: number) {
+    const range = this.$AnalysisStore.localState.BtcRange;
+    if (range[1] < range[0]) {
+      const temp = range[1];
+      this.$set(range, 1, range[0]);
+      this.$set(range, 0, temp);
+    }
+    const diff1 = val - range[0];
+    const diff2 = -val + range[1];
+
+    if (diff1 > diff2) {
+      this.$set(range, 1, val);
+    } else {
+      this.$set(range, 0, val);
+    }
+  }
 
   async Submit() {
     (this.$refs.dialog as any).save(this.Dates);
@@ -116,7 +162,6 @@ export default class AnalysisPage extends Vue {
 
   @Watch('$AnalysisStore.localState.BtcRange', { deep: true, immediate: true })
   OnBtcRangeChange(val: number[]) {
-    console.log(val, this.old);
     if (val && val[0] === this.old[0]) {
       this.LastChangeIndex = 1;
     } else {
@@ -176,7 +221,7 @@ export default class AnalysisPage extends Vue {
       },
       title: {
         text: ``,
-        subtext: `账户资产趋势 ${this.Times[0]} ~ ${this.Times[1]}`,
+        subtext: `账户资产趋势`,
         top: 4,
       },
       xAxis: [{ type: 'category', boundaryGap: false }],
@@ -236,11 +281,46 @@ export default class AnalysisPage extends Vue {
         },
       ],
     });
+
+    myChart3 = echarts.init(this.$refs.AnalysisNum as any);
+    myChart3.setOption({
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: {
+          type: 'cross',
+          label: {
+            backgroundColor: '#6a7985',
+          },
+        },
+      },
+      legend: {
+        data: [...this.BtcNumber.map((num, i) => `${this.BtcNumber[i - 1] || 0}~${num}`), `${this.BtcNumber[this.BtcNumber.length - 1]}+`, '合计'],
+      },
+      grid: {
+        left: '20px',
+        right: '14px',
+        bottom: '3%',
+        // top: '40px',
+        containLabel: true,
+      },
+      title: {
+        text: ``,
+        subtext: `账户数量趋势`,
+        top: 4,
+      },
+      xAxis: [{ type: 'category', boundaryGap: false }],
+      yAxis: [
+        {
+          type: 'value',
+        },
+      ],
+    });
   }
 
   Render() {
     if (!myChart) return;
     if (!myChart2) return;
+    if (!myChart3) return;
     const color = (i: number) => {
       return 0.4 + (i / this.BtcNumber.length) * 0.6;
     };
@@ -255,67 +335,65 @@ export default class AnalysisPage extends Vue {
     // );
     // 1111111111111111
     const NumArrData = this.BtcNumber.map((num, i) => {
-      return {
-        name: `${this.BtcNumber[i - 1] || 0}~${num}`,
+      return [
+        {
+          name: `${this.BtcNumber[i - 1] || 0}~${num}`,
+          type: 'line',
+          stack: `BTC`,
+          data: [] as number[],
+          color: `rgba(4, 164, 204, ${color(i)})`,
+          areaStyle: {
+            color: `rgba(4, 164, 204, ${color(i)})`,
+          },
+        },
+        {
+          name: `${this.BtcNumber[i - 1] || 0}~${num}`,
+          type: 'line',
+          stack: `BTC`,
+          data: [] as number[],
+          color: `rgba(4, 164, 204, ${color(i)})`,
+          areaStyle: {
+            color: `rgba(4, 164, 204, ${color(i)})`,
+          },
+        },
+      ];
+    });
+    const other = [
+      {
+        name: `${this.BtcNumber[this.BtcNumber.length - 1]}+`,
         type: 'line',
         stack: `BTC`,
         data: [] as number[],
-        color: `rgba(4, 164, 204, ${color(i)})`,
+        color: `rgba(4, 164, 204, 1)`,
         areaStyle: {
-          color: `rgba(4, 164, 204, ${color(i)})`,
+          color: `rgba(4, 164, 204, 1)`,
         },
-      };
-    });
-    const other = {
-      name: `${this.BtcNumber[this.BtcNumber.length - 1]}+`,
-      type: 'line',
-      stack: `BTC`,
-      data: [] as number[],
-      color: `rgba(4, 164, 204, 1)`,
-      areaStyle: {
+      },
+      {
+        name: `${this.BtcNumber[this.BtcNumber.length - 1]}+`,
+        type: 'line',
+        stack: `BTC`,
+        data: [] as number[],
+        color: `rgba(4, 164, 204, 1)`,
+        areaStyle: {
+          color: `rgba(4, 164, 204, 1)`,
+        },
+      },
+    ];
+    const sum = [
+      {
+        name: `总资产`,
+        type: 'line',
+        data: [] as number[],
         color: `rgba(4, 164, 204, 1)`,
       },
-    };
-    const sum = {
-      name: `总资产`,
-      type: 'line',
-      data: [] as number[],
-      color: `rgba(4, 164, 204, 1)`,
-    };
-    this.SnapshotData.forEach((item: any) => {
-      // 因为amount是从小到大排序的
-      let NumIndex = 0;
-      const tempArr = NumArrData.map(() => new BigNumber(0));
-      tempArr.push(new BigNumber(0)); // 其他，多余 10 BTC的账户
-      item.Data.forEach((val: any) => {
-        const PutItem = () => {
-          const NumRange = this.BtcNumber[NumIndex];
-          const max = NumIndex in this.BtcNumber ? NumRange : Infinity; // 如果找不到，那就去无限大。
-          const AddVal = (index: number) => {
-            tempArr[index] = tempArr[index].plus(val.amount);
-          };
-
-          if (val.amount < max) return AddVal(NumIndex);
-          NumIndex++;
-          PutItem();
-        };
-        PutItem();
-      });
-      NumArrData.forEach((nad, index) => {
-        nad.data.push(tempArr[index].toNumber());
-      });
-      other.data.push(tempArr[tempArr.length - 1].toNumber());
-      sum.data.push(tempArr.reduce((a, b) => a.plus(b), new BigNumber(0)).toNumber());
-    });
-    myChart.setOption({
-      legend: {
-        data: [...this.BtcNumber.map((num, i) => `${this.BtcNumber[i - 1] || 0}~${num}`), `${this.BtcNumber[this.BtcNumber.length - 1]}+`, '总资产'],
+      {
+        name: `合计`,
+        type: 'line',
+        data: [] as number[],
+        color: `rgba(4, 164, 204, 1)`,
       },
-      xAxis: {
-        data: labelText,
-      },
-      series: [...NumArrData, other, sum],
-    });
+    ];
 
     // 2222222222222222222
     const NumArrData2 = this.Top5.map((num, i) => {
@@ -329,12 +407,65 @@ export default class AnalysisPage extends Vue {
         },
       };
     });
-    this.SnapshotData.map((item: any) => {
+
+    // 计算
+    this.SnapshotData.forEach((item: any) => {
+      // 2222222222222
       this.Top5.forEach((num, index) => {
         const user = item.Data[item.Data.length - num - 1]; // 倒序的
         NumArrData2[index].data.push(user.amount);
       });
+
+      // 111111111111 因为amount是从小到大排序的
+      let NumIndex = 0;
+      const tempArrCount = NumArrData.map(() => 0);
+      const tempArr = NumArrData.map(() => new BigNumber(0));
+      tempArr.push(new BigNumber(0)); // 其他，多余 10 BTC的账户
+      tempArrCount.push(0);
+      item.Data.forEach((val: any) => {
+        const PutItem = () => {
+          const NumRange = this.BtcNumber[NumIndex];
+          const max = NumIndex in this.BtcNumber ? NumRange : Infinity; // 如果找不到，那就去无限大。
+          const AddVal = (index: number) => {
+            tempArr[index] = tempArr[index].plus(val.amount);
+            tempArrCount[index]++;
+          };
+
+          if (val.amount < max) return AddVal(NumIndex);
+          NumIndex++;
+          PutItem();
+        };
+        PutItem();
+      });
+      NumArrData.forEach((nad, index) => {
+        nad[0].data.push(tempArr[index].toNumber());
+        nad[1].data.push(tempArrCount[index]);
+      });
+      other[0].data.push(tempArr[tempArr.length - 1].toNumber());
+      other[1].data.push(tempArrCount[tempArrCount.length - 1]);
+      sum[0].data.push(tempArr.reduce((a, b) => a.plus(b), new BigNumber(0)).toNumber());
+      sum[1].data.push(tempArrCount.reduce((a, b) => a + b, 0));
     });
+    myChart.setOption({
+      legend: {
+        data: [...this.BtcNumber.map((num, i) => `${this.BtcNumber[i - 1] || 0}~${num}`), `${this.BtcNumber[this.BtcNumber.length - 1]}+`, '总资产'],
+      },
+      xAxis: {
+        data: labelText,
+      },
+      series: [...NumArrData.map((item) => item[0]), other[0], sum[0]],
+    });
+
+    myChart3.setOption({
+      legend: {
+        data: [...this.BtcNumber.map((num, i) => `${this.BtcNumber[i - 1] || 0}~${num}`), `${this.BtcNumber[this.BtcNumber.length - 1]}+`, '合计'],
+      },
+      xAxis: {
+        data: labelText,
+      },
+      series: [...NumArrData.map((item) => item[1]), other[1], sum[1]],
+    });
+
     myChart2.setOption({
       xAxis: {
         data: labelText,
@@ -378,5 +509,8 @@ export default class AnalysisPage extends Vue {
     width: 100%;
     height: 400px;
   }
+}
+.txt-i {
+  color: red;
 }
 </style>

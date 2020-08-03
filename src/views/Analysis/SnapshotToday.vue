@@ -10,6 +10,24 @@
         <v-btn text color="primary" @click="SaveDate">确定</v-btn>
       </v-date-picker>
     </v-dialog>
+
+    <template v-if="!loading && TotalInfo">
+      <v-badge :content="PreInfo('Count')" color="primary" :offset-y="14" :offset-x="20">
+        <v-chip class="ma-2" color="primary" small outlined> 共 {{ TotalInfo.Last.Count }} 个账户 </v-chip>
+      </v-badge>
+      <v-badge :content="PreInfo('bxjj')" color="primary" :offset-y="14" :offset-x="20">
+        <v-chip class="ma-2" color="primary" small outlined> 已知系统账户-保险基金: {{ TotalInfo.Last.bxjj }} BTC </v-chip>
+      </v-badge>
+      <v-badge :content="PreInfo('fusd')" color="primary" :offset-y="14" :offset-x="20">
+        <v-chip class="ma-2" color="primary" small outlined> 已知系统账户-FUSD解锁奖励: {{ TotalInfo.Last.fusd }} BTC </v-chip>
+      </v-badge>
+      <v-badge :content="PreInfo('RealSum')" color="primary" :offset-y="14" :offset-x="20">
+        <v-chip class="ma-2" color="primary" small outlined> 其余账户，约 {{ TotalInfo.Last.RealSum }} BTC </v-chip>
+      </v-badge>
+      <v-badge :content="PreInfo('Sum')" color="primary" :offset-y="14" :offset-x="20">
+        <v-chip class="ma-2" color="primary" small outlined> 合计，约 {{ TotalInfo.Last.Sum }} BTC </v-chip>
+      </v-badge>
+    </template>
     <div class="data-analysis">
       <div v-for="(item, index) in ShowDataOrigin" :key="index" v-show="$AnalysisStore.localState.UserSNChooseHistory.indexOf(index) > -1" ref="echartref"></div>
     </div>
@@ -58,6 +76,7 @@ import { EchartsBar } from '@/lib/echarts-render';
 import { SnapshotItem, Snapshot } from '../../types/fmex';
 import { DateFormat } from '../../lib/utils';
 import axios from 'axios';
+import BigNumber from 'bignumber.js';
 
 interface ShowDataOrigin {
   Name: (vm: AnalysisPage) => string;
@@ -149,6 +168,45 @@ export default class AnalysisPage extends Vue {
     return this;
   }
 
+  get TotalInfo() {
+    if (this.SnapshotData.length === 0 || this.SnapshotDataPre.length === 0) return null;
+    const last = this.SnapshotData;
+    const lastSum = last.map((a: any) => new BigNumber(a.amount)).reduce((a, b) => a.plus(b), new BigNumber(0));
+    const pre = this.SnapshotDataPre;
+    const preSum = pre.map((a: any) => new BigNumber(a.amount)).reduce((a, b) => a.plus(b), new BigNumber(0));
+
+    return {
+      Last: {
+        bxjj: last[0].amount,
+        fusd: last[1].amount,
+        Count: last.length,
+        Sum: lastSum.toNumber(),
+        RealSum: lastSum
+          .minus(last[0].amount)
+          .minus(last[1].amount)
+          .toNumber(),
+      },
+      Pre: {
+        bxjj: pre[0].amount,
+        fusd: pre[1].amount,
+        Count: pre.length,
+        Sum: preSum.toNumber(),
+        RealSum: preSum
+          .minus(pre[0].amount)
+          .minus(pre[1].amount)
+          .toNumber(),
+      },
+    };
+  }
+
+  PreInfo(key: string) {
+    if (!this.TotalInfo) return null;
+    const tt = this.TotalInfo as any;
+    const val = new BigNumber(tt.Last[key]).minus(tt.Pre[key]).toNumber();
+    if (val < 0) return '- ' + -val;
+    return '+ ' + val;
+  }
+
   ShowDataOrigin: ShowDataOrigin[] = [
     {
       Name: (vm: AnalysisPage) => '资产排名 TOP:50 的账户',
@@ -224,6 +282,7 @@ export default class AnalysisPage extends Vue {
   loading = true;
   OnLoadData = ['用户资产数据'];
   SnapshotData: SnapshotItem[] = [];
+  SnapshotDataPre: SnapshotItem[] = [];
   BaseUrl = 'https://fmex-database.oss-cn-qingdao.aliyuncs.com/fmex/api/broker/v3/zkp-assets/account/snapshot/BTC/';
 
   @Watch('dialog')
@@ -274,6 +333,25 @@ export default class AnalysisPage extends Vue {
     });
     Data.sort((a: any, b: any) => b.amount - a.amount);
     this.SnapshotData = Data;
+    this.loading = false;
+    this.GetPreData();
+  }
+
+  // 获取前一天的数据（用于比较）
+  async GetPreData(times = 0): Promise<any> {
+    const timeDate = new Date(this.date);
+    // 因为数据存储时，按照今天存储昨天的
+    const next = new Date(timeDate.getTime());
+    const FileName = DateFormat(next, 'yyyy/MM/dd');
+    const Data = await this.$AnalysisStore.GetJson(this.BaseUrl + FileName);
+    if (!Data) {
+      return this.GetPreData(++times);
+    }
+    Data.forEach((item: any) => {
+      item.amount = parseFloat(item.amount);
+    });
+    Data.sort((a: any, b: any) => b.amount - a.amount);
+    this.SnapshotDataPre = Data;
   }
 
   async GetBtcSnapshot(id = '', times = 0): Promise<any> {
