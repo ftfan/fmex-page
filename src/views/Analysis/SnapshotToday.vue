@@ -15,15 +15,19 @@
       <v-badge :content="PreInfo('Count')" color="primary" :offset-y="14" :offset-x="20">
         <v-chip class="ma-2" color="primary" small outlined> 共 {{ TotalInfo.Last.Count }} 个账户 </v-chip>
       </v-badge>
+      <br />
       <v-badge :content="PreInfo('bxjj')" color="primary" :offset-y="14" :offset-x="20">
         <v-chip class="ma-2" color="primary" small outlined> 已知系统账户-保险基金: {{ TotalInfo.Last.bxjj }} BTC </v-chip>
       </v-badge>
+      <br />
       <v-badge :content="PreInfo('fusd')" color="primary" :offset-y="14" :offset-x="20">
         <v-chip class="ma-2" color="primary" small outlined> 已知系统账户-FUSD解锁奖励: {{ TotalInfo.Last.fusd }} BTC </v-chip>
       </v-badge>
+      <br />
       <v-badge :content="PreInfo('RealSum')" color="primary" :offset-y="14" :offset-x="20">
         <v-chip class="ma-2" color="primary" small outlined> 其余账户，约 {{ TotalInfo.Last.RealSum }} BTC </v-chip>
       </v-badge>
+      <br />
       <v-badge :content="PreInfo('Sum')" color="primary" :offset-y="14" :offset-x="20">
         <v-chip class="ma-2" color="primary" small outlined> 合计，约 {{ TotalInfo.Last.Sum }} BTC </v-chip>
       </v-badge>

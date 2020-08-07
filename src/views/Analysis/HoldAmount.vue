@@ -1,6 +1,18 @@
 <template>
   <div>
+    <v-dialog ref="dialog" v-model="modal" color="primary" :return-value.sync="Dates" persistent>
+      <template v-slot:activator="{ on, attrs }">
+        <v-text-field v-model="Dates" label="日期选择" prepend-icon="mdi-calendar-range" readonly v-bind="attrs" v-on="on"></v-text-field>
+      </template>
+      <v-date-picker v-model="Dates" range scrollable :min="DateMin" :max="DateMax">
+        <v-spacer></v-spacer>
+        <v-btn text color="primary" @click="modal = false">取消</v-btn>
+        <v-btn text color="primary" @click="Submit">确定</v-btn>
+      </v-date-picker>
+    </v-dialog>
+
     <div class="data-analysis">
+      <div ref="HoldAmountTotal"></div>
       <div ref="HoldAmount"></div>
     </div>
   </div>
@@ -11,31 +23,55 @@ import { Component, Vue } from 'vue-property-decorator';
 import echarts from 'echarts';
 import { DateFormat } from '../../lib/utils';
 
-const BaseTime = new Date(2020, 7 - 1, 13).getTime();
+const DateMax = DateFormat(Date.now(), 'yyyy-MM-dd');
+const DateMin = DateFormat(new Date(2020, 7 - 1, 13), 'yyyy-MM-dd');
+const GetTimes = () => {
+  const now = new Date();
+  const begin = new Date();
+  begin.setDate(now.getDate() - 30);
+  const MinTime = new Date(DateMin).getTime();
+  if (begin.getTime() < MinTime) begin.setTime(MinTime); // 开始时间不得大于目前已有的基础时间（有数据的时间）
+  return [DateFormat(begin, 'yyyy-MM-dd'), DateMax];
+};
 
 let myChart: echarts.ECharts | null = null;
+let myChart2: echarts.ECharts | null = null;
 
 @Component({
   components: {},
 })
 export default class HoldAmount extends Vue {
+  modal = false;
+  DateMin = DateMin;
+  DateMax = DateMax;
+  // 默认选中最近 30 天
+  Times = GetTimes();
+  Dates = GetTimes();
+
   loading = true;
   // OnLoadData = ['用户资产数据'];
-  SnapshotData: any[] = [];
+  // SnapshotData: any[] = [];
+  FullData: any[] = [];
 
   BaseUrl = 'https://fmex-database.oss-cn-qingdao.aliyuncs.com/fmex/api/contracts/web/v3/public/statistics/';
 
-  // 默认选中最近 30 天
-  Times = (() => {
-    const now = new Date();
-    const begin = new Date();
-    begin.setDate(now.getDate() - 30);
-    if (begin.getTime() < BaseTime) begin.setTime(BaseTime); // 开始时间不得大于目前已有的基础时间（有数据的时间）
-    return [begin, now];
-  })();
-
   mounted() {
     this.mountedd();
+  }
+
+  async Submit() {
+    (this.$refs.dialog as any).save(this.Dates);
+    const begin = new Date(this.Dates[0]);
+    const end = new Date(this.Dates[1]);
+    if (begin.getTime() > end.getTime()) {
+      const temp = begin.getTime();
+      begin.setTime(end.getTime());
+      end.setTime(temp);
+    }
+    this.Times = [DateFormat(begin, 'yyyy-MM-dd'), DateFormat(end, 'yyyy-MM-dd')];
+    this.FullData = [];
+    await this.GetData(this.Times[0]);
+    this.Render();
   }
 
   async mountedd() {
@@ -44,8 +80,9 @@ export default class HoldAmount extends Vue {
   }
 
   RenderInit() {
-    this.SnapshotData = [];
-    myChart = echarts.init(this.$refs.HoldAmount as any);
+    this.FullData = [];
+    myChart = echarts.init(this.$refs.HoldAmountTotal as any);
+    myChart2 = echarts.init(this.$refs.HoldAmount as any);
     myChart.setOption({
       tooltip: {
         trigger: 'axis',
@@ -59,11 +96,11 @@ export default class HoldAmount extends Vue {
         bottom: '80px',
       },
       legend: {
-        data: ['未平仓合约'],
+        data: ['日均', '最小', '最大'],
       },
       title: {
         text: ``,
-        subtext: `${DateFormat(this.Times[0], 'yyyy-MM-dd')} ~ ${DateFormat(this.Times[1], 'yyyy-MM-dd')}`,
+        subtext: `${this.Times[0]} 至 ${this.Times[1]} 每日未平仓趋势分析`,
         top: 4,
       },
       dataZoom: [
@@ -89,33 +126,131 @@ export default class HoldAmount extends Vue {
         },
       ],
     });
+    myChart2.setOption({
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: {
+          type: 'cross',
+        },
+      },
+      grid: {
+        right: '50px',
+        left: '50px',
+        bottom: '80px',
+      },
+      legend: {
+        data: ['未平仓合约'],
+      },
+      title: {
+        text: ``,
+        subtext: `近3日未平仓张数`,
+        top: 4,
+      },
+      dataZoom: [
+        {
+          show: true,
+          start: 66,
+          end: 100,
+        },
+      ],
+      xAxis: [{ type: 'category', boundaryGap: false }],
+      yAxis: [
+        {
+          type: 'value',
+          // min: (value) => {
+          //   return Math.floor(value.min);
+          // },
+          position: 'right',
+          name: '单位： 万USD',
+          axisLabel: {
+            formatter: '{value}',
+          },
+          // splitLine: { show: false },
+        },
+      ],
+    });
   }
 
   Render() {
     if (!myChart) return;
+    if (!myChart2) return;
+    const AmountsAvo = {
+      name: `日均`,
+      type: 'line',
+      smooth: true,
+      data: [] as number[],
+      color: `rgba(4, 164, 204, 1)`,
+    };
+    const AmountsMin = {
+      name: `最小`,
+      type: 'line',
+      smooth: true,
+      data: [] as number[],
+      color: `rgba(4, 164, 204, 0.6)`,
+      areaStyle: {
+        color: `rgba(255, 255, 255, 1)`,
+      },
+    };
+    const AmountsMax = {
+      name: `最大`,
+      type: 'line',
+      smooth: true,
+      data: [] as number[],
+      color: `rgba(4, 164, 204, 0.6)`,
+      areaStyle: {
+        color: `rgba(4, 164, 204, 0.4)`,
+      },
+    };
+    const xAxisTotal: string[] = [];
     const Amounts = {
       name: `未平仓合约`,
-      type: 'line',
+      type: 'bar',
       data: [] as number[],
       color: `rgba(4, 164, 204, 0.4)`,
       areaStyle: {
         color: `rgba(4, 164, 204, 0.4)`,
       },
     };
-    this.SnapshotData.map((item: any) => {
-      Amounts.data.push(item.BTCUSD_P / 10000);
+    const xAxis: string[] = [];
+    const Last5Day = this.FullData.length - 3;
+    this.FullData.map((items: any, index) => {
+      if (!items.length) return;
+      xAxisTotal.push(items[0].TimeStr.replace(/\r\n(.*)/, ''));
+      let min = Infinity;
+      let max = 0;
+      let sum = 0;
+      items.forEach((item: any) => {
+        const val = item.BTCUSD_P / 10000;
+        if (index >= Last5Day) {
+          xAxis.push(item.TimeStr);
+          Amounts.data.push(val);
+        }
+
+        min = Math.min(val, min);
+        max = Math.max(val, max);
+        sum += val;
+      });
+      AmountsAvo.data.push(Math.floor((sum / items.length) * 10000) / 10000);
+      AmountsMin.data.push(min);
+      AmountsMax.data.push(max);
     });
     myChart.setOption({
       xAxis: {
-        data: this.SnapshotData.map((it) => it.TimeStr),
+        data: xAxisTotal,
+      },
+      series: [AmountsAvo, AmountsMax, AmountsMin],
+    });
+    myChart2.setOption({
+      xAxis: {
+        data: xAxis,
       },
       series: [Amounts],
     });
   }
 
-  async GetData(time: Date, times = 1): Promise<any> {
+  async GetData(time: string, times = 1): Promise<any> {
     if (times > 5) return;
-    const FileName = DateFormat(time, 'yyyy/MM/dd');
+    const FileName = time.replace(/-/g, '/');
     // this.OnLoadData.push(`加载 ${FileName} ${times > 1 ? times : ''}`);
     const Data = await this.$AnalysisStore.GetJson(this.BaseUrl + FileName);
     if (!Data) {
@@ -124,10 +259,12 @@ export default class HoldAmount extends Vue {
     Data.forEach((item: any) => {
       item.TimeStr = DateFormat(item.ts, 'MM-dd\r\nhh:mm');
     });
-    this.SnapshotData.push(...Data);
-    const next = new Date(time.getTime() + 86400000);
-    if (next.getTime() < this.Times[1].getTime()) {
-      return this.GetData(next);
+    this.FullData.push(Data);
+    // this.SnapshotData.push(...Data);
+    const timeDate = new Date(time);
+    const next = new Date(timeDate.getTime() + 86400000);
+    if (next.getTime() <= new Date(this.Times[1]).getTime()) {
+      return this.GetData(DateFormat(next, 'yyyy-MM-dd'));
     }
     this.loading = false;
     this.GetFmexData();
