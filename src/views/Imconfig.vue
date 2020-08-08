@@ -6,24 +6,22 @@
     </div>
 
     <v-form ref="form" lazy-validation style="padding-left:20px;padding-right:20px;">
-      <v-select v-model="paramsAutoPrice" :items="paramsAutoPrices" :label="paramsAutoPrice" solo></v-select>
-      <template v-if="paramsAutoPrice === '固定区间模式'">
-        <v-text-field required v-model="params.MaxPrice" label="【上限价格】，达到此价格，持【上限仓位】(USD)" type="number" outlined></v-text-field>
-        <v-text-field required v-model="params.MaxPosition" label="【上限仓位】负为空(张)" type="number" outlined></v-text-field>
+      <v-text-field required v-model="params.BasePrice" label="基准价格(USD)" type="number" outlined></v-text-field>
+      <v-slider v-model="params.BasePriceWeight" label="基准价格权重" thumb-label="always" :thumb-size="30" :min="0" :max="1" :step="0.1"> </v-slider>
+      <span>基准价格权重不为1时，</span>
+      <span>上下限价格将根据最近24小时成交均价偏移</span>
+      <br />
+      <br />
 
-        <v-text-field required v-model="params.MinPrice" label="【下限价格】，达到此价格，持【下限仓位】(USD)" type="number" outlined></v-text-field>
-        <v-text-field required v-model="params.MinPosition" label="【下限仓位】负为空(张)" type="number" outlined></v-text-field>
-      </template>
-      <template v-else>
-        <v-text-field required v-model="params.MaxPrice" label="【上限价格】24H均价+该价格，持【上限仓位】(USD)" type="number" outlined></v-text-field>
-        <v-text-field required v-model="params.MaxPosition" label="【上限仓位】负为空(张)" type="number" outlined></v-text-field>
+      <v-text-field required v-model="params.MaxPrice" label="【上限价格】，此价格，持【上限仓位】(USD)" type="number" outlined></v-text-field>
+      <v-text-field required v-model="params.MaxPosition" label="【上限仓位】负为空(张)" type="number" outlined></v-text-field>
 
-        <v-text-field required v-model="params.MinPrice" label="【下限价格】24H均价+该价格，持【下限仓位】(USD)" type="number" outlined></v-text-field>
-        <v-text-field required v-model="params.MinPosition" label="【下限仓位】负为空(张)" type="number" outlined></v-text-field>
-      </template>
+      <v-text-field required v-model="params.MinPrice" label="【下限价格】，此价格，持【下限仓位】(USD)" type="number" outlined></v-text-field>
+      <v-text-field required v-model="params.MinPosition" label="【下限仓位】负为空(张)" type="number" outlined></v-text-field>
 
-      <v-text-field required v-model="params.MaxStepVol" label="单次挂单量(张)" type="number" outlined></v-text-field>
-      <v-text-field required v-model="params.OverStepChange" label="价差多少重新下单(USD)" type="number" outlined></v-text-field>
+      <v-text-field required v-model="params.MaxStepVol" label="单次挂单上限(张)" type="number" outlined></v-text-field>
+      <v-text-field required v-model="params.OverStepChange" label="偏移金额撤单(USD)" type="number" outlined></v-text-field>
+      <v-text-field required v-model="params.GridDiff" label="下单偏移金额(USD)" type="number" outlined></v-text-field>
 
       <v-text-field required v-model="params.Key" label="api key" type="text" outlined></v-text-field>
       <v-switch v-model="params.Runner" class="ma-2" label="策略运行"></v-switch>
@@ -89,7 +87,7 @@ interface LogData {
   BtcSum: number;
   UsdSum: number;
   quantity: number;
-  WantPos: number;
+  WantPos: number | number[];
 }
 
 interface KData {
@@ -124,11 +122,13 @@ export default class ImconfigPage extends Vue {
     MinPosition: 1000,
     MaxPrice: 12000,
     MaxPosition: -200,
-    AutoPrice: false,
     MaxStepVol: 100, // 每次下单最多不能超过该金额
-    OverStepChange: 3,
+    OverStepChange: 4,
     Runner: true,
     Key: Vue.AppStore.localState.UserKey,
+    BasePrice: 11700,
+    BasePriceWeight: 1,
+    GridDiff: 1, // 设置偏移价格，0表示档位1；
   };
   paramsAutoPrice = '固定区间模式';
   paramsAutoPrices = ['固定区间模式', '24H均价移动区间模式'];
@@ -390,7 +390,9 @@ export default class ImconfigPage extends Vue {
     this.SnapshotData.forEach((item) => {
       item.data.forEach((data) => {
         conf.forEach((val) => {
-          render[val.name].data.push((data as any)[val.key]);
+          const value = (data as any)[val.key];
+          if (val.key === 'WantPos' && typeof value === 'object') return render[val.name].data.push(value[0]);
+          render[val.name].data.push(value);
         });
         xxx.push(DateFormat(data.Ts, 'hh:mm:ss\r\nMM-dd'));
 
@@ -553,7 +555,6 @@ export default class ImconfigPage extends Vue {
   }
 
   async validate() {
-    this.params.AutoPrice = this.paramsAutoPrice !== '固定区间模式';
     this.$AppStore.localState.UserKey = this.params.Key;
     const res = await Axios.get(`${this.$AppStore.localState.ServerUrl}/grid/set-params`, {
       params: this.params,
