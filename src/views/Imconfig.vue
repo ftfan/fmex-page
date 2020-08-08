@@ -6,19 +6,19 @@
     </div>
 
     <v-form ref="form" lazy-validation style="padding-left:20px;padding-right:20px;">
-      <v-select :items="paramsAutoPrices" :label="paramsAutoPrice" solo></v-select>
+      <v-select v-model="paramsAutoPrice" :items="paramsAutoPrices" :label="paramsAutoPrice" solo></v-select>
       <template v-if="paramsAutoPrice === '固定区间模式'">
-        <v-text-field required v-model="params.MaxPrice" label="【上限价格】，达到此价格，持仓为【上限仓位】(USD)" type="number" outlined></v-text-field>
+        <v-text-field required v-model="params.MaxPrice" label="【上限价格】，达到此价格，持【上限仓位】(USD)" type="number" outlined></v-text-field>
         <v-text-field required v-model="params.MaxPosition" label="【上限仓位】负为空(张)" type="number" outlined></v-text-field>
 
-        <v-text-field required v-model="params.MinPrice" label="【下限价格】，达到此价格，持仓为【下限仓位】(USD)" type="number" outlined></v-text-field>
+        <v-text-field required v-model="params.MinPrice" label="【下限价格】，达到此价格，持【下限仓位】(USD)" type="number" outlined></v-text-field>
         <v-text-field required v-model="params.MinPosition" label="【下限仓位】负为空(张)" type="number" outlined></v-text-field>
       </template>
       <template v-else>
-        <v-text-field required v-model="params.MaxPrice" label="【上限价格】，24H均价+该价格，持仓为【上限仓位】(USD)" type="number" outlined></v-text-field>
+        <v-text-field required v-model="params.MaxPrice" label="【上限价格】24H均价+该价格，持【上限仓位】(USD)" type="number" outlined></v-text-field>
         <v-text-field required v-model="params.MaxPosition" label="【上限仓位】负为空(张)" type="number" outlined></v-text-field>
 
-        <v-text-field required v-model="params.MinPrice" label="【下限价格】，24H均价+该价格，持仓为【下限仓位】(USD)" type="number" outlined></v-text-field>
+        <v-text-field required v-model="params.MinPrice" label="【下限价格】24H均价+该价格，持【下限仓位】(USD)" type="number" outlined></v-text-field>
         <v-text-field required v-model="params.MinPosition" label="【下限仓位】负为空(张)" type="number" outlined></v-text-field>
       </template>
 
