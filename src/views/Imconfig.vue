@@ -63,6 +63,7 @@
 import { Component, Vue, Watch } from 'vue-property-decorator';
 import { DateFormat } from '../lib/utils';
 import echarts from 'echarts';
+import urijs from 'urijs';
 import { throttle } from 'ts-debounce-throttle';
 import Axios from 'axios';
 let myChart: echarts.ECharts | null = null;
@@ -556,7 +557,9 @@ export default class ImconfigPage extends Vue {
 
   async validate() {
     this.$AppStore.localState.UserKey = this.params.Key;
-    location.href = `${this.$AppStore.localState.ServerUrl}/grid/set-params`;
+    const url = new urijs(`${this.$AppStore.localState.ServerUrl}/grid/set-params`);
+    url.setQuery(this.params);
+    location.href = url.toString();
     // const res = await Axios.get(`${this.$AppStore.localState.ServerUrl}/grid/set-params`, {
     //   params: this.params,
     // });
