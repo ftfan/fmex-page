@@ -77,7 +77,7 @@ const MinTime = new Date(DateMin).getTime();
 const GetTimes = () => {
   const now = new Date();
   const begin = new Date();
-  begin.setDate(now.getDate() - 30);
+  begin.setDate(now.getDate() - 2);
   if (begin.getTime() < MinTime) begin.setTime(MinTime); // 开始时间不得大于目前已有的基础时间（有数据的时间）
   return [DateFormat(begin, 'yyyy-MM-dd'), DateMax];
 };
@@ -332,6 +332,7 @@ export default class ImconfigPage extends Vue {
           axisLabel: {
             formatter: '{value}',
           },
+          min: 'dataMin',
           splitLine: { show: false },
         },
         {
