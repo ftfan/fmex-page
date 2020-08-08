@@ -550,7 +550,7 @@ export default class ImconfigPage extends Vue {
   }
 
   async GetParams() {
-    const Data = await this.$AnalysisStore.GetJson(`https://fmex-database.oss-cn-qingdao.aliyuncs.com/report/${this.$AppStore.localState.KeyDecode}/config`);
+    const Data = await this.$AnalysisStore.GetJson(`https://fmex-database.oss-cn-qingdao.aliyuncs.com/report/${this.$AppStore.localState.KeyDecode}/config`, true);
     if (!Data) return;
     Object.assign(this.params, Data);
   }

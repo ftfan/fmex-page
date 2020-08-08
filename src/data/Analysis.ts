@@ -24,8 +24,10 @@ class Store extends Data {
     this.initilization();
   }
 
-  async GetJson(url: string) {
-    return this.GetData(url + '.json');
+  async GetJson(url: string, clearCache = false) {
+    let req = url + '.json';
+    if (clearCache) req += '?t=' + Date.now();
+    return this.GetData(req);
   }
   async GetData(url: string) {
     const res = await axios
