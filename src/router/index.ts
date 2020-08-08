@@ -17,6 +17,7 @@ function AsyncLoader(resolve: any, reject: any, component: Promise<any>) {
 
 const routes: Array<RouteConfig> = [
   { path: '/', name: 'Index', component: Index },
+  { path: '/Imconfig', name: 'Imconfig', component: (s, j) => AsyncLoader(s, j, import('@/views/Imconfig.vue')) },
   { path: '/About', name: 'About', component: (s, j) => AsyncLoader(s, j, import('@/views/About.vue')) },
   { path: '/Analysis', name: 'Analysis', component: (s, j) => AsyncLoader(s, j, import('@/views/Analysis.vue')) },
   { path: '/Friend', name: 'Friend', component: (s, j) => AsyncLoader(s, j, import('@/views/Friend.vue')) },

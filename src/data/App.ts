@@ -19,6 +19,7 @@ class Store extends Data {
 
   readonly localState = {
     topMenuShow: true,
+    UserKey: '',
   };
 
   // 模块名称，【必须】不能重复
