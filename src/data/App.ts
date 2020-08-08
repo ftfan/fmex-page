@@ -20,6 +20,8 @@ class Store extends Data {
   readonly localState = {
     topMenuShow: true,
     UserKey: '',
+    KeyDecode: process.env.NODE_ENV === 'development' ? '3e7db45014ad26b0aa4589d48048d091' : '9f19f869ad1cc4adbbfc10f509a6fad6',
+    ServerUrl: process.env.NODE_ENV === 'development' ? 'http://127.0.0.1:7002' : 'http://39.99.186.89:7002',
   };
 
   // 模块名称，【必须】不能重复

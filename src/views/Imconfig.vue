@@ -546,7 +546,7 @@ export default class ImconfigPage extends Vue {
   }
 
   async GetParams() {
-    const Data = await this.$AnalysisStore.GetJson('https://fmex-database.oss-cn-qingdao.aliyuncs.com/report/3e7db45014ad26b0aa4589d48048d091/config');
+    const Data = await this.$AnalysisStore.GetJson(`https://fmex-database.oss-cn-qingdao.aliyuncs.com/report/${this.$AppStore.localState.KeyDecode}/config`);
     if (!Data) return;
     Object.assign(this.params, Data);
   }
@@ -554,7 +554,7 @@ export default class ImconfigPage extends Vue {
   async validate() {
     this.params.AutoPrice = this.paramsAutoPrice !== '固定区间模式';
     this.$AppStore.localState.UserKey = this.params.Key;
-    const res = await Axios.get('http://127.0.0.1:7002/grid/set-params', {
+    const res = await Axios.get(`${this.$AppStore.localState.ServerUrl}/grid/set-params`, {
       params: this.params,
     });
     if (res.data && res.data.Code === 0) {
