@@ -556,15 +556,12 @@ export default class ImconfigPage extends Vue {
 
   async validate() {
     this.$AppStore.localState.UserKey = this.params.Key;
-    const res = await Axios.get(`${this.$AppStore.localState.ServerUrl}/grid/set-params`, {
-      params: this.params,
-    });
-    if (res.data && res.data.Code === 0) {
-      this.$AppStore.localState.UserKey = this.params.Key;
-
-      return alert('保存成功');
-    }
-    alert(res.data && res.data.Msg);
+    location.href = `${this.$AppStore.localState.ServerUrl}/grid/set-params`;
+    // const res = await Axios.get(`${this.$AppStore.localState.ServerUrl}/grid/set-params`, {
+    //   params: this.params,
+    // });
+    // if (res.data && res.data.Code === 0) return alert('保存成功');
+    // alert(res.data && res.data.Msg);
   }
 }
 </script>
