@@ -19,6 +19,9 @@
         <v-icon>mdi-information-variant</v-icon>
       </v-btn>
     </v-bottom-navigation>
+    <v-dialog :value="!!$AppStore.state.ErrorMsg" @input="CloseMsg">
+      <v-alert border="left" colored-border color="primary" elevation="2"> {{ $AppStore.state.ErrorMsg }} </v-alert>
+    </v-dialog>
   </v-app>
 </template>
 
@@ -39,6 +42,11 @@ export default class App extends Vue {
     if (this.$route.name === 'Index') return (this.bottomNav = 0);
     if (this.$route.name === 'Analysis') return (this.bottomNav = 1);
     if (this.$route.name === 'About') return (this.bottomNav = 2);
+  }
+
+  CloseMsg(bol: boolean) {
+    if (bol) return;
+    this.$AppStore.state.ErrorMsg = '';
   }
 
   get FMexFunApp() {

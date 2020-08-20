@@ -20,7 +20,7 @@
         <v-chip class="ma-2" color="primary" small outlined> 已知系统账户-保险基金: {{ TotalInfo.Last.bxjj }} BTC </v-chip>
       </v-badge>
       <br />
-      <v-badge :content="PreInfo('fusd')" color="primary" :offset-y="14" :offset-x="20">
+      <v-badge v-if="DateMin20200819" :content="PreInfo('fusd')" color="primary" :offset-y="14" :offset-x="20">
         <v-chip class="ma-2" color="primary" small outlined> 已知系统账户-FUSD解锁奖励: {{ TotalInfo.Last.fusd }} BTC </v-chip>
       </v-badge>
       <br />
@@ -168,6 +168,11 @@ export default class AnalysisPage extends Vue {
   DateMin = DateMin;
   DateMax = DateMax;
 
+  get DateMin20200819() {
+    const timeDate = new Date(this.date);
+    return timeDate.getTime() < 1597836221965; // 小于 20200819
+  }
+
   get thisNick() {
     return this;
   }
@@ -187,7 +192,7 @@ export default class AnalysisPage extends Vue {
         Sum: lastSum.toNumber(),
         RealSum: lastSum
           .minus(last[0].amount)
-          .minus(last[1].amount)
+          .minus(this.DateMin20200819 ? last[1].amount : 0)
           .toNumber(),
       },
       Pre: {
@@ -197,7 +202,7 @@ export default class AnalysisPage extends Vue {
         Sum: preSum.toNumber(),
         RealSum: preSum
           .minus(pre[0].amount)
-          .minus(pre[1].amount)
+          .minus(this.DateMin20200819 ? pre[1].amount : 0)
           .toNumber(),
       },
     };

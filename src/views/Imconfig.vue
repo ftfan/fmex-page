@@ -1,39 +1,88 @@
 <template>
-  <div class="page-index">
-    <div class="center">
-      <h1 class="sitename">测试账号</h1>
-      <p><b>最近更新: </b>{{ BuildTime }}</p>
+  <div class="center" v-if="!$route.query.DataKey">
+    <h1 class="sitename">参数错误</h1>
+  </div>
+  <div class="page-index" v-else>
+    <div class="center" style="padding-top: 20px;">
+      <p>账号: {{ report }}</p>
     </div>
 
-    <v-form ref="form" lazy-validation style="padding-left:20px;padding-right:20px;">
-      <v-text-field required v-model="params.BasePrice" label="基准价格(USD)" type="number" outlined></v-text-field>
-      <v-slider v-model="params.BasePriceWeight" label="基准价格权重" thumb-label="always" :thumb-size="30" :min="0" :max="1" :step="0.1"> </v-slider>
-      <span>基准价格权重不为1时，</span>
-      <span>上下限价格将根据最近24小时成交均价偏移</span>
-      <br />
-      <br />
+    <v-dialog v-model="settingDailog">
+      <template v-slot:activator="{ on, attrs }">
+        <v-btn color="primary" style="top:80px" fixed top right small fab v-bind="attrs" v-on="on">
+          <v-icon>mdi-view-dashboard-outline</v-icon>
+        </v-btn>
+      </template>
 
-      <v-text-field required v-model="params.MaxPrice" label="【上限价格】，此价格，持【上限仓位】(USD)" type="number" outlined></v-text-field>
-      <v-text-field required v-model="params.MaxPosition" label="【上限仓位】负为空(张)" type="number" outlined></v-text-field>
+      <v-form ref="form" lazy-validation style="padding:20px;background-color:#ffffff;">
+        <!-- <v-text-field required v-model="params.BasePrice" label="基准价格(USD)" type="number" outlined></v-text-field>
+        <v-slider v-model="params.BasePriceWeight" label="基准价格权重" thumb-label="always" :thumb-size="30" :min="0" :max="1" :step="0.1"> </v-slider>
+        <span>基准价格权重为<strong>1</strong>时:</span>
+        <span><strong>不使用</strong>最近24小时成交均价做区间参考</span>
+        <br />
+        <br /> -->
+        <v-list-item dense v-for="(item, index) in params.OrderRule" :key="index" active-class="text--accent-4">
+          <v-list-item-icon>
+            <v-text-field required style="width:80px" v-model.number="item.Price" :label="'价格' + (index + 1)" type="number"></v-text-field>
+          </v-list-item-icon>
+          <v-list-item-content>
+            <v-text-field required style="width:80px" v-model.number="item.Position" :label="'持仓(负为空)'" type="number"></v-text-field>
+          </v-list-item-content>
+          <v-list-item-action>
+            <v-icon color="success" @click="params.OrderRule.splice(index, 1)">mdi-close-circle</v-icon>
+            <v-icon v-if="index < params.OrderRule.length - 1" color="primary" @click="ChooseRule(item)">mdi-vector-radius</v-icon>
+          </v-list-item-action>
+        </v-list-item>
+        <v-list-item dense>
+          <v-list-item-content>
+            <v-icon color="primary" @click="params.OrderRule.push({ Price: 0, Position: 0, Next: { Type: 'L7', Position: 0, Price: 0 } })">mdi-plus-circle</v-icon>
+          </v-list-item-content>
+        </v-list-item>
 
-      <v-text-field required v-model="params.MinPrice" label="【下限价格】，此价格，持【下限仓位】(USD)" type="number" outlined></v-text-field>
-      <v-text-field required v-model="params.MinPosition" label="【下限仓位】负为空(张)" type="number" outlined></v-text-field>
+        <v-dialog v-model="settingDailogSub">
+          <v-item-group>
+            <v-container>
+              <v-row>
+                <v-col v-for="item in RuleTypes" :key="item" cols="6" md="2">
+                  <v-card class="d-flex align-center" height="100">
+                    <div
+                      :class="ActiveRule && ActiveRule.Next.Type === item ? 'div-active' : ''"
+                      @click="RuleChoosed(item)"
+                      :style="{ 'background-image': 'url(/t-' + item + '.svg)', width: '100%', height: '100%' }"
+                      type="image/svg+xml"
+                    ></div>
+                  </v-card>
+                </v-col>
+              </v-row>
+            </v-container>
+          </v-item-group>
+        </v-dialog>
 
-      <v-text-field required v-model="params.MaxStepVol" label="单次挂单上限(张)" type="number" outlined></v-text-field>
-      <v-text-field required v-model="params.OverStepChange" label="偏移金额撤单(USD)" type="number" outlined></v-text-field>
-      <v-text-field required v-model="params.GridDiff" label="下单偏移金额(USD)" type="number" outlined></v-text-field>
+        <v-text-field style="margin-top:10px" required v-model.number="params.MaxStepVol" label="单次挂单上限(张)" type="number" outlined></v-text-field>
+        <v-text-field required v-model.number="params.OpenOrderMaxCount" label="挂单数量（单边，1~25）" type="number" outlined></v-text-field>
+        <v-text-field required v-model.number="params.GridDiff" label="挂单间隔(USD，0.5的倍数)" type="number" outlined></v-text-field>
 
-      <v-text-field required v-model="params.Key" label="api key" type="text" outlined></v-text-field>
-      <v-switch v-model="params.Runner" class="ma-2" label="策略运行"></v-switch>
+        <v-text-field required v-model="params.Key" label="api key" type="text" outlined clearable></v-text-field>
+        <v-text-field required v-model="params.Pwd" label="密码" type="password" outlined clearable></v-text-field>
+        <v-switch v-model="params.Runner" class="ma-2" label="策略运行"></v-switch>
 
-      <v-btn color="success" class="mr-4" @click="validate">保存</v-btn>
-    </v-form>
+        <v-btn color="primary" class="mr-4" @click="RunderSetting">
+          <v-icon>mdi-refresh</v-icon>
+          预览策略视图
+        </v-btn>
+
+        <div style="padding-bottom:20px;width:280px;height:300px;" ref="params"></div>
+
+        <v-btn color="success" class="mr-4" @click="validate">保存</v-btn>
+      </v-form>
+    </v-dialog>
+
     <div class="section">
       <v-dialog ref="dialog" v-model="modal" color="primary" :return-value.sync="Dates" persistent>
         <template v-slot:activator="{ on, attrs }">
           <v-text-field v-model="Dates" label="日期选择" prepend-icon="mdi-calendar-range" readonly v-bind="attrs" v-on="on"></v-text-field>
         </template>
-        <v-date-picker v-model="Dates" range scrollable :min="DateMin" :max="DateMax">
+        <v-date-picker v-model="Dates" range scrollable :allowed-dates="allowedDates" :max="DateMax">
           <v-spacer></v-spacer>
           <v-btn text color="primary" @click="modal = false">取消</v-btn>
           <v-btn text color="primary" @click="Submit">确定</v-btn>
@@ -61,25 +110,17 @@
 
 <script lang="ts">
 import { Component, Vue, Watch } from 'vue-property-decorator';
-import { DateFormat } from '../lib/utils';
+import { DateFormat, sleep } from '../lib/utils';
 import echarts from 'echarts';
 import urijs from 'urijs';
 import { throttle } from 'ts-debounce-throttle';
-import Axios from 'axios';
+import { FunApi } from '@/api/fun';
+import { CodeObj } from '@/lib/Code';
 let myChart: echarts.ECharts | null = null;
 let myChart2: echarts.ECharts | null = null;
 let myChart3: echarts.ECharts | null = null;
 
 const DateMax = DateFormat(Date.now(), 'yyyy-MM-dd');
-const DateMin = DateFormat(new Date(2020, 8 - 1, 7), 'yyyy-MM-dd');
-const MinTime = new Date(DateMin).getTime();
-const GetTimes = () => {
-  const now = new Date();
-  const begin = new Date();
-  begin.setDate(now.getDate() - 2);
-  if (begin.getTime() < MinTime) begin.setTime(MinTime); // 开始时间不得大于目前已有的基础时间（有数据的时间）
-  return [DateFormat(begin, 'yyyy-MM-dd'), DateMax];
-};
 
 interface LogData {
   Ts: number;
@@ -88,7 +129,7 @@ interface LogData {
   BtcSum: number;
   UsdSum: number;
   quantity: number;
-  WantPos: number | number[];
+  // WantPos: number | number[];
 }
 
 interface KData {
@@ -103,36 +144,245 @@ let KlineData: {
   [index: string]: KData;
 } = {};
 
+type RuleTypeEnum = '' | 'LL' | '77' | 'L7' | '7L' | 'L' | '7';
+export interface RuleType {
+  Type: RuleTypeEnum;
+  Position: number;
+  Price: number;
+}
+export interface OrderRule {
+  Price: number;
+  Position: number;
+  Next: RuleType;
+}
+
+// 以24小时均价为基准线。上下浮动范围调整仓位。
+export interface UserParams {
+  OrderRule: OrderRule[]; // 用户设置每个点位的持仓量，以此推算网格
+  MaxStepVol: number; // 每次下单最多不能超过该金额
+  OpenOrderMaxCount: number; // 单边挂单数量
+  Runner: boolean;
+  BasePriceWeight: number; // 基准价格权重，为1表示忽略24H均价。
+  BasePrice: number; // 基准价格，中间价格
+  GridDiff: number; // 订单间隔
+  Reports: string[]; // 当前用户每日报表文件记录
+  ReportKey: string;
+  Time: number; // 该配置的设置时间
+  Pwd: string;
+  Key: string;
+  BakSetting: UserParams[]; // 链式记录上一次的配置
+  PricePosition: number[][];
+}
+
 @Component({
   components: {},
 })
 export default class ImconfigPage extends Vue {
+  settingDailog = false;
+  settingDailogSub = false;
   modal = false;
-  DateMin = DateMin;
   DateMax = DateMax;
-  // 默认选中最近 30 天
-  Times = GetTimes();
-  Dates = GetTimes();
+  Times = [DateMax, DateMax];
+  Dates = [DateMax, DateMax];
   get BuildTime() {
     const Time = window.__Build_Time === '__Build_Time__' ? Date.now() : parseInt(window.__Build_Time, 10);
     return DateFormat(Time, 'yyyy-MM-dd hh:mm');
   }
 
-  params = {
-    MinPrice: 11600,
-    MinPosition: 1000,
-    MaxPrice: 12000,
-    MaxPosition: -200,
-    MaxStepVol: 100, // 每次下单最多不能超过该金额
-    OverStepChange: 4,
-    Runner: true,
+  get report() {
+    return this.$route.query.DataKey as string;
+  }
+  @Watch('settingDailog')
+  async OnSettingDailogChange() {
+    if (!this.settingDailog) return;
+    await this.$nextTick();
+    await sleep(1000);
+    this.RunderSetting();
+  }
+
+  RuleTypes = ['L7', '7L', 'L', '7', 'LL', '77', ''];
+  RunderSetting() {
+    // 校验参数的合格性
+    const OrderRule: OrderRule[] = [];
+    this.params.OrderRule.sort((a, b) => a.Price - b.Price);
+
+    let err = '';
+    let max = Infinity;
+    let lastPrice = 0;
+    this.params.OrderRule.forEach((item, index) => {
+      const pos = `【价格${index + 1}】`;
+      if (err) return; // 已经定位错误了，以第一个错误为准
+      if (item.Price <= 0) return (err = `价格不能为 0 ${pos}`);
+      if (item.Position > max) return (err = `价格越大，持仓必须越小 ${pos}`);
+      if (item.Price === lastPrice) return (err = `价格不能重复 ${pos}`);
+      max = item.Position;
+      lastPrice = item.Price;
+      OrderRule.push(item);
+    });
+    if (!err) {
+      if (this.params.MaxStepVol <= 0) err = `下单上限错误`;
+      if (this.params.OpenOrderMaxCount <= 0) err = `单边挂单数量错误`;
+      if (this.params.GridDiff < 0.5) err = `挂单间隔不能小于0.5`;
+      if (OrderRule.length < 2) err = '价格至少设置两个';
+    }
+    if (err) return this.$AppStore.Error(err);
+
+    const myChart = echarts.init(this.$refs.params as any);
+
+    const MinPrice = OrderRule[0].Price;
+    const PriceDiff = OrderRule[OrderRule.length - 1].Price - MinPrice;
+
+    const PriceDiffCount = Math.ceil(PriceDiff / this.params.GridDiff);
+
+    const xx = Array(PriceDiffCount + 1)
+      .join(',')
+      .split(',')
+      .map((item, index) => index * this.params.GridDiff + MinPrice);
+
+    const yy: number[] = [];
+    const Map: { [index: string]: number } = {};
+
+    let bakRule: OrderRule | null = null;
+    OrderRule.forEach((rule) => {
+      if (!bakRule) {
+        bakRule = rule;
+        return;
+      }
+      const perRule = bakRule;
+      bakRule = rule;
+
+      const center = perRule.Next;
+      // 仓位不符合规范
+      // if (center.Position <= perRule.Position || center.Position >= rule.Position || center.Price <= perRule.Price || center.Price >= rule.Price) {
+      center.Position = (perRule.Position + rule.Position) / 2;
+      center.Price = (rule.Price + perRule.Price) / 2;
+      switch (center.Type) {
+        case 'L':
+          center.Position = center.Position - (center.Position - perRule.Position) * -0.5;
+          center.Price = center.Price - (center.Price - rule.Price) * -0.5;
+          break;
+        case '7':
+          center.Position = center.Position - (center.Position - rule.Position) * -0.5;
+          center.Price = center.Price - (center.Price - perRule.Price) * -0.5;
+          break;
+      }
+      // }
+
+      const centerSum = center.Price * center.Position;
+      const beginSum = perRule.Price * perRule.Position;
+      const endSum = rule.Price * rule.Position;
+      const bc = beginSum / centerSum;
+      const ec = endSum / centerSum;
+
+      xx.forEach((item) => {
+        if (item < perRule.Price || item > rule.Price) return;
+        if (item === rule.Price) return yy.push(rule.Position);
+        if (item === center.Price) return yy.push(center.Position);
+        if (item === perRule.Price) return yy.push(perRule.Position);
+        let begin: { Price: number; Position: number } = perRule;
+        let end: { Price: number; Position: number } = center;
+        if (item > center.Price) {
+          begin = center;
+          end = rule;
+        }
+        const p = (item - begin.Price) / (end.Price - begin.Price);
+        const pp = 0.5 + p * 1.5;
+        let add = 0;
+        const Line = () => p * (begin.Position - end.Position);
+        const PicL = () => ((2 - 1 / pp) / 1.5) * (begin.Position - end.Position);
+        const Pic7 = () => ((1 / (2.5 - pp) - 0.5) / 1.5) * (begin.Position - end.Position);
+        const str = center.Type.split('');
+        const bp = str[0];
+        const ep = str[str.length - 1];
+        if (center.Type === '') {
+          add = Line();
+        } else if ((item < center.Price && bp === '7') || (item > center.Price && ep === '7')) {
+          add = Pic7();
+        } else {
+          add = PicL();
+        }
+        const Position = begin.Position - add;
+        yy.push(Position > 0 ? Math.floor(Position) : Math.ceil(Position));
+      });
+    });
+
+    this.params.PricePosition = xx.map((x, index) => [x, yy[index]]);
+
+    myChart.setOption({
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: {
+          type: 'cross',
+          label: {
+            backgroundColor: '#6a7985',
+          },
+        },
+      },
+      legend: {
+        data: ['仓位'],
+      },
+      grid: {
+        left: '20px',
+        right: '14px',
+        bottom: '40px',
+        containLabel: true,
+      },
+      xAxis: [{ type: 'category', boundaryGap: false }],
+      yAxis: [
+        {
+          type: 'value',
+          min: 'dataMin',
+          max: 'dataMax',
+        },
+      ],
+    });
+
+    myChart.setOption({
+      xAxis: {
+        data: xx,
+      },
+      series: [
+        {
+          name: '仓位',
+          type: 'bar',
+          data: yy,
+        },
+      ],
+    });
+    return 'success';
+  }
+
+  ChooseRule(item: OrderRule) {
+    this.settingDailogSub = true;
+    this.ActiveRule = item;
+  }
+  RuleChoosed(item: RuleTypeEnum) {
+    if (!this.ActiveRule) return;
+    this.ActiveRule.Next.Type = item;
+    this.settingDailogSub = false;
+  }
+  ActiveRule: null | OrderRule = null;
+  params: UserParams = {
+    OrderRule: [
+      { Price: 11500, Position: 1000, Next: { Type: 'L7', Position: 0, Price: 0 } },
+      { Price: 12500, Position: 0, Next: { Type: 'L7', Position: 0, Price: 0 } },
+      { Price: 13000, Position: -100, Next: { Type: 'L7', Position: 0, Price: 0 } },
+    ],
+    OpenOrderMaxCount: 20, // 单边最多挂单数量
+    Runner: false,
     Key: Vue.AppStore.localState.UserKey,
     BasePrice: 11700,
     BasePriceWeight: 1,
-    GridDiff: 1, // 设置偏移价格，0表示档位1；
+    GridDiff: 1, // 挂单间隔
+    MaxStepVol: 100,
+    Reports: [],
+    Time: 0,
+    Pwd: '',
+    ReportKey: '',
+    BakSetting: [],
+    PricePosition: [],
   };
-  paramsAutoPrice = '固定区间模式';
-  paramsAutoPrices = ['固定区间模式', '24H均价移动区间模式'];
+  OrderRuleModel = [];
 
   detailValue = 0;
   detailMin = Infinity;
@@ -148,11 +398,12 @@ export default class ImconfigPage extends Vue {
     this.mountedd();
   }
 
+  allowedDates(val: string) {
+    return this.params.Reports.indexOf(val) > -1;
+  }
+
   async mountedd() {
     this.GetParams();
-
-    this.GetData(this.Times[0]);
-    this.RenderInit();
   }
 
   async Submit() {
@@ -165,6 +416,7 @@ export default class ImconfigPage extends Vue {
       end.setTime(temp);
     }
     this.Times = [DateFormat(begin, 'yyyy-MM-dd'), DateFormat(end, 'yyyy-MM-dd')];
+    Vue.AppStore.localState.TimesCache = this.Times;
     this.SnapshotData = [];
     await this.GetData(this.Times[0]);
     this.Render();
@@ -369,7 +621,7 @@ export default class ImconfigPage extends Vue {
       { name: '24H均价', type: 'line', color: '#666666', key: 'p24h', y: 0 },
       { name: '现价', type: 'line', color: 'rgba(4, 164, 204, 1)', key: 'Price', y: 0 },
       { name: '持仓', type: 'line', color: '#ff0099', key: 'quantity', y: 2 },
-      { name: '目标持仓', type: 'line', color: '#ff9900', key: 'WantPos', y: 2 },
+      // { name: '目标持仓', type: 'line', color: '#ff9900', key: 'WantPos', y: 2 },
     ];
     const render: { [index: string]: Aaaa } = {};
 
@@ -392,7 +644,7 @@ export default class ImconfigPage extends Vue {
       item.data.forEach((data) => {
         conf.forEach((val) => {
           const value = (data as any)[val.key];
-          if (val.key === 'WantPos' && typeof value === 'object') return render[val.name].data.push(value[0]);
+          // if (val.key === 'WantPos' && typeof value === 'object') return render[val.name].data.push(value[0]);
           render[val.name].data.push(value);
         });
         xxx.push(DateFormat(data.Ts, 'hh:mm:ss\r\nMM-dd'));
@@ -532,7 +784,7 @@ export default class ImconfigPage extends Vue {
     if (times > 5) return;
     const FileName = time.replace(/-/g, '/');
     // this.OnLoadData.push(`加载 ${FileName} ${times > 1 ? times : ''}`);
-    const Data = await this.$AnalysisStore.GetJson('https://fmex-database.oss-cn-qingdao.aliyuncs.com/report/9f19f869ad1cc4adbbfc10f509a6fad6/' + FileName);
+    const Data = await this.$AnalysisStore.GetJson(`https://fmex-database.oss-cn-qingdao.aliyuncs.com/runner/report/${this.report}/` + FileName);
     if (!Data) {
       return this.GetData(time, ++times);
     }
@@ -540,36 +792,44 @@ export default class ImconfigPage extends Vue {
       time,
       data: Data,
     });
-    const timeDate = new Date(time);
-    const next = new Date(timeDate.getTime() + 86400000);
-    if (next.getTime() <= new Date(this.Times[1]).getTime()) {
-      return this.GetData(DateFormat(next, 'yyyy-MM-dd'));
-    }
+    // 获取下一个报表
+    const thisIndex = this.params.Reports.indexOf(time);
+    const next = this.params.Reports[thisIndex + 1];
+    if (time !== this.Times[1] && next !== this.Times[1]) return this.GetData(next);
     this.Render();
     return true;
   }
 
   async GetParams() {
-    const Data = await this.$AnalysisStore.GetJson(`https://fmex-database.oss-cn-qingdao.aliyuncs.com/report/${this.$AppStore.localState.KeyDecode}/config`, true);
-    if (!Data) return;
+    const Data = await this.$AnalysisStore.GetJson(`https://fmex-database.oss-cn-qingdao.aliyuncs.com/runner/report/${this.report}/config`, true);
+    if (!Data) return this.$AppStore.Error('配置文件加载失败，请刷新重试');
     Object.assign(this.params, Data);
+    this.params.Key = this.$AppStore.localState.UserKey;
+    if (this.params.Reports.length === 0) return this.$AppStore.Error('暂未找到该账号的数据报表');
+    this.Times[0] = this.Times[1] = this.params.Reports[this.params.Reports.length - 1];
+
+    this.GetData(this.Times[0]);
+    this.RenderInit();
   }
 
   async validate() {
+    const check = this.RunderSetting();
+    if (check !== 'success') return;
+    this.params.ReportKey = this.report;
     this.$AppStore.localState.UserKey = this.params.Key;
-    const url = new urijs(`${this.$AppStore.localState.ServerUrl}/grid/set-params`);
-    url.setQuery(this.params);
-    location.href = url.toString();
-    // const res = await Axios.get(`${this.$AppStore.localState.ServerUrl}/grid/set-params`, {
-    //   params: this.params,
-    // });
-    // if (res.data && res.data.Code === 0) return alert('保存成功');
-    // alert(res.data && res.data.Msg);
+    const res = await FunApi.post('/grid/set-params', this.params).then((res) => res.data as CodeObj<any>);
+    console.log(res);
+    this.settingDailog = false;
+    if (res.Error()) return this.$AppStore.Error(res.Msg);
+    this.$AppStore.Error('保存成功');
   }
 }
 </script>
 
 <style lang="scss" scoped>
+.div-active {
+  border: 2px solid $color-primary;
+}
 .echarts {
   width: 100%;
   height: 600px;
