@@ -17,19 +17,19 @@
       </v-badge>
       <br />
       <v-badge :content="PreInfo('bxjj')" color="primary" :offset-y="14" :offset-x="20">
-        <v-chip class="ma-2" color="primary" small outlined> 已知系统账户-保险基金: {{ TotalInfo.Last.bxjj }} BTC </v-chip>
+        <v-chip class="ma-2" color="primary" small outlined> 系统账户-【保险基金】: {{ TotalInfo.Last.bxjj }} BTC </v-chip>
       </v-badge>
       <br />
-      <v-badge v-if="DateMin20200819" :content="PreInfo('fusd')" color="primary" :offset-y="14" :offset-x="20">
-        <v-chip class="ma-2" color="primary" small outlined> 已知系统账户-FUSD解锁奖励: {{ TotalInfo.Last.fusd }} BTC </v-chip>
+      <v-badge :content="PreInfo('fusd')" color="primary" :offset-y="14" :offset-x="20">
+        <v-chip class="ma-2" color="primary" small outlined> 系统账户-【FUSD解锁】: {{ TotalInfo.Last.fusd }} BTC </v-chip>
       </v-badge>
       <br />
       <v-badge :content="PreInfo('RealSum')" color="primary" :offset-y="14" :offset-x="20">
-        <v-chip class="ma-2" color="primary" small outlined> 其余账户，约 {{ TotalInfo.Last.RealSum }} BTC </v-chip>
+        <v-chip class="ma-2" color="primary" small outlined> 其余账户 {{ TotalInfo.Last.RealSum }} BTC </v-chip>
       </v-badge>
       <br />
       <v-badge :content="PreInfo('Sum')" color="primary" :offset-y="14" :offset-x="20">
-        <v-chip class="ma-2" color="primary" small outlined> 合计，约 {{ TotalInfo.Last.Sum }} BTC </v-chip>
+        <v-chip class="ma-2" color="primary" small outlined> 合计 {{ TotalInfo.Last.Sum }} BTC </v-chip>
       </v-badge>
     </template>
     <div class="data-analysis">
@@ -168,9 +168,9 @@ export default class AnalysisPage extends Vue {
   DateMin = DateMin;
   DateMax = DateMax;
 
-  get DateMin20200819() {
-    const timeDate = new Date(this.date);
-    return timeDate.getTime() < 1597836221965; // 小于 20200819
+  get FUSDDateIndex() {
+    if (this.date === '2020-08-19') return 2;
+    return 1;
   }
 
   get thisNick() {
@@ -192,7 +192,7 @@ export default class AnalysisPage extends Vue {
         Sum: lastSum.toNumber(),
         RealSum: lastSum
           .minus(last[0].amount)
-          .minus(this.DateMin20200819 ? last[1].amount : 0)
+          .minus(last[this.FUSDDateIndex].amount)
           .toNumber(),
       },
       Pre: {
@@ -202,7 +202,7 @@ export default class AnalysisPage extends Vue {
         Sum: preSum.toNumber(),
         RealSum: preSum
           .minus(pre[0].amount)
-          .minus(this.DateMin20200819 ? pre[1].amount : 0)
+          .minus(pre[this.FUSDDateIndex].amount)
           .toNumber(),
       },
     };

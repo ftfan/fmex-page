@@ -124,7 +124,7 @@ export default class BtcVolPrice extends Vue {
       dataZoom: [
         {
           show: true,
-          start: 90,
+          start: 80,
           end: 100,
         },
       ],
