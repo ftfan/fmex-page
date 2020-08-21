@@ -169,8 +169,9 @@ export default class AnalysisPage extends Vue {
   DateMax = DateMax;
 
   get FUSDDateIndex() {
-    if (this.date === '2020-08-19') return 2;
-    return 1;
+    if (this.date === '2020-08-19') return [2, 1];
+    if (this.date === '2020-08-20') return [1, 2];
+    return [1, 1];
   }
 
   get thisNick() {
@@ -183,26 +184,26 @@ export default class AnalysisPage extends Vue {
     const lastSum = last.map((a: any) => new BigNumber(a.amount)).reduce((a, b) => a.plus(b), new BigNumber(0));
     const pre = this.SnapshotDataPre;
     const preSum = pre.map((a: any) => new BigNumber(a.amount)).reduce((a, b) => a.plus(b), new BigNumber(0));
-
+    const FUSDIndex = this.FUSDDateIndex;
     return {
       Last: {
         bxjj: last[0].amount,
-        fusd: last[1].amount,
+        fusd: last[FUSDIndex[0]].amount,
         Count: last.length,
         Sum: lastSum.toNumber(),
         RealSum: lastSum
           .minus(last[0].amount)
-          .minus(last[this.FUSDDateIndex].amount)
+          .minus(last[FUSDIndex[0]].amount)
           .toNumber(),
       },
       Pre: {
         bxjj: pre[0].amount,
-        fusd: pre[1].amount,
+        fusd: pre[FUSDIndex[1]].amount,
         Count: pre.length,
         Sum: preSum.toNumber(),
         RealSum: preSum
           .minus(pre[0].amount)
-          .minus(pre[this.FUSDDateIndex].amount)
+          .minus(pre[FUSDIndex[1]].amount)
           .toNumber(),
       },
     };
