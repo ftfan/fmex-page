@@ -98,7 +98,7 @@ const DateMin = DateFormat(new Date(2020, 7 - 1, 8), 'yyyy-MM-dd');
 const CreateNumChoose = (num: number, index: number) => {
   return [
     {
-      Name: (vm: AnalysisPage) => `资产 < ${num} BTC 的账户`,
+      Name: (vm: AnalysisPage) => `资产 < ${num} ${vm.UpCoinName} 的账户`,
       Render: (vm: AnalysisPage) => {
         const echartref = vm.$refs.echartref as any;
         const database = vm.SnapshotData.filter((item) => item.amount < num);

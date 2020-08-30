@@ -99,7 +99,11 @@ export default class AnalysisPage extends Vue {
   DateMin = DateMin;
   DateMax = DateMax;
 
-  Ranges = [1, 2, 3, 4, 5, 8, 10, 15, 20, 25, 30, 40];
+  get Ranges() {
+    if (this.UpCoinName === 'BTC') return [1, 2, 3, 4, 5, 8, 10, 15, 20, 25, 30, 40];
+    if (this.UpCoinName === 'USDT') return [1, 10, 50, 100, 200, 500, 1000, 2000, 5000, 10000];
+    return [10, 50, 100, 500, 1000, 5000, 10000, 50000];
+  }
 
   value: number[] = [];
   labelText: string[] = [];
