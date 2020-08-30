@@ -1,5 +1,7 @@
 <template>
   <div>
+    <v-select style="margin-top:10px" dense :items="$AnalysisStore.localState.PlatformCurrency" small label="查看币种" v-model="$AnalysisStore.localState.Currency" outlined></v-select>
+
     <v-dialog ref="dialog" v-model="modal" color="primary" :return-value.sync="date" persistent>
       <template v-slot:activator="{ on, attrs }">
         <v-text-field v-model="date" label="日期选择" prepend-icon="mdi-calendar-range" readonly v-bind="attrs" v-on="on"></v-text-field>
@@ -16,24 +18,27 @@
         <v-chip class="ma-2" color="primary" small outlined> 共 {{ TotalInfo.Last.Count }} 个账户 </v-chip>
       </v-badge>
       <br />
-      <v-badge :content="PreInfo('bxjj')" color="primary" :offset-y="14" :offset-x="20">
-        <v-chip class="ma-2" color="primary" small outlined> 系统账户-【保险基金】: {{ TotalInfo.Last.bxjj }} BTC </v-chip>
-      </v-badge>
-      <br />
-      <v-badge :content="PreInfo('fusd')" color="primary" :offset-y="14" :offset-x="20">
-        <v-chip class="ma-2" color="primary" small outlined> 系统账户-【FUSD解锁】: {{ TotalInfo.Last.fusd }} BTC </v-chip>
-      </v-badge>
-      <br />
-      <v-badge :content="PreInfo('RealSum')" color="primary" :offset-y="14" :offset-x="20">
-        <v-chip class="ma-2" color="primary" small outlined> 其余账户 {{ TotalInfo.Last.RealSum }} BTC </v-chip>
-      </v-badge>
-      <br />
+      <template v-if="UpCoinName === 'BTC'">
+        <v-badge :content="PreInfo('bxjj')" color="primary" :offset-y="14" :offset-x="20">
+          <v-chip class="ma-2" color="primary" small outlined> 系统账户-【保险基金】: {{ TotalInfo.Last.bxjj }} BTC </v-chip>
+        </v-badge>
+        <br />
+        <v-badge :content="PreInfo('fusd')" color="primary" :offset-y="14" :offset-x="20">
+          <v-chip class="ma-2" color="primary" small outlined> 系统账户-【FUSD解锁】: {{ TotalInfo.Last.fusd }} BTC </v-chip>
+        </v-badge>
+        <br />
+        <v-badge :content="PreInfo('RealSum')" color="primary" :offset-y="14" :offset-x="20">
+          <v-chip class="ma-2" color="primary" small outlined> 其余账户 {{ TotalInfo.Last.RealSum }} BTC </v-chip>
+        </v-badge>
+        <br />
+      </template>
+
       <v-badge :content="PreInfo('Sum')" color="primary" :offset-y="14" :offset-x="20">
-        <v-chip class="ma-2" color="primary" small outlined> 合计 {{ TotalInfo.Last.Sum }} BTC </v-chip>
+        <v-chip class="ma-2" color="primary" small outlined> 合计 {{ TotalInfo.Last.Sum }} {{ UpCoinName }} </v-chip>
       </v-badge>
     </template>
     <div class="data-analysis">
-      <div v-for="(item, index) in ShowDataOrigin" :key="index" v-show="$AnalysisStore.localState.UserSNChooseHistory.indexOf(index) > -1" ref="echartref"></div>
+      <div :style="CanvasStyle" v-for="(item, index) in ShowDataOrigin" :key="index" v-show="$AnalysisStore.localState.UserSNChooseHistory.indexOf(index) > -1" ref="echartref"></div>
     </div>
 
     <v-dialog v-model="dialog">
@@ -104,7 +109,7 @@ const CreateNumChoose = (num: number, index: number) => {
             axisPointer: { type: 'shadow' },
           },
           title: {
-            subtext: `FMex 账户资产 < ${num} BTC 的${database.length}个账户`,
+            subtext: `FMex 账户资产 < ${num} ${vm.UpCoinName} 的${database.length}个账户`,
           },
           xAxis: {
             type: 'category',
@@ -125,7 +130,7 @@ const CreateNumChoose = (num: number, index: number) => {
       },
     },
     {
-      Name: (vm: AnalysisPage) => `资产 >= ${num} BTC 的账户`,
+      Name: (vm: AnalysisPage) => `资产 >= ${num} ${vm.UpCoinName} 的账户`,
       Render: (vm: AnalysisPage) => {
         const echartref = vm.$refs.echartref as any;
         const database = vm.SnapshotData.filter((item) => item.amount >= num);
@@ -136,7 +141,7 @@ const CreateNumChoose = (num: number, index: number) => {
             axisPointer: { type: 'shadow' },
           },
           title: {
-            subtext: `FMex 账户资产 >= ${num} BTC 的${database.length}个账户`,
+            subtext: `FMex 账户资产 >= ${num} ${vm.UpCoinName} 的${database.length}个账户`,
           },
           xAxis: {
             type: 'category',
@@ -168,8 +173,19 @@ export default class AnalysisPage extends Vue {
   DateMin = DateMin;
   DateMax = DateMax;
 
+  get CanvasStyle() {
+    return { width: window.outerWidth + 'px' };
+  }
+
+  get UpCoinName() {
+    return this.$AnalysisStore.localState.Currency.toLocaleUpperCase();
+  }
+
   get FUSDDateIndex() {
+    // 18号那天（保存文件名称是2020-08-19），fusd奖励账户的资产排名到了第三位，也就是index===2；
     if (this.date === '2020-08-19') return [2, 1];
+
+    // 因为上面18号那天的原因，需要调整19号的前一天，也就是18号的数据
     if (this.date === '2020-08-20') return [1, 2];
     return [1, 1];
   }
@@ -185,6 +201,7 @@ export default class AnalysisPage extends Vue {
     const pre = this.SnapshotDataPre;
     const preSum = pre.map((a: any) => new BigNumber(a.amount)).reduce((a, b) => a.plus(b), new BigNumber(0));
     const FUSDIndex = this.FUSDDateIndex;
+    const isBtc = this.UpCoinName === 'BTC';
     return {
       Last: {
         bxjj: last[0].amount,
@@ -192,8 +209,8 @@ export default class AnalysisPage extends Vue {
         Count: last.length,
         Sum: lastSum.toNumber(),
         RealSum: lastSum
-          .minus(last[0].amount)
-          .minus(last[FUSDIndex[0]].amount)
+          .minus(isBtc ? last[0].amount : 0)
+          .minus(isBtc ? last[FUSDIndex[0]].amount : 0)
           .toNumber(),
       },
       Pre: {
@@ -202,8 +219,8 @@ export default class AnalysisPage extends Vue {
         Count: pre.length,
         Sum: preSum.toNumber(),
         RealSum: preSum
-          .minus(pre[0].amount)
-          .minus(pre[FUSDIndex[1]].amount)
+          .minus(isBtc ? pre[0].amount : 0)
+          .minus(isBtc ? pre[FUSDIndex[1]].amount : 0)
           .toNumber(),
       },
     };
@@ -239,7 +256,7 @@ export default class AnalysisPage extends Vue {
           },
           yAxis: {
             type: 'value',
-            name: '单位：BTC',
+            name: `单位：${vm.UpCoinName}`,
           },
           series: [
             {
@@ -271,7 +288,7 @@ export default class AnalysisPage extends Vue {
           },
           yAxis: {
             type: 'value',
-            name: '单位：BTC',
+            name: `单位：${vm.UpCoinName}`,
           },
           series: [
             {
@@ -293,11 +310,24 @@ export default class AnalysisPage extends Vue {
   OnLoadData = ['用户资产数据'];
   SnapshotData: SnapshotItem[] = [];
   SnapshotDataPre: SnapshotItem[] = [];
-  BaseUrl = 'https://fmex-database.oss-cn-qingdao.aliyuncs.com/fmex/api/broker/v3/zkp-assets/account/snapshot/BTC/';
+  get BaseUrl() {
+    return `https://fmex-database.oss-cn-qingdao.aliyuncs.com/fmex/api/broker/v3/zkp-assets/account/snapshot/${this.UpCoinName}/`;
+  }
 
   @Watch('dialog')
   OnDialogChange() {
     if (this.dialog === true) return;
+    this.Render();
+  }
+
+  @Watch('date', { immediate: true })
+  OnDateChange() {
+    this.$AnalysisStore.GetPlatformCurrency(this.date);
+  }
+
+  @Watch('UpCoinName')
+  async OnUpCoinNameChange() {
+    await this.GetData();
     this.Render();
   }
 
@@ -330,10 +360,12 @@ export default class AnalysisPage extends Vue {
   }
 
   async GetData(times = 0): Promise<any> {
+    if (times > 5) return;
     const timeDate = new Date(this.date);
     // 因为数据存储时，按照今天存储昨天的
     const next = new Date(timeDate.getTime() + 86400000);
     const FileName = DateFormat(next, 'yyyy/MM/dd');
+    if (this.UpCoinName === 'USDT' && next.getTime() < new Date('2020-08-30').getTime()) return; // usdt 之前没数据。不用浪费请求
     const Data = await this.$AnalysisStore.GetJson(this.BaseUrl + FileName);
     if (!Data) {
       return this.GetData(++times);
@@ -344,15 +376,18 @@ export default class AnalysisPage extends Vue {
     Data.sort((a: any, b: any) => b.amount - a.amount);
     this.SnapshotData = Data;
     this.loading = false;
+    this.SnapshotDataPre = [];
     this.GetPreData();
   }
 
   // 获取前一天的数据（用于比较）
   async GetPreData(times = 0): Promise<any> {
+    if (times > 5) return;
     const timeDate = new Date(this.date);
     // 因为数据存储时，按照今天存储昨天的
     const next = new Date(timeDate.getTime());
     const FileName = DateFormat(next, 'yyyy/MM/dd');
+    if (this.UpCoinName === 'USDT' && next.getTime() < new Date('2020-08-30').getTime()) return; // usdt 之前没数据。不用浪费请求
     const Data = await this.$AnalysisStore.GetJson(this.BaseUrl + FileName);
     if (!Data) {
       return this.GetPreData(++times);
@@ -383,11 +418,12 @@ export default class AnalysisPage extends Vue {
 
     if (this.$AnalysisStore.sessionState.snapshot[id]) return End(this.$AnalysisStore.sessionState.snapshot[id]); // 使用缓存
     const res = await axios
-      .get(`https://fmex.com/api/broker/v3/zkp-assets/account/snapshot?currencyName=BTC${idStr}`)
+      .get(`https://fmex.com/api/broker/v3/zkp-assets/account/snapshot?currencyName=${this.UpCoinName.toLocaleUpperCase()}${idStr}`)
       .then((res) => res.data)
       .catch(() => null);
     console.log(res);
     if (!res || res.status !== 'ok') {
+      debugger;
       this.OnLoadData[this.OnLoadData.length - 1] = `${this.OnLoadData[this.OnLoadData.length - 1]} 加载失败`;
       return this.GetBtcSnapshot(id, ++times); // 获取下一页
     }
@@ -399,7 +435,6 @@ export default class AnalysisPage extends Vue {
 <style lang="scss" scoped>
 .data-analysis {
   div {
-    width: 100%;
     height: 300px;
   }
 }

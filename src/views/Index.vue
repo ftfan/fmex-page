@@ -4,7 +4,7 @@
       <h1 class="sitename">FMex.Fun</h1>
       <p><b>最近更新: </b>{{ BuildTime }}</p>
     </div>
-    <div class="section">
+    <!-- <div class="section">
       <ul class="clearfix">
         <li class="GetTired">
           <div class="content">
@@ -15,7 +15,7 @@
           </div>
         </li>
       </ul>
-    </div>
+    </div> -->
   </div>
 </template>
 

@@ -1,5 +1,6 @@
 <template>
   <div>
+    <v-select style="margin-top:10px" dense :items="$AnalysisStore.localState.PlatformCurrency" label="查看币种" v-model="$AnalysisStore.localState.Currency" outlined></v-select>
     <v-dialog ref="dialog" v-model="modal" color="primary" :return-value.sync="Dates" persistent>
       <template v-slot:activator="{ on, attrs }">
         <v-text-field v-model="Dates" label="日期选择" prepend-icon="mdi-calendar-range" readonly v-bind="attrs" v-on="on"></v-text-field>
@@ -28,15 +29,15 @@
           分析:
           <br />
           <v-chip class="ma-2" color="primary" small outlined>
-            <i class="txt-i">0</i> ~ <i class="txt-i">{{ $AnalysisStore.localState.BtcRange[0] }}</i> 个 BTC
+            <i class="txt-i">0</i> ~ <i class="txt-i">{{ $AnalysisStore.localState.BtcRange[0] }}</i> 个 {{ UpCoinName }}
           </v-chip>
           <br />
           <v-chip class="ma-2" color="primary" small outlined>
-            <i class="txt-i">{{ $AnalysisStore.localState.BtcRange[0] }}</i> ~ <i class="txt-i">{{ $AnalysisStore.localState.BtcRange[1] }}</i> 个 BTC
+            <i class="txt-i">{{ $AnalysisStore.localState.BtcRange[0] }}</i> ~ <i class="txt-i">{{ $AnalysisStore.localState.BtcRange[1] }}</i> 个 {{ UpCoinName }}
           </v-chip>
           <br />
           <v-chip class="ma-2" color="primary" small outlined>
-            <i class="txt-i">{{ $AnalysisStore.localState.BtcRange[1] }}</i> ~ <i class="txt-i">{{ 50 }}</i> 个 BTC
+            <i class="txt-i">{{ $AnalysisStore.localState.BtcRange[1] }}</i> ~ <i class="txt-i">{{ 50 }}</i> 个 {{ UpCoinName }}
           </v-chip>
           <br />
           的账户数量/资产统计
@@ -103,12 +104,18 @@ export default class AnalysisPage extends Vue {
   value: number[] = [];
   labelText: string[] = [];
 
+  get UpCoinName() {
+    return this.$AnalysisStore.localState.Currency.toLocaleUpperCase();
+  }
+
   loading = true;
   dialog = false;
   // OnLoadData = ['用户资产数据'];
   SnapshotData: any[] = [];
 
-  BaseUrl = 'https://fmex-database.oss-cn-qingdao.aliyuncs.com/fmex/api/broker/v3/zkp-assets/account/snapshot/BTC/';
+  get BaseUrl() {
+    return `https://fmex-database.oss-cn-qingdao.aliyuncs.com/fmex/api/broker/v3/zkp-assets/account/snapshot/${this.UpCoinName}/`;
+  }
 
   // 资产区间
   BtcNumber = [1, 10, 50];
@@ -118,6 +125,11 @@ export default class AnalysisPage extends Vue {
   // 默认选中最近100天
   Times = GetTimes();
   Dates = GetTimes();
+
+  @Watch('Times', { immediate: true, deep: true })
+  OnTimes1Change() {
+    this.$AnalysisStore.GetPlatformCurrency(this.Times[1]);
+  }
 
   LastChangeIndex = 0; // $AnalysisStore.localState.BtcRange 最近在使用的索引
   old = [...Vue.AnalysisStore.localState.BtcRange];
@@ -176,6 +188,12 @@ export default class AnalysisPage extends Vue {
     this.Render();
   }, 300);
 
+  @Watch('UpCoinName')
+  async OnUpCoinNameChange() {
+    this.GetData(this.Times[0]);
+    this.Render();
+  }
+
   decrement() {
     const val = new BigNumber(this.$AnalysisStore.localState.BtcRange[this.LastChangeIndex]).minus(0.1);
     this.$set(this.$AnalysisStore.localState.BtcRange, this.LastChangeIndex, val.toNumber());
@@ -190,8 +208,8 @@ export default class AnalysisPage extends Vue {
   }
 
   async mountedd() {
-    this.GetData(this.Times[0]);
     this.RenderInit();
+    this.GetData(this.Times[0]);
   }
 
   RenderInit() {
@@ -227,7 +245,7 @@ export default class AnalysisPage extends Vue {
       xAxis: [{ type: 'category', boundaryGap: false }],
       yAxis: [
         {
-          name: '单位: BTC',
+          name: `单位: ${this.UpCoinName}`,
           type: 'value',
           // min: 'dataMin',
           // max: 'dataMax',
@@ -270,7 +288,7 @@ export default class AnalysisPage extends Vue {
       xAxis: [{ type: 'category', boundaryGap: false }],
       yAxis: [
         {
-          name: '单位: BTC',
+          name: `单位: ${this.UpCoinName}`,
           type: 'value',
           min: (value) => {
             return Math.floor(value.min);
@@ -339,7 +357,7 @@ export default class AnalysisPage extends Vue {
         {
           name: `${this.BtcNumber[i - 1] || 0}~${num}`,
           type: 'line',
-          stack: `BTC`,
+          stack: `${this.UpCoinName}`,
           data: [] as number[],
           color: `rgba(4, 164, 204, ${color(i)})`,
           areaStyle: {
@@ -349,7 +367,7 @@ export default class AnalysisPage extends Vue {
         {
           name: `${this.BtcNumber[i - 1] || 0}~${num}`,
           type: 'line',
-          stack: `BTC`,
+          stack: `${this.UpCoinName}`,
           data: [] as number[],
           color: `rgba(4, 164, 204, ${color(i)})`,
           areaStyle: {
@@ -362,7 +380,7 @@ export default class AnalysisPage extends Vue {
       {
         name: `${this.BtcNumber[this.BtcNumber.length - 1]}+`,
         type: 'line',
-        stack: `BTC`,
+        stack: `${this.UpCoinName}`,
         data: [] as number[],
         color: `rgba(4, 164, 204, 1)`,
         areaStyle: {
@@ -372,7 +390,7 @@ export default class AnalysisPage extends Vue {
       {
         name: `${this.BtcNumber[this.BtcNumber.length - 1]}+`,
         type: 'line',
-        stack: `BTC`,
+        stack: `${this.UpCoinName}`,
         data: [] as number[],
         color: `rgba(4, 164, 204, 1)`,
         areaStyle: {
@@ -412,7 +430,7 @@ export default class AnalysisPage extends Vue {
     this.SnapshotData.forEach((item: any) => {
       // 2222222222222
       this.Top5.forEach((num, index) => {
-        const user = item.Data[item.Data.length - num - 1]; // 倒序的
+        const user = item.Data[item.Data.length - num - 1] || { amount: 0 }; // 倒序的
         NumArrData2[index].data.push(user.amount);
       });
 
@@ -453,6 +471,11 @@ export default class AnalysisPage extends Vue {
       xAxis: {
         data: labelText,
       },
+      yAxis: [
+        {
+          name: `单位: ${this.UpCoinName}`,
+        },
+      ],
       series: [...NumArrData.map((item) => item[0]), other[0], sum[0]],
     });
 
@@ -463,6 +486,11 @@ export default class AnalysisPage extends Vue {
       xAxis: {
         data: labelText,
       },
+      yAxis: [
+        {
+          name: `单位: ${this.UpCoinName}`,
+        },
+      ],
       series: [...NumArrData.map((item) => item[1]), other[1], sum[1]],
     });
 
@@ -475,12 +503,23 @@ export default class AnalysisPage extends Vue {
   }
 
   async GetData(time: string, times = 1): Promise<any> {
-    if (times > 5) return;
+    const NextDay = (Data: any) => {
+      // 用户资产是备份前一天的。所以时间上是错开了一天。这里纠正回去
+      const ShowTime = new Date(time);
+      this.SnapshotData.push({ FileName: DateFormat(ShowTime, 'MM-dd\r\nyyyy'), Data });
+      if (next.getTime() <= new Date(this.Times[1]).getTime()) {
+        return this.GetData(FileName.replace(/\//g, '-'));
+      }
+      this.loading = false;
+      this.Render();
+      return true;
+    };
     const timeDate = new Date(time);
     // 因为数据存储时，按照今天存储昨天的
     const next = new Date(timeDate.getTime() + 86400000);
     const FileName = DateFormat(next, 'yyyy/MM/dd');
-    // this.OnLoadData.push(`加载 ${FileName} ${times > 1 ? times : ''}`);
+    if (times > 3) return NextDay([]); // 重试3次没数据，当做没数据处理
+    if (this.UpCoinName === 'USDT' && next.getTime() < new Date('2020-08-30').getTime()) return NextDay([]); // usdt 之前没数据。不用浪费请求
     const Data = await this.$AnalysisStore.GetJson(this.BaseUrl + FileName);
     if (!Data) {
       return this.GetData(time, ++times);
@@ -490,15 +529,7 @@ export default class AnalysisPage extends Vue {
     });
     Data.sort((a: any, b: any) => a.amount - b.amount);
 
-    // 用户资产是备份前一天的。所以时间上是错开了一天。这里纠正回去
-    const ShowTime = new Date(time);
-    this.SnapshotData.push({ FileName: DateFormat(ShowTime, 'MM-dd\r\nyyyy'), Data });
-    if (next.getTime() <= new Date(this.Times[1]).getTime()) {
-      return this.GetData(FileName.replace(/\//g, '-'));
-    }
-    this.loading = false;
-    this.Render();
-    return true;
+    return NextDay(Data);
   }
 }
 </script>
