@@ -125,6 +125,7 @@ export default class AnalysisPage extends Vue {
   // 默认选中最近100天
   Times = GetTimes();
   Dates = GetTimes();
+  queue = 1; // 因为需要获取多个请求，这里设置个id。id不一样，后面就不请求了
 
   @Watch('Times', { immediate: true, deep: true })
   OnTimes1Change() {
@@ -167,9 +168,7 @@ export default class AnalysisPage extends Vue {
       end.setTime(temp);
     }
     this.Times = [DateFormat(begin, 'yyyy-MM-dd'), DateFormat(end, 'yyyy-MM-dd')];
-    this.SnapshotData = [];
-    await this.GetData(this.Times[0]);
-    this.Render();
+    this.OnUpCoinNameChange();
   }
 
   @Watch('$AnalysisStore.localState.BtcRange', { deep: true, immediate: true })
@@ -190,7 +189,8 @@ export default class AnalysisPage extends Vue {
 
   @Watch('UpCoinName')
   async OnUpCoinNameChange() {
-    this.GetData(this.Times[0]);
+    this.SnapshotData = [];
+    this.GetData(++this.queue, this.Times[0]);
     this.Render();
   }
 
@@ -209,7 +209,7 @@ export default class AnalysisPage extends Vue {
 
   async mountedd() {
     this.RenderInit();
-    this.GetData(this.Times[0]);
+    this.GetData(++this.queue, this.Times[0]);
   }
 
   RenderInit() {
@@ -502,13 +502,15 @@ export default class AnalysisPage extends Vue {
     });
   }
 
-  async GetData(time: string, times = 1): Promise<any> {
+  async GetData(queue: number, time: string, times = 1): Promise<any> {
+    if (queue !== this.queue) return Promise.resolve(false); // 这是一个已经丢弃掉的请求队列了。
+
     const NextDay = (Data: any) => {
       // 用户资产是备份前一天的。所以时间上是错开了一天。这里纠正回去
       const ShowTime = new Date(time);
       this.SnapshotData.push({ FileName: DateFormat(ShowTime, 'MM-dd\r\nyyyy'), Data });
       if (next.getTime() <= new Date(this.Times[1]).getTime()) {
-        return this.GetData(FileName.replace(/\//g, '-'));
+        return this.GetData(queue, FileName.replace(/\//g, '-'));
       }
       this.loading = false;
       this.Render();
@@ -521,8 +523,9 @@ export default class AnalysisPage extends Vue {
     if (times > 3) return NextDay([]); // 重试3次没数据，当做没数据处理
     if (this.UpCoinName === 'USDT' && next.getTime() < new Date('2020-08-30').getTime()) return NextDay([]); // usdt 之前没数据。不用浪费请求
     const Data = await this.$AnalysisStore.GetJson(this.BaseUrl + FileName);
+    if (queue !== this.queue) return Promise.resolve(false); // 这是一个已经丢弃掉的请求队列了。
     if (!Data) {
-      return this.GetData(time, ++times);
+      return this.GetData(queue, time, ++times);
     }
     Data.forEach((item: any) => {
       item.amount = parseFloat(item.amount);

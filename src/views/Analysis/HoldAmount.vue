@@ -52,6 +52,7 @@ export default class HoldAmount extends Vue {
   // OnLoadData = ['用户资产数据'];
   // SnapshotData: any[] = [];
   FullData: any[] = [];
+  queue = 1; // 因为需要获取多个请求，这里设置个id。id不一样，后面就不请求了
 
   BaseUrl = 'https://fmex-database.oss-cn-qingdao.aliyuncs.com/fmex/api/contracts/web/v3/public/statistics/';
 
@@ -70,12 +71,12 @@ export default class HoldAmount extends Vue {
     }
     this.Times = [DateFormat(begin, 'yyyy-MM-dd'), DateFormat(end, 'yyyy-MM-dd')];
     this.FullData = [];
-    await this.GetData(this.Times[0]);
+    await this.GetData(++this.queue, this.Times[0]);
     this.Render();
   }
 
   async mountedd() {
-    this.GetData(this.Times[0]);
+    this.GetData(++this.queue, this.Times[0]);
     this.RenderInit();
   }
 
@@ -248,13 +249,15 @@ export default class HoldAmount extends Vue {
     });
   }
 
-  async GetData(time: string, times = 1): Promise<any> {
+  async GetData(queue: number, time: string, times = 1): Promise<any> {
+    if (queue !== this.queue) return Promise.resolve(false); // 这是一个已经丢弃掉的请求队列了。
     if (times > 5) return;
     const FileName = time.replace(/-/g, '/');
     // this.OnLoadData.push(`加载 ${FileName} ${times > 1 ? times : ''}`);
     const Data = await this.$AnalysisStore.GetJson(this.BaseUrl + FileName);
+    if (queue !== this.queue) return Promise.resolve(false); // 这是一个已经丢弃掉的请求队列了。
     if (!Data) {
-      return this.GetData(time, ++times);
+      return this.GetData(queue, time, ++times);
     }
     Data.forEach((item: any) => {
       item.TimeStr = DateFormat(item.ts, 'MM-dd\r\nhh:mm');
@@ -264,7 +267,7 @@ export default class HoldAmount extends Vue {
     const timeDate = new Date(time);
     const next = new Date(timeDate.getTime() + 86400000);
     if (next.getTime() <= new Date(this.Times[1]).getTime()) {
-      return this.GetData(DateFormat(next, 'yyyy-MM-dd'));
+      return this.GetData(queue, DateFormat(next, 'yyyy-MM-dd'));
     }
     this.loading = false;
     this.GetFmexData();
