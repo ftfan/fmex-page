@@ -29,7 +29,7 @@
             <v-text-field required style="width:80px" v-model.number="item.Position" :label="'持仓(负为空)'" type="number"></v-text-field>
           </v-list-item-content>
           <v-list-item-action>
-            <v-icon color="success" @click="params.OrderRule.splice(index, 1)">mdi-close-circle</v-icon>
+            <v-icon color="error" @click="params.OrderRule.splice(index, 1)">mdi-close-circle</v-icon>
             <v-icon v-if="index < params.OrderRule.length - 1" color="primary" @click="ChooseRule(item)">mdi-vector-radius</v-icon>
           </v-list-item-action>
         </v-list-item>

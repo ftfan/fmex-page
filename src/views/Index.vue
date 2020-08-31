@@ -13,13 +13,14 @@
                 <v-list-item-content>
                   <v-list-item-title class="headline mb-1">{{ item.Title }}</v-list-item-title>
                   <v-list-item-subtitle>{{ item.Des }}</v-list-item-subtitle>
+                  <v-list-item-subtitle v-if="$AppStore.localState.ApiInfo.DataKey">您的策略ID：{{ $AppStore.localState.ApiInfo.DataKey }}</v-list-item-subtitle>
                 </v-list-item-content>
               </v-list-item>
 
               <v-card-actions>
-                <v-btn color="primary" text @click="tip = true">我要试用</v-btn>
-                <v-btn color="primary" text @click="ViewData">查看策略日志</v-btn>
-                <v-btn color="primary" text @click="$router.push({ name: 'Imconfig', query: { DataKey: '' } })">查看试运行账号</v-btn>
+                <v-btn color="primary" text v-if="!$AppStore.localState.ApiInfo.DataKey" @click="tip = true">开始使用</v-btn>
+                <v-btn color="primary" text v-else @click="ViewData">我的报表</v-btn>
+                <!-- <v-btn color="primary" text @click="$router.push({ name: 'Imconfig', query: { DataKey: '' } })">试运行账号报表</v-btn> -->
                 <!-- <v-switch v-model="item.Run"></v-switch> -->
               </v-card-actions>
             </v-card>
@@ -71,7 +72,8 @@ export default class IndexPage extends Vue {
 
   ViewData() {
     this.DataKeyTemp = this.$AppStore.localState.ApiInfo.DataKey;
-    this.kkkkkkkkk = true;
+    // this.kkkkkkkkk = true;
+    this.SubmitView();
   }
 
   applyParams = {
@@ -107,7 +109,7 @@ export default class IndexPage extends Vue {
 
   Runners = [
     {
-      Title: 'FMex网格策略(试运行阶段)',
+      Title: 'FMex网格策略',
       Des: '在一定价格区间内低多高空，赚取差价和手续费',
       // Run: false,
       // Api: {
