@@ -23,8 +23,13 @@ import BtcVolPrice from './Analysis/BtcVolPrice.vue';
 import HoldAmount from './Analysis/HoldAmount.vue';
 import { LogEvent } from '../router';
 
-@Component({
+@Component<AnalysisPage>({
   components: { SnapshotToday, SnapshotHistory, BtcVolPrice, HoldAmount },
+  beforeRouteEnter: (to, from, next) => {
+    next((vm) => {
+      vm.tab = parseInt(to.query.tab as string, 10) || 0;
+    });
+  },
 })
 export default class AnalysisPage extends Vue {
   tab = 0;
@@ -45,7 +50,12 @@ export default class AnalysisPage extends Vue {
       const el = els[0];
       if (el && el.mountedd) el.mountedd(); // 初始化组件
     }
+    const query = Object.assign({}, this.$route.query, {
+      tab: String(tab),
+    });
 
+    // 当前路由与tab不一致时才更新
+    if (String(tab) !== String(this.$route.query.tab)) this.$router.replace({ query });
     LogEvent(item.Name, 'click', 'tab', 1);
   }
 }

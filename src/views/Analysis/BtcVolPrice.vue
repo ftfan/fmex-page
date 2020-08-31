@@ -56,6 +56,7 @@ export default class BtcVolPrice extends Vue {
 
   BaseUrl = 'https://fmex-database.oss-cn-qingdao.aliyuncs.com/fmex/v2/market/all-tickers/';
   FmexCurrent = 'https://api.fmex.com/v2/market/all-tickers';
+  queue = 1; // 因为需要获取多个请求，这里设置个id。id不一样，后面就不请求了
 
   mounted() {
     this.mountedd();
@@ -72,12 +73,12 @@ export default class BtcVolPrice extends Vue {
     }
     this.Times = [DateFormat(begin, 'yyyy-MM-dd'), DateFormat(end, 'yyyy-MM-dd')];
     this.SnapshotData = [];
-    await this.GetData(this.Times[0]);
+    await this.GetData(++this.queue, this.Times[0]);
     this.Render();
   }
 
   async mountedd() {
-    this.GetData(this.Times[0]);
+    this.GetData(++this.queue, this.Times[0]);
     this.RenderInit();
   }
 
@@ -124,7 +125,7 @@ export default class BtcVolPrice extends Vue {
       dataZoom: [
         {
           show: true,
-          start: 90,
+          start: 80,
           end: 100,
         },
       ],
@@ -291,13 +292,15 @@ export default class BtcVolPrice extends Vue {
     });
   }
 
-  async GetData(time: string, times = 1): Promise<any> {
+  async GetData(queue: number, time: string, times = 1): Promise<any> {
+    if (queue !== this.queue) return Promise.resolve(false); // 这是一个已经丢弃掉的请求队列了。
     if (times > 5) return;
     const FileName = time.replace(/-/g, '/');
     // this.OnLoadData.push(`加载 ${FileName} ${times > 1 ? times : ''}`);
     const Data = await this.$AnalysisStore.GetJson(this.BaseUrl + FileName);
+    if (queue !== this.queue) return Promise.resolve(false); // 这是一个已经丢弃掉的请求队列了。
     if (!Data) {
-      return this.GetData(time, ++times);
+      return this.GetData(queue, time, ++times);
     }
     Data.forEach((item: any) => {
       item.ts = item.ts - (item.ts % 3600000);
@@ -308,7 +311,7 @@ export default class BtcVolPrice extends Vue {
     const timeDate = new Date(time);
     const next = new Date(timeDate.getTime() + 86400000);
     if (next.getTime() <= new Date(this.Times[1]).getTime()) {
-      return this.GetData(DateFormat(next, 'yyyy-MM-dd'));
+      return this.GetData(queue, DateFormat(next, 'yyyy-MM-dd'));
     }
     FMexWss.req('candle', FMex.Resolution.H1, 'btcusd_p', 1440, new Date(this.Times[1]).getTime()).then((res) => {
       console.log(res);
