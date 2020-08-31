@@ -108,15 +108,10 @@ export default class IndexPage extends Vue {
   }
 
   Runners = [
-    {
-      Title: 'FMex网格策略',
-      Des: '在一定价格区间内低多高空，赚取差价和手续费',
-      // Run: false,
-      // Api: {
-      //   Secret: '',
-      //   Key: '',
-      // },
-    },
+    // {
+    //   Title: 'FMex网格策略',
+    //   Des: '在一定价格区间内低多高空，赚取差价和手续费',
+    // },
   ];
 }
 </script>

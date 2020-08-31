@@ -73,7 +73,7 @@
 <script lang="ts">
 import { Component, Vue, Watch } from 'vue-property-decorator';
 import echarts from 'echarts';
-import { DateFormat } from '../../lib/utils';
+import { DateFormat, BigNumShowStr } from '../../lib/utils';
 import BigNumber from 'bignumber.js';
 import { debounce, throttle } from 'ts-debounce-throttle';
 const DateMax = DateFormat(Date.now() - 86400000, 'yyyy-MM-dd'); // 只有昨日的数据。
@@ -251,6 +251,7 @@ export default class AnalysisPage extends Vue {
         {
           name: `单位: ${this.UpCoinName}`,
           type: 'value',
+          axisLabel: { formatter: BigNumShowStr },
           // min: 'dataMin',
           // max: 'dataMax',
         },
@@ -294,6 +295,7 @@ export default class AnalysisPage extends Vue {
         {
           name: `单位: ${this.UpCoinName}`,
           type: 'value',
+          axisLabel: { formatter: BigNumShowStr },
           min: (value) => {
             return Math.floor(value.min);
           },
@@ -334,6 +336,7 @@ export default class AnalysisPage extends Vue {
       yAxis: [
         {
           type: 'value',
+          axisLabel: { formatter: BigNumShowStr },
         },
       ],
     });
@@ -490,11 +493,6 @@ export default class AnalysisPage extends Vue {
       xAxis: {
         data: labelText,
       },
-      yAxis: [
-        {
-          name: `单位: ${this.UpCoinName}`,
-        },
-      ],
       series: [...NumArrData.map((item) => item[1]), other[1], sum[1]],
     });
 

@@ -83,7 +83,7 @@
 import { Component, Vue, Watch } from 'vue-property-decorator';
 import { EchartsBar } from '@/lib/echarts-render';
 import { SnapshotItem, Snapshot } from '../../types/fmex';
-import { DateFormat } from '../../lib/utils';
+import { DateFormat, BigNumShowStr } from '../../lib/utils';
 import axios from 'axios';
 import BigNumber from 'bignumber.js';
 
@@ -95,6 +95,12 @@ interface ShowDataOrigin {
 const DateMax = DateFormat(Date.now() - 86400000, 'yyyy-MM-dd'); // 只有昨日的数据。
 const DateMin = DateFormat(new Date(2020, 7 - 1, 8), 'yyyy-MM-dd');
 
+const grid = {
+  right: '50px',
+  left: '50px',
+  bottom: '80px',
+};
+
 const CreateNumChoose = (num: number, index: number) => {
   return [
     {
@@ -103,13 +109,14 @@ const CreateNumChoose = (num: number, index: number) => {
         const echartref = vm.$refs.echartref as any;
         const database = vm.SnapshotData.filter((item) => item.amount < num);
         EchartsBar(echartref[index], {
+          grid,
           color: ['#04a4cc'],
           tooltip: {
             trigger: 'axis',
             axisPointer: { type: 'shadow' },
           },
           title: {
-            subtext: `FMex 账户资产 < ${num} ${vm.UpCoinName} 的${database.length}个账户`,
+            subtext: `账户资产 < ${num} ${vm.UpCoinName} 的${database.length}个账户`,
           },
           xAxis: {
             type: 'category',
@@ -118,7 +125,8 @@ const CreateNumChoose = (num: number, index: number) => {
           },
           yAxis: {
             type: 'value',
-            name: '单位：BTC',
+            name: `单位：${vm.UpCoinName}`,
+            axisLabel: { formatter: BigNumShowStr },
           },
           series: [
             {
@@ -135,13 +143,14 @@ const CreateNumChoose = (num: number, index: number) => {
         const echartref = vm.$refs.echartref as any;
         const database = vm.SnapshotData.filter((item) => item.amount >= num);
         EchartsBar(echartref[index + 1], {
+          grid,
           color: ['#04a4cc'],
           tooltip: {
             trigger: 'axis',
             axisPointer: { type: 'shadow' },
           },
           title: {
-            subtext: `FMex 账户资产 >= ${num} ${vm.UpCoinName} 的${database.length}个账户`,
+            subtext: `账户资产 >= ${num} ${vm.UpCoinName} 的${database.length}个账户`,
           },
           xAxis: {
             type: 'category',
@@ -150,7 +159,8 @@ const CreateNumChoose = (num: number, index: number) => {
           },
           yAxis: {
             type: 'value',
-            name: '单位：BTC',
+            name: `单位：${vm.UpCoinName}`,
+            axisLabel: { formatter: BigNumShowStr },
           },
           series: [
             {
@@ -241,13 +251,14 @@ export default class AnalysisPage extends Vue {
         const echartref = vm.$refs.echartref as any;
         const database = vm.SnapshotData.slice(0, 50);
         EchartsBar(echartref[0], {
+          grid,
           color: ['#04a4cc'],
           tooltip: {
             trigger: 'axis',
             axisPointer: { type: 'shadow' },
           },
           title: {
-            subtext: 'FMex 账户资产 TOP:50',
+            subtext: '账户资产 TOP:50',
           },
           xAxis: {
             type: 'category',
@@ -257,6 +268,7 @@ export default class AnalysisPage extends Vue {
           yAxis: {
             type: 'value',
             name: `单位：${vm.UpCoinName}`,
+            axisLabel: { formatter: BigNumShowStr },
           },
           series: [
             {
@@ -273,13 +285,14 @@ export default class AnalysisPage extends Vue {
         const echartref = vm.$refs.echartref as any;
         const database = vm.SnapshotData.slice(50);
         EchartsBar(echartref[1], {
+          grid,
           color: ['#04a4cc'],
           tooltip: {
             trigger: 'axis',
             axisPointer: { type: 'shadow' },
           },
           title: {
-            subtext: `FMex 账户资产排名 50~${vm.SnapshotData.length}`,
+            subtext: `账户资产排名 50~${vm.SnapshotData.length}`,
           },
           xAxis: {
             type: 'category',
@@ -289,6 +302,7 @@ export default class AnalysisPage extends Vue {
           yAxis: {
             type: 'value',
             name: `单位：${vm.UpCoinName}`,
+            axisLabel: { formatter: BigNumShowStr },
           },
           series: [
             {

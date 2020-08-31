@@ -61,3 +61,13 @@ export const DateFormat = (time: number | Date, fmt = 'yyyy-MM-dd hh:mm:ss') => 
   }
   return fmt;
 };
+
+export const BigNumShowStr = (num: number) => {
+  if (num < 10000) return num.toString();
+  if (num < 10000) return Math.floor(num / 100) / 100 + '万';
+  if (num < 100000) return Math.floor(num / 1000) / 10 + '万';
+  if (num < 1000000) return Math.floor(num / 10000) + '万';
+  if (num < 100000000) return Math.floor(num / 1000000) / 100 + '亿';
+  if (num < 1000000000) return Math.floor(num / 10000000) / 10 + '亿';
+  return Math.floor(num / 100000000) + '亿';
+};
