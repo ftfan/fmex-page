@@ -1,5 +1,5 @@
 <template>
-  <div class="center" v-if="!$route.query.DataKey">
+  <div class="center" v-if="!report">
     <h1 class="sitename">参数错误</h1>
   </div>
   <div class="page-index" v-else>
