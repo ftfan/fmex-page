@@ -22,7 +22,6 @@ class Store extends Data {
   readonly localState = {
     topMenuShow: true,
     UserKey: '',
-    ServerUrl: process.env.NODE_ENV === 'development' ? 'http://127.0.0.1:7002' : 'http://39.99.186.89:7002',
     ApiInfo: {
       DataKey: '',
     },

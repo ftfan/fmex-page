@@ -74,11 +74,16 @@
         <div style="padding-bottom:20px;width:280px;height:300px;" ref="params"></div>
 
         <v-btn color="success" class="mr-4" @click="validate">保存</v-btn>
+        <v-btn color="error" class="mr-4" @click="deleteIt">永久删除</v-btn>
       </v-form>
     </v-dialog>
 
+    <v-alert v-if="loaded && params.Reports.length === 0" type="error">
+      该账号，暂无报表数据
+    </v-alert>
+
     <div class="section">
-      <v-dialog ref="dialog" v-model="modal" color="primary" :return-value.sync="Dates" persistent>
+      <!-- <v-dialog ref="dialog" v-model="modal" color="primary" :return-value.sync="Dates" persistent>
         <template v-slot:activator="{ on, attrs }">
           <v-text-field v-model="Dates" label="日期选择" prepend-icon="mdi-calendar-range" readonly v-bind="attrs" v-on="on"></v-text-field>
         </template>
@@ -87,7 +92,7 @@
           <v-btn text color="primary" @click="modal = false">取消</v-btn>
           <v-btn text color="primary" @click="Submit">确定</v-btn>
         </v-date-picker>
-      </v-dialog>
+      </v-dialog> -->
       <div style="padding-top:10px" class="echarts" ref="MyAccount"></div>
       <div style="padding-top:40px" class="echarts" ref="MyAccountDetail"></div>
       <v-slider v-model="detailValue" thumb-label="always" :thumb-size="60" :min="detailMin" :max="detailMax" :step="0.5">
@@ -178,6 +183,7 @@ export interface UserParams {
   components: {},
 })
 export default class ImconfigPage extends Vue {
+  loaded = false;
   settingDailog = false;
   settingDailogSub = false;
   modal = false;
@@ -190,7 +196,9 @@ export default class ImconfigPage extends Vue {
   }
 
   get report() {
-    return this.$route.query.DataKey as string;
+    const key = this.$route.query.DataKey as string;
+    if (!key) return '6ecaf7a0eeafb2194382523779839cc1';
+    return key;
   }
   @Watch('settingDailog')
   async OnSettingDailogChange() {
@@ -392,7 +400,7 @@ export default class ImconfigPage extends Vue {
     this.Runder3();
   }
 
-  SnapshotData: { data: LogData[]; time: string }[] = [];
+  SnapshotData: { data: LogData[]; FileName: string }[] = [];
 
   mounted() {
     this.mountedd();
@@ -418,7 +426,7 @@ export default class ImconfigPage extends Vue {
     this.Times = [DateFormat(begin, 'yyyy-MM-dd'), DateFormat(end, 'yyyy-MM-dd')];
     Vue.AppStore.localState.TimesCache = this.Times;
     this.SnapshotData = [];
-    await this.GetData(this.Times[0]);
+    await this.GetData(this.params.Reports.length - 1);
     this.Render();
   }
 
@@ -780,22 +788,22 @@ export default class ImconfigPage extends Vue {
     });
   }, 1000);
 
-  async GetData(time: string, times = 1): Promise<any> {
+  async GetData(index: number, times = 1): Promise<any> {
     if (times > 5) return;
-    const FileName = time.replace(/-/g, '/');
-    // this.OnLoadData.push(`加载 ${FileName} ${times > 1 ? times : ''}`);
-    const Data = await this.$AnalysisStore.GetJson(`https://fmex-database.oss-cn-qingdao.aliyuncs.com/runner/report/${this.report}/` + FileName);
+    const FileName = this.params.Reports[index];
+    if (!FileName) return;
+    const Data = await this.$AnalysisStore.GetData(`https://fmex-database.oss-cn-qingdao.aliyuncs.com` + FileName);
     if (!Data) {
-      return this.GetData(time, ++times);
+      return this.GetData(index, ++times);
     }
     this.SnapshotData.push({
-      time,
+      FileName,
       data: Data,
     });
     // 获取下一个报表
-    const thisIndex = this.params.Reports.indexOf(time);
-    const next = this.params.Reports[thisIndex + 1];
-    if (time !== this.Times[1] && next !== this.Times[1]) return this.GetData(next);
+    const thisIndex = --index;
+    const next = this.params.Reports[thisIndex];
+    if (next) return this.GetData(thisIndex);
     this.Render();
     return true;
   }
@@ -804,11 +812,12 @@ export default class ImconfigPage extends Vue {
     const Data = await this.$AnalysisStore.GetJson(`https://fmex-database.oss-cn-qingdao.aliyuncs.com/runner/report/${this.report}/config`, true);
     if (!Data) return this.$AppStore.Error('配置文件加载失败，请刷新重试');
     Object.assign(this.params, Data);
+    this.loaded = true;
     this.params.Key = this.$AppStore.localState.UserKey;
-    if (this.params.Reports.length === 0) return this.$AppStore.Error('暂未找到该账号的数据报表');
-    this.Times[0] = this.Times[1] = this.params.Reports[this.params.Reports.length - 1];
+    if (this.params.Reports.length === 0) return;
+    // this.Times[0] = this.Times[1] = this.params.Reports[this.params.Reports.length - 1];
 
-    this.GetData(this.Times[0]);
+    this.GetData(this.params.Reports.length - 1);
     this.RenderInit();
   }
 
@@ -822,6 +831,20 @@ export default class ImconfigPage extends Vue {
     this.settingDailog = false;
     if (res.Error()) return this.$AppStore.Error(res.Msg);
     this.$AppStore.Error('保存成功');
+  }
+
+  async deleteIt() {
+    const bool = confirm('永久删除后，无法找回数据，是否删除？');
+    if (!bool) return;
+    this.params.ReportKey = this.report;
+    const res = await FunApi.post('/grid/del-params', this.params).then((res) => res.data as CodeObj<any>);
+    console.log(res);
+    this.settingDailog = false;
+    if (res.Error()) return this.$AppStore.Error(res.Msg);
+    this.$AppStore.localState.UserKey = '';
+    this.$AppStore.localState.ApiInfo.DataKey = '';
+    this.$AppStore.Error('删除成功');
+    // this.$router.push();
   }
 }
 </script>

@@ -2,7 +2,7 @@ import Axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
 import { Code, CodeObj } from '../lib/Code';
 
 export const FunApi = Axios.create({
-  baseURL: process.env.NODE_ENV === 'development' ? 'http://127.0.0.1:7002' : 'https://fun.imconfig.com',
+  baseURL: 'https://fun.imconfig.com',
 });
 
 const catchError = (error: any) => {
