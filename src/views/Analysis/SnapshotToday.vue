@@ -4,7 +4,17 @@
 
     <v-dialog ref="dialog" v-model="modal" color="primary" :return-value.sync="date" persistent>
       <template v-slot:activator="{ on, attrs }">
-        <v-text-field v-model="date" label="日期选择" prepend-icon="mdi-calendar-range" readonly v-bind="attrs" v-on="on"></v-text-field>
+        <div>
+          <div style="float:right;">
+            <v-btn class="mx-2" @click="ToDayNext(-1)" fab dark small color="primary">
+              <v-icon dark>mdi-menu-left-outline</v-icon>
+            </v-btn>
+            <v-btn class="mx-2" @click="ToDayNext(1)" fab dark small :color="NextDayAble ? 'primary' : '#666666'">
+              <v-icon dark>mdi-menu-right-outline</v-icon>
+            </v-btn>
+          </div>
+          <v-text-field style="width:200px;" v-model="date" label="日期选择" prepend-icon="mdi-calendar-range" readonly v-bind="attrs" v-on="on"></v-text-field>
+        </div>
       </template>
       <v-date-picker v-model="date" scrollable :allowed-dates="allowedDates" :min="DateMin" :max="DateMax">
         <v-spacer></v-spacer>
@@ -14,28 +24,11 @@
     </v-dialog>
 
     <template v-if="!loading && TotalInfo">
-      <v-badge :content="PreInfo('Count')" color="primary" :offset-y="14" :offset-x="20">
-        <v-chip class="ma-2" color="primary" small outlined> 共 {{ TotalInfo.Last.Count }} 个账户 </v-chip>
-      </v-badge>
-      <br />
-      <template v-if="UpCoinName === 'BTC'">
-        <v-badge :content="PreInfo('bxjj')" color="primary" :offset-y="14" :offset-x="20">
-          <v-chip class="ma-2" color="primary" small outlined> 系统账户-【保险基金】: {{ TotalInfo.Last.bxjj }} BTC </v-chip>
+      <div v-for="(item, index) in TotalInfo" :key="index">
+        <v-badge v-bind="item.badge">
+          <v-chip v-bind="item.chip">{{ item.chipContent }}</v-chip>
         </v-badge>
-        <br />
-        <v-badge :content="PreInfo('fusd')" color="primary" :offset-y="14" :offset-x="20">
-          <v-chip class="ma-2" color="primary" small outlined> 系统账户-【FUSD解锁】: {{ TotalInfo.Last.fusd }} BTC </v-chip>
-        </v-badge>
-        <br />
-        <v-badge :content="PreInfo('RealSum')" color="primary" :offset-y="14" :offset-x="20">
-          <v-chip class="ma-2" color="primary" small outlined> 其余账户 {{ TotalInfo.Last.RealSum }} BTC </v-chip>
-        </v-badge>
-        <br />
-      </template>
-
-      <v-badge :content="PreInfo('Sum')" color="primary" :offset-y="14" :offset-x="20">
-        <v-chip class="ma-2" color="primary" small outlined> 合计 {{ TotalInfo.Last.Sum }} {{ UpCoinName }} </v-chip>
-      </v-badge>
+      </div>
     </template>
     <div class="data-analysis">
       <div :style="CanvasStyle" v-for="(item, index) in ShowDataOrigin" :key="index" v-show="$AnalysisStore.localState.UserSNChooseHistory.indexOf(index) > -1" ref="echartref"></div>
@@ -87,6 +80,8 @@ import { DateFormat, BigNumShowStr } from '../../lib/utils';
 import axios from 'axios';
 import BigNumber from 'bignumber.js';
 
+const ToDayStr = DateFormat(Date.now(), 'yyyy-MM-dd');
+
 interface ShowDataOrigin {
   Name: (vm: AnalysisPage) => string;
   Render: (vm: AnalysisPage) => any;
@@ -94,6 +89,7 @@ interface ShowDataOrigin {
 
 const DateMax = DateFormat(Date.now() - 86400000, 'yyyy-MM-dd'); // 只有昨日的数据。
 const DateMin = DateFormat(new Date(2020, 7 - 1, 8), 'yyyy-MM-dd');
+const Day20200902 = new Date('2020-09-02').getTime();
 
 const grid = {
   right: '50px',
@@ -191,6 +187,11 @@ export default class AnalysisPage extends Vue {
     return this.$AnalysisStore.localState.Currency.toLocaleUpperCase();
   }
 
+  // 2020-09-02.json 文件开始，也就是09-01那天的数据，开始标记系统账户
+  get HasLabelTime() {
+    return new Date(this.date).getTime() >= Day20200902;
+  }
+
   get FUSDDateIndex() {
     // 18号那天（保存文件名称是2020-08-19），fusd奖励账户的资产排名到了第三位，也就是index===2；
     if (this.date === '2020-08-19') return [2, 1];
@@ -199,11 +200,23 @@ export default class AnalysisPage extends Vue {
     if (this.date === '2020-08-20') return [1, 2];
     return [1, 1];
   }
-
+  get NextDayAble() {
+    const date = new Date(this.date);
+    const now = new Date(ToDayStr);
+    return date.getTime() < now.getTime() - 86400000;
+  }
   get thisNick() {
     return this;
   }
 
+  SysName(name: string) {
+    if (name === 'Futures Insurance Fund') return '合约保险基金';
+    if (name === 'Fee income') return '合约手续费收入';
+    if (name === 'Account with Unrealised PNL') return '合约未实现盈亏账户';
+    return name;
+  }
+
+  // fusd解锁账号
   get TotalInfo() {
     if (this.SnapshotData.length === 0 || this.SnapshotDataPre.length === 0) return null;
     const last = this.SnapshotData;
@@ -212,28 +225,116 @@ export default class AnalysisPage extends Vue {
     const preSum = pre.map((a: any) => new BigNumber(a.amount)).reduce((a, b) => a.plus(b), new BigNumber(0));
     const FUSDIndex = this.FUSDDateIndex;
     const isBtc = this.UpCoinName === 'BTC';
-    return {
-      Last: {
-        bxjj: last[0].amount,
-        fusd: last[FUSDIndex[0]].amount,
-        Count: last.length,
-        Sum: lastSum.toNumber(),
-        RealSum: lastSum
-          .minus(isBtc ? last[0].amount : 0)
-          .minus(isBtc ? last[FUSDIndex[0]].amount : 0)
-          .toNumber(),
-      },
-      Pre: {
-        bxjj: pre[0].amount,
-        fusd: pre[FUSDIndex[1]].amount,
-        Count: pre.length,
-        Sum: preSum.toNumber(),
-        RealSum: preSum
-          .minus(isBtc ? pre[0].amount : 0)
-          .minus(isBtc ? pre[FUSDIndex[1]].amount : 0)
-          .toNumber(),
-      },
-    };
+    // 最新的资产表内对系统资产进行了标记
+    if (this.HasLabelTime || !isBtc) {
+      const sys = this.SnapshotData.filter((item) => item.label);
+      const sysSum = sys.map((a: any) => new BigNumber(a.amount)).reduce((a, b) => a.plus(b), new BigNumber(0));
+
+      // 上一天的数据
+      const sysPre = this.SnapshotDataPre.filter((item) => item.label);
+      const sysPreMap: any = {};
+      sysPre.forEach((item) => {
+        sysPreMap[item.label] = item;
+      });
+      const sysPreSum = sysPre.map((a: any) => new BigNumber(a.amount)).reduce((a, b) => a.plus(b), new BigNumber(0));
+
+      const sysInfo = sys.map((item) => ({
+        badge: {
+          content: this.ShowPre(new BigNumber(item.amount).minus(new BigNumber((sysPreMap[item.label] && sysPreMap[item.label].amount) || 0)).toNumber()),
+          color: 'success',
+          'offset-y': 14,
+          'offset-x': 20,
+        },
+        chip: { class: 'ma-2', color: 'success', small: true, outlined: true },
+        chipContent: `【${item.label}】 ${item.amount}`,
+      }));
+      if (sysInfo.length) {
+        sysInfo.push({
+          // 非系统账户合计
+          badge: {
+            content: this.ShowPre(
+              lastSum
+                .minus(sysSum)
+                .minus(preSum.minus(sysPreSum))
+                .toNumber()
+            ),
+            color: 'success',
+            'offset-y': 14,
+            'offset-x': 20,
+          },
+          chip: { class: 'ma-2', color: 'success', small: true, outlined: true },
+          chipContent: `用户账户合计 ${lastSum.minus(sysSum).toNumber()}`,
+        });
+      }
+
+      return [
+        {
+          // 账户数量
+          badge: { content: this.ShowPre(last.length - pre.length), color: 'primary', 'offset-y': 14, 'offset-x': 20 },
+          chip: { class: 'ma-2', color: 'primary', small: true, outlined: true },
+          chipContent: `${this.UpCoinName} 账户数量 ${last.length}`,
+        },
+        // 系统账户
+        ...sysInfo,
+        {
+          // 合计
+          badge: { content: this.ShowPre(lastSum.minus(preSum).toNumber()), color: 'primary', 'offset-y': 14, 'offset-x': 20 },
+          chip: { class: 'ma-2', color: 'primary', small: true, outlined: true },
+          chipContent: `合计 ${lastSum.toNumber()}`,
+        },
+      ];
+    } else {
+      return [
+        {
+          // 账户数量
+          badge: { content: this.ShowPre(last.length - pre.length), color: 'primary', 'offset-y': 14, 'offset-x': 20 },
+          chip: { class: 'ma-2', color: 'primary', small: true, outlined: true },
+          chipContent: `${this.UpCoinName} 账户数量 ${last.length}`,
+        },
+        {
+          badge: { content: this.ShowPre(new BigNumber(last[0].amount).minus(new BigNumber(pre[0].amount)).toNumber()), color: 'success', 'offset-y': 14, 'offset-x': 20 },
+          chip: { class: 'ma-2', color: 'success', small: true, outlined: true },
+          chipContent: `【合约保险基金】 ${last[0].amount}`,
+        },
+        {
+          badge: { content: this.ShowPre(new BigNumber(last[FUSDIndex[0]].amount).minus(new BigNumber(pre[FUSDIndex[1]].amount)).toNumber()), color: 'success', 'offset-y': 14, 'offset-x': 20 },
+          chip: { class: 'ma-2', color: 'success', small: true, outlined: true },
+          chipContent: `【FUSD解锁账户】 ${last[FUSDIndex[0]].amount}`,
+        },
+        {
+          // 非系统账户合计
+          badge: {
+            content: this.ShowPre(
+              lastSum
+                .minus(last[0].amount)
+                .minus(last[FUSDIndex[0]].amount)
+                .minus(preSum.minus(pre[0].amount).minus(pre[FUSDIndex[0]].amount))
+                .toNumber()
+            ),
+            color: 'success',
+            'offset-y': 14,
+            'offset-x': 20,
+          },
+          chip: { class: 'ma-2', color: 'success', small: true, outlined: true },
+          chipContent: `用户账户合计 ${lastSum
+            .minus(last[0].amount)
+            .minus(last[FUSDIndex[0]].amount)
+            .toNumber()}`,
+        },
+        {
+          // 合计
+          badge: { content: this.ShowPre(lastSum.minus(preSum).toNumber()), color: 'primary', 'offset-y': 14, 'offset-x': 20 },
+          chip: { class: 'ma-2', color: 'primary', small: true, outlined: true },
+          chipContent: `合计 ${lastSum.toNumber()}`,
+        },
+      ];
+    }
+  }
+
+  ShowPre(n: number) {
+    if (n > 0) return `+ ${n}`;
+    if (n === 0) return '+ 0';
+    return `- ${-n}`;
   }
 
   PreInfo(key: string) {
@@ -246,7 +347,7 @@ export default class AnalysisPage extends Vue {
 
   ShowDataOrigin: ShowDataOrigin[] = [
     {
-      Name: (vm: AnalysisPage) => '资产排名 TOP:50 的账户',
+      Name: (vm: AnalysisPage) => '资产排名 TOP: 50 的账户',
       Render: (vm: AnalysisPage) => {
         const echartref = vm.$refs.echartref as any;
         const database = vm.SnapshotData.slice(0, 50);
@@ -274,6 +375,18 @@ export default class AnalysisPage extends Vue {
             {
               data: database.map((item) => item.amount),
               type: 'bar',
+              markPoint: {
+                data: database
+                  .filter((i) => i.label)
+                  .map((item) => {
+                    return {
+                      symbolRotate: 45,
+                      name: item.label,
+                      coord: [database.indexOf(item) + 1, item.amount],
+                      value: item.label as any,
+                    };
+                  }),
+              },
             },
           ],
         });
@@ -319,6 +432,7 @@ export default class AnalysisPage extends Vue {
   ];
 
   dialog = false;
+  queue = 0;
 
   loading = true;
   OnLoadData = ['用户资产数据'];
@@ -341,15 +455,13 @@ export default class AnalysisPage extends Vue {
 
   @Watch('UpCoinName')
   async OnUpCoinNameChange() {
-    await this.GetData();
-    this.Render();
+    this.mountedd();
   }
 
   async SaveDate() {
     (this.$refs.dialog as any).save(this.date);
     this.SnapshotData = [];
-    await this.GetData();
-    this.Render();
+    this.mountedd();
   }
 
   allowedDates(val: string) {
@@ -362,7 +474,7 @@ export default class AnalysisPage extends Vue {
   }
 
   async mountedd() {
-    await this.GetData();
+    await this.GetData(++this.queue);
     this.Render();
   }
 
@@ -373,7 +485,7 @@ export default class AnalysisPage extends Vue {
     });
   }
 
-  async GetData(times = 0): Promise<any> {
+  async GetData(queue: number, times = 0): Promise<any> {
     if (times > 5) return;
     const timeDate = new Date(this.date);
     // 因为数据存储时，按照今天存储昨天的
@@ -381,21 +493,30 @@ export default class AnalysisPage extends Vue {
     const FileName = DateFormat(next, 'yyyy/MM/dd');
     if (this.UpCoinName === 'USDT' && next.getTime() < new Date('2020-08-30').getTime()) return; // usdt 之前没数据。不用浪费请求
     const Data = await this.$AnalysisStore.GetJson(this.BaseUrl + FileName);
+    if (queue !== this.queue) return;
     if (!Data) {
-      return this.GetData(++times);
+      return this.GetData(queue, ++times);
     }
     Data.forEach((item: any) => {
       item.amount = parseFloat(item.amount);
+      item.label = this.SysName(item.label);
     });
     Data.sort((a: any, b: any) => b.amount - a.amount);
     this.SnapshotData = Data;
+    // 去重
+    const mapId: any = {};
+    this.SnapshotData = this.SnapshotData.filter((item) => {
+      if (mapId[item.id]) return false;
+      mapId[item.id] = true;
+      return true;
+    });
     this.loading = false;
     this.SnapshotDataPre = [];
-    this.GetPreData();
+    this.GetPreData(queue);
   }
 
   // 获取前一天的数据（用于比较）
-  async GetPreData(times = 0): Promise<any> {
+  async GetPreData(queue: number, times = 0): Promise<any> {
     if (times > 5) return;
     const timeDate = new Date(this.date);
     // 因为数据存储时，按照今天存储昨天的
@@ -403,14 +524,23 @@ export default class AnalysisPage extends Vue {
     const FileName = DateFormat(next, 'yyyy/MM/dd');
     if (this.UpCoinName === 'USDT' && next.getTime() < new Date('2020-08-30').getTime()) return; // usdt 之前没数据。不用浪费请求
     const Data = await this.$AnalysisStore.GetJson(this.BaseUrl + FileName);
+    if (queue !== this.queue) return;
     if (!Data) {
-      return this.GetPreData(++times);
+      return this.GetPreData(queue, ++times);
     }
     Data.forEach((item: any) => {
       item.amount = parseFloat(item.amount);
+      item.label = this.SysName(item.label);
     });
     Data.sort((a: any, b: any) => b.amount - a.amount);
     this.SnapshotDataPre = Data;
+    // 去重
+    const mapId: any = {};
+    this.SnapshotDataPre = this.SnapshotDataPre.filter((item) => {
+      if (mapId[item.id]) return false;
+      mapId[item.id] = true;
+      return true;
+    });
   }
 
   async GetBtcSnapshot(id = '', times = 0): Promise<any> {
@@ -437,11 +567,20 @@ export default class AnalysisPage extends Vue {
       .catch(() => null);
     console.log(res);
     if (!res || res.status !== 'ok') {
-      debugger;
       this.OnLoadData[this.OnLoadData.length - 1] = `${this.OnLoadData[this.OnLoadData.length - 1]} 加载失败`;
       return this.GetBtcSnapshot(id, ++times); // 获取下一页
     }
     return End(res.data);
+  }
+
+  ToDayNext(num: number) {
+    const timeDate = new Date(this.date);
+    // 因为数据存储时，按照今天存储昨天的
+    const next = new Date(timeDate.getTime() + num * 86400000);
+    const nextDay = DateFormat(next, 'yyyy-MM-dd');
+    if (nextDay === DateFormat(Date.now(), 'yyyy-MM-dd')) return; // 不能设置成今天，没有数据
+    this.date = nextDay;
+    this.mountedd();
   }
 }
 </script>

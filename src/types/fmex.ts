@@ -2,6 +2,7 @@ export interface SnapshotItem {
   amount: number;
   hash: string;
   id: string;
+  label: string;
 }
 export interface Snapshot {
   current_elements: number;
