@@ -382,7 +382,7 @@ export default class AnalysisPage extends Vue {
                     return {
                       symbolRotate: 45,
                       name: item.label,
-                      coord: [database.indexOf(item) + 1, item.amount],
+                      coord: [database.indexOf(item), item.amount],
                       value: item.label as any,
                     };
                   }),
