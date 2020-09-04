@@ -197,7 +197,7 @@ export default class ImconfigPage extends Vue {
 
   get report() {
     const key = this.$route.query.DataKey as string;
-    if (!key) return '6ecaf7a0eeafb2194382523779839cc1';
+    if (!key) return 'e6e53eb75ebbe4eae637898fee27dacc';
     return key;
   }
   @Watch('settingDailog')
