@@ -796,7 +796,7 @@ export default class ImconfigPage extends Vue {
     if (!Data) {
       return this.GetData(index, ++times);
     }
-    this.SnapshotData.push({
+    this.SnapshotData.unshift({
       FileName,
       data: Data,
     });
