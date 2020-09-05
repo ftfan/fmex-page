@@ -622,7 +622,7 @@ export default class ImconfigPage extends Vue {
       { name: '资产BTC', type: 'line', color: 'rgba(4, 100, 100, 0.3)', areaStyle: { color: 'rgba(4, 100, 100, 0.3)' }, key: 'BtcSum', y: 1 },
       { name: '24H均价', type: 'line', color: '#666666', key: 'p24h', y: 0 },
       { name: '现价', type: 'line', color: 'rgba(4, 164, 204, 1)', key: 'Price', y: 0 },
-      { name: '持仓', type: 'line', color: '#ff0099', key: 'quantity', y: 2 },
+      { name: '持仓', type: 'line', color: 'rgba(255, 0, 150, 0.5)', areaStyle: { color: 'rgba(255, 0, 150, 0.5)' }, key: 'quantity', y: 2 },
       // { name: '目标持仓', type: 'line', color: '#ff9900', key: 'WantPos', y: 2 },
     ];
     const render: { [index: string]: Aaaa } = {};

@@ -25,9 +25,12 @@
               </v-card-actions>
             </v-card>
           </v-col>
-          <v-col>
-            <v-btn color="success" @click="ViewOtherData('e6e53eb75ebbe4eae637898fee27dacc')">示例账号</v-btn>
-          </v-col>
+
+          <v-row>
+            <v-col>
+              <v-btn color="success" @click="ViewOtherData('e6e53eb75ebbe4eae637898fee27dacc')">示例账号</v-btn>
+            </v-col>
+          </v-row>
         </v-row>
       </v-container>
 
