@@ -517,7 +517,7 @@ export default class ImconfigPage extends Vue {
 
     myChart2 = echarts.init(this.$refs.MyAccountReport as any);
     myChart2.setOption({
-      // color: ['#04a4cc'],
+      backgroundColor: '#404a59',
       tooltip: {
         trigger: 'axis',
         axisPointer: {
@@ -528,7 +528,7 @@ export default class ImconfigPage extends Vue {
         },
       },
       legend: {
-        data: ['资产变更'],
+        data: ['资产'],
       },
       grid: {
         left: '20px',
@@ -538,15 +538,76 @@ export default class ImconfigPage extends Vue {
       },
       title: {
         text: ``,
-        subtext: `资产-价格变更趋势`,
+        subtext: `资产-变更趋势`,
         top: 4,
       },
-      xAxis: [{ type: 'category', boundaryGap: false, scale: true, axisLine: { onZero: false }, splitLine: { show: false }, min: 'dataMin', max: 'dataMax' }],
-      yAxis: [
+      xAxis: {
+        type: 'value',
+        name: 'BTC 价格',
+        nameGap: 4,
+        nameTextStyle: {
+          color: '#fff',
+          fontSize: 14,
+        },
+        // max: 31,
+        splitLine: {
+          show: false,
+        },
+        axisLine: {
+          lineStyle: {
+            color: '#eee',
+          },
+        },
+      },
+      yAxis: {
+        type: 'value',
+        name: '账户权益 BTC',
+        nameLocation: 'end',
+        nameGap: 4,
+        nameTextStyle: {
+          color: '#fff',
+          fontSize: 16,
+        },
+        axisLine: {
+          lineStyle: {
+            color: '#eee',
+          },
+        },
+        splitLine: {
+          show: false,
+        },
+      },
+      visualMap: [
         {
-          scale: true,
-          splitArea: {
-            show: true,
+          left: 'right',
+          bottom: '5%',
+          dimension: 2,
+          min: 0,
+          max: 50,
+          itemHeight: 0,
+
+          precision: 0.1,
+          text: ['白色表示旧数据'],
+          textGap: 30,
+          textStyle: {
+            color: '#fff',
+          },
+          inRange: {
+            colorLightness: [1, 0.5],
+            symbolSize: [2, 2],
+            colorAlpha: [0.1, 1],
+            color: '#04a4cc',
+          },
+          outOfRange: {
+            color: ['rgba(255,255,255,.2)'],
+          },
+          controller: {
+            inRange: {
+              color: ['#04a4cc'],
+            },
+            outOfRange: {
+              color: ['#04a4cc'],
+            },
           },
         },
       ],
@@ -642,8 +703,10 @@ export default class ImconfigPage extends Vue {
     KlineData = {};
     const arr: KData[] = [];
 
+    const all: LogData[] = [];
     this.SnapshotData.forEach((item) => {
       item.data.forEach((data) => {
+        all.push(data);
         conf.forEach((val) => {
           const value = (data as any)[val.key];
           // if (val.key === 'WantPos' && typeof value === 'object') return render[val.name].data.push(value[0]);
@@ -691,7 +754,7 @@ export default class ImconfigPage extends Vue {
 
     arr.splice(ii, arr.length - ii);
     arr.sort((a, b) => a.price - b.price);
-    console.log(arr);
+    // console.log(arr);
 
     myChart.setOption({
       xAxis: {
@@ -706,51 +769,73 @@ export default class ImconfigPage extends Vue {
     const downBorderColor = '#008F28';
 
     // 取出固定横坐标个数，合并数据，避免数据太大。
-    const MaxXNumber = 400;
-    const diffOut = arr.length / MaxXNumber; // 每隔 这么多个，留下一个
-    if (diffOut > 1) {
-      ii = 0;
-      const map: any = {};
-      arr.forEach((i, index) => {
-        map[Math.floor(index * diffOut)] = true;
-        // 无需修改的有效数据
-        if (map[index]) {
-          arr[ii++] = i;
-          return;
-        }
-        // 将当前数据合并到下一项内
-        const next = arr[index + 1];
-        if (!next) return;
-        next.low = Math.min(next.low, i.low);
-        next.high = Math.max(next.high, i.high);
-        const currTimes = i.details.map((d) => d.Ts);
-        const nextTimes = next.details.map((d) => d.Ts);
-        const currTimeMax = Math.max(...currTimes);
-        const currTimeMin = Math.min(...currTimes);
-        const nextTimeMax = Math.max(...nextTimes);
-        const nextTimeMin = Math.min(...nextTimes);
-        if (currTimeMin < nextTimeMin) next.open = i.open;
-        if (currTimeMax > nextTimeMax) next.close = i.close;
-      });
-      arr.splice(ii, arr.length - ii);
-      console.log(diffOut, arr, ii);
-    }
-
+    // const MaxXNumber = 400;
+    // const diffOut = arr.length / MaxXNumber; // 每隔 这么多个，留下一个
+    // if (diffOut > 1) {
+    //   ii = 0;
+    //   const map: any = {};
+    //   arr.forEach((i, index) => {
+    //     map[Math.floor(index * diffOut)] = true;
+    //     // 无需修改的有效数据
+    //     if (map[index]) {
+    //       arr[ii++] = i;
+    //       return;
+    //     }
+    //     // 将当前数据合并到下一项内
+    //     const next = arr[index + 1];
+    //     if (!next) return;
+    //     next.low = Math.min(next.low, i.low);
+    //     next.high = Math.max(next.high, i.high);
+    //     const currTimes = i.details.map((d) => d.Ts);
+    //     const nextTimes = next.details.map((d) => d.Ts);
+    //     const currTimeMax = Math.max(...currTimes);
+    //     const currTimeMin = Math.min(...currTimes);
+    //     const nextTimeMax = Math.max(...nextTimes);
+    //     const nextTimeMin = Math.min(...nextTimes);
+    //     if (currTimeMin < nextTimeMin) next.open = i.open;
+    //     if (currTimeMax > nextTimeMax) next.close = i.close;
+    //   });
+    //   arr.splice(ii, arr.length - ii);
+    // }
+    all.sort((a, b) => a.Price - b.Price);
+    const itemStyle = {
+      opacity: 0.8,
+      shadowBlur: 0,
+      shadowOffsetX: 0,
+      shadowOffsetY: 0,
+      shadowColor: 'rgba(0, 0, 0, 0.5)',
+    };
+    const prices = all.map((i) => i.Price);
+    const btcs = all.map((i) => i.BtcSum);
+    const tss = all.map((i) => i.Ts);
     myChart2.setOption({
       xAxis: {
-        data: arr.map((i) => i.price),
+        min: Math.min(...prices),
+        max: Math.max(...prices),
       },
+      yAxis: {
+        min: Math.floor(Math.min(...btcs) * 10000) / 10000,
+        max: Math.ceil(Math.max(...btcs) * 10000) / 10000,
+      },
+      visualMap: [
+        {
+          dimension: 2,
+          min: Math.min(...tss),
+          max: Math.max(...tss),
+        },
+      ],
       series: [
         {
-          name: '资产变更',
-          type: 'candlestick',
-          data: arr.map((i) => [i.open, i.close, i.low, i.high]),
-          itemStyle: {
-            color: upColor,
-            color0: downColor,
-            borderColor: upBorderColor,
-            borderColor0: downBorderColor,
-          },
+          name: '',
+          type: 'scatter',
+          itemStyle,
+          // itemStyle: {
+          //   color: upColor,
+          //   color0: downColor,
+          //   borderColor: upBorderColor,
+          //   borderColor0: downBorderColor,
+          // },
+          data: all.map((i) => [i.Price, i.BtcSum, i.Ts]),
         },
       ],
     });
