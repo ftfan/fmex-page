@@ -8,7 +8,7 @@
       <v-container fluid>
         <v-row dense>
           <v-col v-for="(item, index) in Runners" :key="index">
-            <v-card outlined :loading="item.Run" :elevation="4">
+            <v-card outlined :elevation="4">
               <v-list-item three-line>
                 <v-list-item-content>
                   <v-list-item-title class="headline mb-1">{{ item.Title }}</v-list-item-title>
@@ -19,11 +19,14 @@
 
               <v-card-actions>
                 <v-btn color="primary" text v-if="!$AppStore.localState.ApiInfo.DataKey" @click="tip = true">开始使用</v-btn>
-                <v-btn color="primary" text v-else @click="ViewData">我的报表</v-btn>
+                <v-btn color="primary" v-else @click="ViewData">我的策略</v-btn>
                 <!-- <v-btn color="primary" text @click="$router.push({ name: 'Imconfig', query: { DataKey: '' } })">试运行账号报表</v-btn> -->
                 <!-- <v-switch v-model="item.Run"></v-switch> -->
               </v-card-actions>
             </v-card>
+          </v-col>
+          <v-col>
+            <v-btn color="success" @click="ViewOtherData('e6e53eb75ebbe4eae637898fee27dacc')">示例账号</v-btn>
           </v-col>
         </v-row>
       </v-container>
@@ -85,6 +88,10 @@ export default class IndexPage extends Vue {
 
   SubmitView() {
     this.validate(this.DataKeyTemp);
+  }
+
+  ViewOtherData(DataKey: string) {
+    this.$router.push({ name: 'Imconfig', query: { DataKey } });
   }
 
   async validate(key: string) {

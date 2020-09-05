@@ -8,6 +8,6 @@ const dir = path.join(__dirname, 'docs');
 const FileStr = fs.readFileSync(path.join(dir, 'index.html'), 'utf-8');
 
 const result = FileStr.replace(/__Build_Time__/, Date.now());
-fs.writeFile(path.join(dir, env.html), result, (err) => {
+fs.writeFile(path.join(dir, 'index.html'), result, (err) => {
   if (err) throw err;
 });

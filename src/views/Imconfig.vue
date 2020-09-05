@@ -5,6 +5,7 @@
   <div class="page-index" v-else>
     <div class="center" style="padding-top: 20px;">
       <p>账号: {{ report }}</p>
+      <p v-if="$AppStore.localState.ApiInfo.DataKey !== report">无当前账号设置权限</p>
     </div>
 
     <v-dialog v-model="settingDailog">
@@ -73,8 +74,8 @@
 
         <div style="padding-bottom:20px;width:280px;height:300px;" ref="params"></div>
 
-        <v-btn color="success" class="mr-4" @click="validate">保存</v-btn>
-        <v-btn color="error" class="mr-4" @click="deleteIt">永久删除</v-btn>
+        <v-btn color="success" class="mr-4" @click="validate" v-if="$AppStore.localState.ApiInfo.DataKey === report">保存</v-btn>
+        <v-btn color="error" class="mr-4" @click="deleteIt" v-if="$AppStore.localState.ApiInfo.DataKey === report">永久删除</v-btn>
       </v-form>
     </v-dialog>
 
@@ -509,7 +510,7 @@ export default class ImconfigPage extends Vue {
           // min: -200,
           // max: 1000,
           splitLine: { show: false },
-          inverse: true,
+          // inverse: true,
         },
       ],
     });
@@ -529,13 +530,6 @@ export default class ImconfigPage extends Vue {
       legend: {
         data: ['资产变更'],
       },
-      dataZoom: [
-        {
-          show: true,
-          start: 33,
-          end: 66,
-        },
-      ],
       grid: {
         left: '20px',
         right: '14px',
@@ -710,6 +704,37 @@ export default class ImconfigPage extends Vue {
     const upBorderColor = '#8A0000';
     const downColor = '#00da3c';
     const downBorderColor = '#008F28';
+
+    // 取出固定横坐标个数，合并数据，避免数据太大。
+    const MaxXNumber = 400;
+    const diffOut = arr.length / MaxXNumber; // 每隔 这么多个，留下一个
+    if (diffOut > 1) {
+      ii = 0;
+      const map: any = {};
+      arr.forEach((i, index) => {
+        map[Math.floor(index * diffOut)] = true;
+        // 无需修改的有效数据
+        if (map[index]) {
+          arr[ii++] = i;
+          return;
+        }
+        // 将当前数据合并到下一项内
+        const next = arr[index + 1];
+        if (!next) return;
+        next.low = Math.min(next.low, i.low);
+        next.high = Math.max(next.high, i.high);
+        const currTimes = i.details.map((d) => d.Ts);
+        const nextTimes = next.details.map((d) => d.Ts);
+        const currTimeMax = Math.max(...currTimes);
+        const currTimeMin = Math.min(...currTimes);
+        const nextTimeMax = Math.max(...nextTimes);
+        const nextTimeMin = Math.min(...nextTimes);
+        if (currTimeMin < nextTimeMin) next.open = i.open;
+        if (currTimeMax > nextTimeMax) next.close = i.close;
+      });
+      arr.splice(ii, arr.length - ii);
+      console.log(diffOut, arr, ii);
+    }
 
     myChart2.setOption({
       xAxis: {
