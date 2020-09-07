@@ -574,7 +574,7 @@ export default class ImconfigPage extends Vue {
           '24H均价': false,
           BTC价格: false,
           '资产(BTC)': true,
-          持仓: true,
+          持仓: false,
         },
       },
       dataZoom: [
@@ -969,15 +969,15 @@ export default class ImconfigPage extends Vue {
     const diff = Math.floor((close - open) * p) / p;
     const title = `${last.price} USD 资产变更`;
     const per = diff / open;
-    let subtext = `${last.price} USD时 用户资产: ${diff > 0 ? '+ ' + diff : diff} (${Math.floor(per * 10000) / 100}%)`;
+    let subtext = `${last.price} USD 用户资产变更 ${diff > 0 ? '+ ' + diff : diff} (${Math.floor(per * 10000) / 100}%)`;
     if (diff > 0) {
       const diffTs = lastDetail[lastDetail.length - 1].Ts - lastDetail[0].Ts;
       const nextDiff = Math.ceil(per); // 下一倍
       // nextDiff / diff = nextDiffTs / diffTs;
       const nextDiffTs = (nextDiff / per) * diffTs;
-      const timestr = DateFormat(lastDetail[0].Ts + nextDiffTs, 'yyyy年MM月dd日hh时');
+      const timestr = DateFormat(lastDetail[0].Ts + nextDiffTs, 'yyyy年MM月dd日hh点');
       const nextBtc = Math.floor((1 + nextDiff) * open * 10000) / 10000;
-      subtext += `\r\n预计 ${timestr} 资产为 ${nextBtc}（${Math.floor(open * 10000) / 10000}的${nextDiff + 1}倍）`;
+      subtext += `\r\n以此预计在 ${timestr} 资产为 ${nextBtc}（${Math.floor(open * 10000) / 10000}的${nextDiff + 1}倍）`;
     }
     console.log(last);
 
