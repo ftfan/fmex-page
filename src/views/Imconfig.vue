@@ -9,8 +9,8 @@
     </div>
 
     <v-btn-toggle color="primary" dark dense v-model="IsUSD">
-      <v-btn>币本位</v-btn>
-      <v-btn>U本位</v-btn>
+      <v-btn>币本位维度查看</v-btn>
+      <v-btn>U本位维度查看</v-btn>
     </v-btn-toggle>
     <v-tabs color="primary" v-model="ViewMode" dark>
       <v-tab>最近24小时</v-tab>
