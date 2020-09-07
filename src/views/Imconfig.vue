@@ -110,8 +110,10 @@
         </v-date-picker>
       </v-dialog> -->
       <div style="padding-top:10px" class="echarts" ref="MyAccount"></div>
+      <div style="padding-top:40px" class="echarts" ref="MyAccountReport"></div>
+
       <div style="padding-top:40px" class="echarts" ref="MyAccountDetail"></div>
-      <v-slider v-model="detailValue" thumb-label="always" :thumb-size="60" :min="detailMin" :max="detailMax" :step="0.5">
+      <v-slider v-model="detailValue" thumb-label="always" :thumb-size="50" :min="detailMin" :max="detailMax" :step="0.5">
         <template v-slot:prepend>
           <v-icon color="primary" @click="detailValue -= 0.5">
             mdi-minus
@@ -124,7 +126,6 @@
           </v-icon>
         </template>
       </v-slider>
-      <div style="padding-top:40px" class="echarts" ref="MyAccountReport"></div>
     </div>
   </div>
 </template>
@@ -208,7 +209,7 @@ export default class ImconfigPage extends Vue {
   loadeddata = false;
   settingDailog = false;
   settingDailogSub = false;
-  ViewMode = 0;
+  ViewMode = 1;
   modal = false;
   DateMax = DateMax;
   Times = [DateMax, DateMax];
@@ -225,7 +226,7 @@ export default class ImconfigPage extends Vue {
   BtcNumEnds = [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14];
   DataNums = [500, 1000, 3000, 6000, 12000, 24000];
 
-  @Watch('ViewMode')
+  @Watch('ViewMode', { immediate: true })
   OnViewModeChange() {
     if (this.ViewMode === 0) {
       this.ShowReports = this.ReportsSelect.slice(this.ReportsSelect.length - Math.min(this.ReportsSelect.length, 2)); // 最近2天的数据
@@ -568,11 +569,11 @@ export default class ImconfigPage extends Vue {
         },
       },
       legend: {
-        data: ['24H均价', '现价', '账户资产(BTC)', '持仓'],
+        data: ['24H均价', 'BTC价格', '资产(BTC)', '持仓'],
         selected: {
-          '24H均价': true,
-          现价: true,
-          '账户资产(BTC)': true,
+          '24H均价': false,
+          BTC价格: false,
+          '资产(BTC)': true,
           持仓: true,
         },
       },
@@ -753,11 +754,12 @@ export default class ImconfigPage extends Vue {
         left: '20px',
         right: '14px',
         bottom: '40px',
+        top: '80px',
         containLabel: true,
       },
       title: {
         text: ``,
-        subtext: `资产-变更记录`,
+        subtext: ``,
         top: 4,
       },
       xAxis: [{ type: 'category', boundaryGap: false, scale: true, axisLine: { onZero: false }, splitLine: { show: false }, min: 'dataMin', max: 'dataMax' }],
@@ -801,10 +803,10 @@ export default class ImconfigPage extends Vue {
       areaStyle: any;
     }
     const conf = [
-      { name: '资产BTC', type: 'line', color: 'rgba(4, 100, 100, 0.3)', areaStyle: { color: 'rgba(4, 100, 100, 0.3)' }, key: 'BtcSum', y: 1 },
+      { name: '资产(BTC)', type: 'line', color: 'rgba(4, 100, 100, 0.4)', areaStyle: { color: 'rgba(4, 100, 100, 0.3)' }, key: 'BtcSum', y: 1 },
       { name: '24H均价', type: 'line', color: '#666666', key: 'p24h', y: 0 },
-      { name: '现价', type: 'line', color: 'rgba(4, 164, 204, 1)', key: 'Price', y: 0 },
-      { name: '持仓', type: 'line', color: 'rgba(255, 0, 150, 0.5)', areaStyle: { color: 'rgba(255, 0, 150, 0.5)' }, key: 'quantity', y: 2 },
+      { name: 'BTC价格', type: 'line', color: 'rgba(4, 164, 204, 1)', key: 'Price', y: 0 },
+      { name: '持仓', type: 'line', color: 'rgba(255, 0, 150, 0.5)', areaStyle: { color: 'rgba(255, 0, 150, 0.2)' }, key: 'quantity', y: 2 },
       // { name: '目标持仓', type: 'line', color: '#ff9900', key: 'WantPos', y: 2 },
     ];
     const render: { [index: string]: Aaaa } = {};
@@ -835,7 +837,11 @@ export default class ImconfigPage extends Vue {
           render[val.name].data.push(value);
         });
         xxx.push(DateFormat(data.Ts, 'hh:mm:ss\r\nMM-dd'));
+      });
+    });
 
+    this.SnapshotData.forEach((item) => {
+      item.data.forEach((data) => {
         // 计算K线
         const kline = KlineData[data.Price];
         if (!kline) {
@@ -859,7 +865,6 @@ export default class ImconfigPage extends Vue {
         this.detailMin = Math.min(this.detailMin, data.Price);
       });
     });
-    // console.log(SnapshotData, render, xxx.length);
 
     // 过滤资产不变更的数据
     let ii = 0;
@@ -890,35 +895,6 @@ export default class ImconfigPage extends Vue {
     const downColor = '#00da3c';
     const downBorderColor = '#008F28';
 
-    // 取出固定横坐标个数，合并数据，避免数据太大。
-    // const MaxXNumber = 400;
-    // const diffOut = arr.length / MaxXNumber; // 每隔 这么多个，留下一个
-    // if (diffOut > 1) {
-    //   ii = 0;
-    //   const map: any = {};
-    //   arr.forEach((i, index) => {
-    //     map[Math.floor(index * diffOut)] = true;
-    //     // 无需修改的有效数据
-    //     if (map[index]) {
-    //       arr[ii++] = i;
-    //       return;
-    //     }
-    //     // 将当前数据合并到下一项内
-    //     const next = arr[index + 1];
-    //     if (!next) return;
-    //     next.low = Math.min(next.low, i.low);
-    //     next.high = Math.max(next.high, i.high);
-    //     const currTimes = i.details.map((d) => d.Ts);
-    //     const nextTimes = next.details.map((d) => d.Ts);
-    //     const currTimeMax = Math.max(...currTimes);
-    //     const currTimeMin = Math.min(...currTimes);
-    //     const nextTimeMax = Math.max(...nextTimes);
-    //     const nextTimeMin = Math.min(...nextTimes);
-    //     if (currTimeMin < nextTimeMin) next.open = i.open;
-    //     if (currTimeMax > nextTimeMax) next.close = i.close;
-    //   });
-    //   arr.splice(ii, arr.length - ii);
-    // }
     all.sort((a, b) => a.Price - b.Price);
     const itemStyle = {
       opacity: 0.8,
@@ -992,7 +968,17 @@ export default class ImconfigPage extends Vue {
     const p = Math.pow(10, this.BtcNumEnd);
     const diff = Math.floor((close - open) * p) / p;
     const title = `${last.price} USD 资产变更`;
-    const subtext = `${last.price} USD 资产变更: ${diff} (${Math.floor((diff / open) * 10000) / 100}%)`;
+    const per = diff / open;
+    let subtext = `${last.price} USD时 用户资产: ${diff > 0 ? '+ ' + diff : diff} (${Math.floor(per * 10000) / 100}%)`;
+    if (diff > 0) {
+      const diffTs = lastDetail[lastDetail.length - 1].Ts - lastDetail[0].Ts;
+      const nextDiff = Math.ceil(per); // 下一倍
+      // nextDiff / diff = nextDiffTs / diffTs;
+      const nextDiffTs = (nextDiff / diff) * diffTs;
+      const timestr = DateFormat(lastDetail[0].Ts + nextDiffTs, 'yyyy年MM月dd日hh时');
+      const nextBtc = Math.floor((1 + nextDiff) * open * 10000) / 10000;
+      subtext += `\r\n预计 ${timestr} 资产为 ${nextBtc}（${Math.floor(open * 10000) / 10000}的${nextDiff + 1}倍）`;
+    }
     console.log(last);
 
     myChart3.setOption({
