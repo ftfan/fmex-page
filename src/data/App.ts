@@ -26,6 +26,7 @@ class Store extends Data {
       DataKey: '',
     },
     TimesCache: [] as string[],
+    IsUsdBenWei: {} as { [index: string]: number },
   };
 
   // 模块名称，【必须】不能重复

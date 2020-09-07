@@ -8,6 +8,10 @@
       <p v-if="$AppStore.localState.ApiInfo.DataKey !== report">无当前账号设置权限</p>
     </div>
 
+    <v-btn-toggle color="primary" dark dense v-model="IsUSD">
+      <v-btn>币本位</v-btn>
+      <v-btn>U本位</v-btn>
+    </v-btn-toggle>
     <v-tabs color="primary" v-model="ViewMode" dark>
       <v-tab>最近24小时</v-tab>
       <v-tab>查看所有</v-tab>
@@ -18,7 +22,7 @@
       <!-- 报表选择 -->
       <v-select v-model="ShowReports" :items="ReportsSelect" filled chips label="选择查看数据" multiple></v-select>
       <!-- 资产精度选择 -->
-      <v-select v-model="BtcNumEnd" :items="BtcNumEnds" filled chips label="资产(BTC)小数精确位数"></v-select>
+      <v-select v-model="BtcNumEnd" :items="BtcNumEnds" filled chips label="资产,小数精确位数"></v-select>
       <!-- 数据采样 -->
       <v-select v-model="DataNum" :items="DataNums" filled chips label="查看每日采样数据：份"></v-select>
     </template>
@@ -205,6 +209,12 @@ interface SnapshotData {
   components: {},
 })
 export default class ImconfigPage extends Vue {
+  get IsUSD() {
+    return this.$AppStore.localState.IsUsdBenWei[this.report] || 0;
+  }
+  set IsUSD(val) {
+    this.$set(this.$AppStore.localState.IsUsdBenWei, this.report, val);
+  }
   loaded = false;
   loadeddata = false;
   settingDailog = false;
@@ -244,9 +254,11 @@ export default class ImconfigPage extends Vue {
   }
 
   @Watch('BtcNumEnd')
+  @Watch('IsUSD')
   @Watch('DataNum')
   @Watch('ShowReports', { deep: true })
   OnSomeChange = debounce(function(this: ImconfigPage) {
+    console.log('OnSomeChange');
     if (this.loaded && this.loadeddata) this.Render();
   }, 1500);
 
@@ -277,8 +289,9 @@ export default class ImconfigPage extends Vue {
         const revert: LogData[] = [];
         let lastP = 0;
         // 过滤资产不变更的数据
+        const key = this.IsUSD ? 'UsdSum' : 'BtcSum';
         const datas = item.data.forEach((da) => {
-          const p = Math.floor(da.BtcSum * s) / s;
+          const p = Math.floor(da[key] * s) / s;
           if (p === lastP) return;
           if (this.ViewMode === 0 && da.Ts < Last24H) return; // 查看最近24H的数据。
           lastP = p;
@@ -287,7 +300,7 @@ export default class ImconfigPage extends Vue {
             p24h: da.p24h,
             Price: da.Price,
             BtcSum: p,
-            UsdSum: da.UsdSum,
+            UsdSum: p,
             quantity: da.quantity,
           };
           revert.push(item);
@@ -569,11 +582,11 @@ export default class ImconfigPage extends Vue {
         },
       },
       legend: {
-        data: ['24H均价', 'BTC价格', '资产(BTC)', '持仓'],
+        data: ['24H均价', 'BTC价格', '账户资产', '持仓'],
         selected: {
           '24H均价': false,
           BTC价格: false,
-          '资产(BTC)': true,
+          账户资产: true,
           持仓: false,
         },
       },
@@ -612,7 +625,7 @@ export default class ImconfigPage extends Vue {
         {
           type: 'value',
           position: 'right',
-          name: '资产(BTC)',
+          name: '账户资产',
           axisLabel: {
             formatter: '{value}',
           },
@@ -683,7 +696,7 @@ export default class ImconfigPage extends Vue {
       },
       yAxis: {
         type: 'value',
-        name: '账户权益 BTC',
+        name: '账户权益',
         nameLocation: 'end',
         nameGap: 4,
         nameTextStyle: {
@@ -777,7 +790,7 @@ export default class ImconfigPage extends Vue {
         {
           type: 'value',
           position: 'right',
-          name: '账户权益: BTC',
+          name: '账户权益',
           axisLabel: {
             formatter: '{value}',
           },
@@ -802,8 +815,11 @@ export default class ImconfigPage extends Vue {
       yAxisIndex: number;
       areaStyle: any;
     }
-    const conf = [
-      { name: '资产(BTC)', type: 'line', color: 'rgba(4, 100, 100, 0.4)', areaStyle: { color: 'rgba(4, 100, 100, 0.3)' }, key: 'BtcSum', y: 1 },
+    const btcsss: any = { name: '资产(BTC)', type: 'line', color: 'rgba(4, 100, 100, 0.4)', areaStyle: { color: 'rgba(4, 100, 100, 0.3)' }, key: 'BtcSum', y: 1 };
+    const usdsss: any = { name: '资产(USD)', type: 'line', color: 'rgba(4, 100, 100, 0.4)', areaStyle: { color: 'rgba(4, 100, 100, 0.3)' }, key: 'UsdSum', y: 1 };
+    console.log('IsUSD', this.IsUSD);
+    const conf: any[] = [
+      this.IsUSD ? usdsss : btcsss,
       { name: '24H均价', type: 'line', color: '#666666', key: 'p24h', y: 0 },
       { name: 'BTC价格', type: 'line', color: 'rgba(4, 164, 204, 1)', key: 'Price', y: 0 },
       { name: '持仓', type: 'line', color: 'rgba(255, 0, 150, 0.5)', areaStyle: { color: 'rgba(255, 0, 150, 0.2)' }, key: 'quantity', y: 2 },
@@ -840,25 +856,27 @@ export default class ImconfigPage extends Vue {
       });
     });
 
+    const key = this.IsUSD ? 'UsdSum' : 'BtcSum';
+
     this.SnapshotData.forEach((item) => {
       item.data.forEach((data) => {
         // 计算K线
         const kline = KlineData[data.Price];
         if (!kline) {
           KlineData[data.Price] = {
-            low: data.BtcSum,
-            high: data.BtcSum,
-            open: data.BtcSum,
-            close: data.BtcSum,
+            low: data[key],
+            high: data[key],
+            open: data[key],
+            close: data[key],
             price: data.Price,
             details: [data],
           };
           arr.push(KlineData[data.Price]);
           return;
         }
-        kline.low = Math.min(kline.low, data.BtcSum);
-        kline.high = Math.max(kline.high, data.BtcSum);
-        kline.close = data.BtcSum;
+        kline.low = Math.min(kline.low, data[key]);
+        kline.high = Math.max(kline.high, data[key]);
+        kline.close = data[key];
         kline.details.push(data);
 
         this.detailMax = Math.max(this.detailMax, data.Price);
@@ -904,7 +922,7 @@ export default class ImconfigPage extends Vue {
       shadowColor: 'rgba(0, 0, 0, 0.5)',
     };
     const prices = all.map((i) => i.Price);
-    const btcs = all.map((i) => i.BtcSum);
+    const btcs = all.map((i) => i[key]);
     const tss = all.map((i) => i.Ts);
     myChart2.setOption({
       xAxis: {
@@ -933,7 +951,7 @@ export default class ImconfigPage extends Vue {
           //   borderColor: upBorderColor,
           //   borderColor0: downBorderColor,
           // },
-          data: all.map((i) => [i.Price, i.BtcSum, i.Ts]),
+          data: all.map((i) => [i.Price, i[key], i.Ts]),
         },
       ],
     });
@@ -954,17 +972,18 @@ export default class ImconfigPage extends Vue {
       // myChart3.clear();
     };
     if (!last) return end();
+    const key = this.IsUSD ? 'UsdSum' : 'BtcSum';
 
     // 将数组内相邻的相同数据剔除
     let lastBtcSum = -1;
     const lastDetail = last.details.filter((item) => {
       if (item.BtcSum === lastBtcSum) return false;
-      lastBtcSum = item.BtcSum;
+      lastBtcSum = item[key];
       return true;
     });
     if (lastDetail.length < 2) return end();
-    const open = lastDetail[0].BtcSum;
-    const close = lastDetail[lastDetail.length - 1].BtcSum;
+    const open = lastDetail[0][key];
+    const close = lastDetail[lastDetail.length - 1][key];
     const p = Math.pow(10, this.BtcNumEnd);
     const diff = Math.floor((close - open) * p) / p;
     const title = `${last.price} USD 资产变更`;
@@ -996,7 +1015,7 @@ export default class ImconfigPage extends Vue {
           name: '资产',
           yAxisIndex: 1,
           type: 'line',
-          data: lastDetail.map((item) => item.BtcSum),
+          data: lastDetail.map((item) => item[key]),
           areaStyle: { color: 'rgba(4, 100, 100, 0.3)' },
         },
         // {
