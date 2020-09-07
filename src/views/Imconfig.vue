@@ -974,7 +974,7 @@ export default class ImconfigPage extends Vue {
       const diffTs = lastDetail[lastDetail.length - 1].Ts - lastDetail[0].Ts;
       const nextDiff = Math.ceil(per); // 下一倍
       // nextDiff / diff = nextDiffTs / diffTs;
-      const nextDiffTs = (nextDiff / diff) * diffTs;
+      const nextDiffTs = (nextDiff / per) * diffTs;
       const timestr = DateFormat(lastDetail[0].Ts + nextDiffTs, 'yyyy年MM月dd日hh时');
       const nextBtc = Math.floor((1 + nextDiff) * open * 10000) / 10000;
       subtext += `\r\n预计 ${timestr} 资产为 ${nextBtc}（${Math.floor(open * 10000) / 10000}的${nextDiff + 1}倍）`;
