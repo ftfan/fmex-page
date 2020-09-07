@@ -8,6 +8,21 @@
       <p v-if="$AppStore.localState.ApiInfo.DataKey !== report">无当前账号设置权限</p>
     </div>
 
+    <v-tabs color="primary" v-model="ViewMode" dark>
+      <v-tab>最近24小时</v-tab>
+      <v-tab>查看所有</v-tab>
+      <v-tab>自定义查看</v-tab>
+    </v-tabs>
+
+    <template v-if="ViewMode === 2">
+      <!-- 报表选择 -->
+      <v-select v-model="ShowReports" :items="ReportsSelect" filled chips label="选择查看数据" multiple></v-select>
+      <!-- 资产精度选择 -->
+      <v-select v-model="BtcNumEnd" :items="BtcNumEnds" filled chips label="资产(BTC)小数精确位数"></v-select>
+      <!-- 数据采样 -->
+      <v-select v-model="DataNum" :items="DataNums" filled chips label="查看每日采样数据：份"></v-select>
+    </template>
+
     <v-dialog v-model="settingDailog">
       <template v-slot:activator="{ on, attrs }">
         <v-btn color="primary" style="top:80px" fixed top right small fab v-bind="attrs" v-on="on">
@@ -79,7 +94,7 @@
       </v-form>
     </v-dialog>
 
-    <v-alert v-if="loaded && params.Reports.length === 0" type="error">
+    <v-alert v-if="loaded && loadeddata && params.Reports.length === 0" type="error">
       该账号，暂无报表数据
     </v-alert>
 
@@ -119,7 +134,7 @@ import { Component, Vue, Watch } from 'vue-property-decorator';
 import { DateFormat, sleep } from '../lib/utils';
 import echarts from 'echarts';
 import urijs from 'urijs';
-import { throttle } from 'ts-debounce-throttle';
+import { debounce, throttle } from 'ts-debounce-throttle';
 import { FunApi } from '@/api/fun';
 import { CodeObj } from '@/lib/Code';
 let myChart: echarts.ECharts | null = null;
@@ -180,13 +195,20 @@ export interface UserParams {
   PricePosition: number[][];
 }
 
+interface SnapshotData {
+  data: LogData[];
+  FileName: string;
+}
+
 @Component({
   components: {},
 })
 export default class ImconfigPage extends Vue {
   loaded = false;
+  loadeddata = false;
   settingDailog = false;
   settingDailogSub = false;
+  ViewMode = 0;
   modal = false;
   DateMax = DateMax;
   Times = [DateMax, DateMax];
@@ -194,6 +216,106 @@ export default class ImconfigPage extends Vue {
   get BuildTime() {
     const Time = window.__Build_Time === '__Build_Time__' ? Date.now() : parseInt(window.__Build_Time, 10);
     return DateFormat(Time, 'yyyy-MM-dd hh:mm');
+  }
+
+  ShowReports: string[] = []; // 报表选择
+  BtcNumEnd = 6; // 小数点位数精确至
+  DataNum = 3000; // 每日数据采样数量
+
+  BtcNumEnds = [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14];
+  DataNums = [500, 1000, 3000, 6000, 12000, 24000];
+
+  @Watch('ViewMode')
+  OnViewModeChange() {
+    if (this.ViewMode === 0) {
+      this.ShowReports = this.ReportsSelect.slice(this.ReportsSelect.length - Math.min(this.ReportsSelect.length, 2)); // 最近2天的数据
+      this.BtcNumEnd = this.BtcNumEnds[this.BtcNumEnds.length - 1];
+      this.DataNum = this.DataNums[this.DataNums.length - 1];
+    } else if (this.ViewMode === 1) {
+      this.ShowReports = this.ReportsSelect.slice(0);
+      this.BtcNumEnd = 6;
+      this.DataNum = this.DataNums[0];
+    } else {
+      this.ShowReports = this.ReportsSelect.slice(this.ReportsSelect.length - Math.min(this.ReportsSelect.length, 5)); // 最近 5 天的数据
+      this.BtcNumEnd = 6;
+      this.DataNum = 3000;
+    }
+  }
+
+  @Watch('BtcNumEnd')
+  @Watch('DataNum')
+  @Watch('ShowReports', { deep: true })
+  OnSomeChange = debounce(function(this: ImconfigPage) {
+    if (this.loaded && this.loadeddata) this.Render();
+  }, 1500);
+
+  get ReportsSelect() {
+    return this.params.Reports.map((item) => {
+      return item.replace(/(.*?)\/(\d\d\d\d)\/(\d\d)\/(\d\d)\.json/, (all, r1, yyyy, MM, dd) => {
+        // console.log(all, r1, yyyy, MM, dd);
+        return `${yyyy}-${MM}-${dd}`;
+      });
+    });
+  }
+
+  DataFilter(data: SnapshotData[]) {
+    const strs = this.ShowReports.map((item) => item.replace(/-/g, '/'));
+    const Last24H = Date.now() - 86400000; // 24H
+
+    return data
+      .map((item) => {
+        const match = strs.filter((str) => item.FileName.match(str))[0];
+        if (!match) {
+          return {
+            data: [],
+            FileName: '',
+          };
+        }
+
+        const s = Math.pow(10, this.BtcNumEnd);
+        const revert: LogData[] = [];
+        let lastP = 0;
+        // 过滤资产不变更的数据
+        const datas = item.data.forEach((da) => {
+          const p = Math.floor(da.BtcSum * s) / s;
+          if (p === lastP) return;
+          if (this.ViewMode === 0 && da.Ts < Last24H) return; // 查看最近24H的数据。
+          lastP = p;
+          const item = {
+            Ts: da.Ts,
+            p24h: da.p24h,
+            Price: da.Price,
+            BtcSum: p,
+            UsdSum: da.UsdSum,
+            quantity: da.quantity,
+          };
+          revert.push(item);
+        });
+        this.ArrayFilter(revert, this.DataNum);
+
+        return {
+          data: revert,
+          FileName: item.FileName,
+        };
+      })
+      .filter((item) => item.data.length);
+  }
+
+  // 采样数据
+  ArrayFilter(arr: any[], num: number) {
+    const diffOut = arr.length / num; // 每隔 这么多个，留下一个
+    if (diffOut <= 1) return;
+    let ii = 0;
+    const map: any = {};
+    arr.forEach((i, index) => {
+      map[Math.floor(index * diffOut)] = true;
+      // 无需修改的有效数据
+      if (map[index]) {
+        arr[ii++] = i;
+        return;
+      }
+    });
+    arr.splice(ii, arr.length - ii);
   }
 
   get report() {
@@ -209,7 +331,7 @@ export default class ImconfigPage extends Vue {
     this.RunderSetting();
   }
 
-  RuleTypes = ['L7', '7L', 'L', '7', 'LL', '77', ''];
+  RuleTypes: RuleTypeEnum[] = ['L7', '7L', 'L', '7', 'LL', '77', ''];
   RunderSetting() {
     // 校验参数的合格性
     const OrderRule: OrderRule[] = [];
@@ -401,7 +523,7 @@ export default class ImconfigPage extends Vue {
     this.Runder3();
   }
 
-  SnapshotData: { data: LogData[]; FileName: string }[] = [];
+  SnapshotData: SnapshotData[] = [];
 
   mounted() {
     this.mountedd();
@@ -446,13 +568,12 @@ export default class ImconfigPage extends Vue {
         },
       },
       legend: {
-        data: ['24H均价', '现价', '资产BTC', '持仓', '目标持仓'],
+        data: ['24H均价', '现价', '账户资产(BTC)', '持仓'],
         selected: {
           '24H均价': true,
           现价: true,
-          资产BTC: true,
+          '账户资产(BTC)': true,
           持仓: true,
-          目标持仓: false,
         },
       },
       dataZoom: [
@@ -471,7 +592,7 @@ export default class ImconfigPage extends Vue {
       },
       title: {
         text: ``,
-        subtext: `账户资产走势`,
+        subtext: `BTC价格走势 与 账户资产、持仓 走势分析`,
         top: 4,
       },
       xAxis: [{ type: 'category', boundaryGap: false }],
@@ -479,7 +600,7 @@ export default class ImconfigPage extends Vue {
         {
           type: 'value',
           position: 'left',
-          name: '价格: USD',
+          name: 'BTC价格(USD)',
           axisLabel: {
             formatter: '{value}',
           },
@@ -490,7 +611,7 @@ export default class ImconfigPage extends Vue {
         {
           type: 'value',
           position: 'right',
-          name: '账户权益: BTC',
+          name: '资产(BTC)',
           axisLabel: {
             formatter: '{value}',
           },
@@ -503,7 +624,7 @@ export default class ImconfigPage extends Vue {
           type: 'value',
           offset: 50,
           position: 'right',
-          name: '持仓金额: USD',
+          name: '持仓(张)',
           axisLabel: {
             formatter: '{value}',
           },
@@ -704,7 +825,8 @@ export default class ImconfigPage extends Vue {
     const arr: KData[] = [];
 
     const all: LogData[] = [];
-    this.SnapshotData.forEach((item) => {
+    const SnapshotData = this.DataFilter(this.SnapshotData);
+    SnapshotData.forEach((item) => {
       item.data.forEach((data) => {
         all.push(data);
         conf.forEach((val) => {
@@ -737,7 +859,7 @@ export default class ImconfigPage extends Vue {
         this.detailMin = Math.min(this.detailMin, data.Price);
       });
     });
-    // console.log(this.SnapshotData, render, xxx.length);
+    // console.log(SnapshotData, render, xxx.length);
 
     // 过滤资产不变更的数据
     let ii = 0;
@@ -840,7 +962,7 @@ export default class ImconfigPage extends Vue {
       ],
     });
 
-    const lastFile = this.SnapshotData[this.SnapshotData.length - 1];
+    const lastFile = SnapshotData[SnapshotData.length - 1];
     if (!lastFile || !lastFile.data.length) return;
     const lastPrice = lastFile.data[lastFile.data.length - 1].Price;
     console.log(lastPrice);
@@ -865,15 +987,17 @@ export default class ImconfigPage extends Vue {
       return true;
     });
     if (lastDetail.length < 2) return end();
-    const open = lastDetail[lastDetail.length - 1].BtcSum;
-    const diff = lastDetail[lastDetail.length - 1].BtcSum - lastDetail[0].BtcSum;
+    const open = lastDetail[0].BtcSum;
+    const close = lastDetail[lastDetail.length - 1].BtcSum;
+    const p = Math.pow(10, this.BtcNumEnd);
+    const diff = Math.floor((close - open) * p) / p;
     const title = `${last.price} USD 资产变更`;
     const subtext = `${last.price} USD 资产变更: ${diff} (${Math.floor((diff / open) * 10000) / 100}%)`;
     console.log(last);
 
     myChart3.setOption({
       legend: {
-        data: ['资产', '24H均价', '持仓'],
+        data: ['资产'],
       },
       title: {
         subtext: subtext,
@@ -889,11 +1013,11 @@ export default class ImconfigPage extends Vue {
           data: lastDetail.map((item) => item.BtcSum),
           areaStyle: { color: 'rgba(4, 100, 100, 0.3)' },
         },
-        {
-          name: '24H均价',
-          type: 'line',
-          data: lastDetail.map((item) => item.p24h),
-        },
+        // {
+        //   name: '24H均价',
+        //   type: 'line',
+        //   data: lastDetail.map((item) => item.p24h),
+        // },
       ],
     });
   }, 1000);
@@ -915,6 +1039,7 @@ export default class ImconfigPage extends Vue {
     const next = this.params.Reports[thisIndex];
     if (next) return this.GetData(thisIndex);
     this.Render();
+    this.loadeddata = true;
     return true;
   }
 
@@ -926,6 +1051,10 @@ export default class ImconfigPage extends Vue {
     this.params.Key = this.$AppStore.localState.UserKey;
     if (this.params.Reports.length === 0) return;
     // this.Times[0] = this.Times[1] = this.params.Reports[this.params.Reports.length - 1];
+    // 为空的时候，默认最后 5 条数据
+    if (this.ShowReports.length === 0) {
+      this.ShowReports = this.ReportsSelect.slice(this.ReportsSelect.length - Math.min(this.ReportsSelect.length, 5));
+    }
 
     this.GetData(this.params.Reports.length - 1);
     this.RenderInit();
