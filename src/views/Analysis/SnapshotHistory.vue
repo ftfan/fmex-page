@@ -275,20 +275,21 @@ export default class AnalysisPage extends Vue {
           1: true,
           2: true,
           3: true,
-          4: true,
-          5: true,
+          4: false,
+          5: false,
         },
       },
       grid: {
         left: '20px',
         right: '14px',
         bottom: '3%',
+        top: '130px',
         containLabel: true,
       },
       title: {
         text: ``,
-        subtext: `TOP${this.Top5.length} 的资产变化`,
-        top: 4,
+        subtext: `TOP${this.Top5.length} 资产 与系统资产 历史`,
+        top: 60,
       },
       xAxis: [{ type: 'category', boundaryGap: false }],
       yAxis: [
@@ -421,7 +422,7 @@ export default class AnalysisPage extends Vue {
     ];
 
     // 2222222222222222222
-    const NumArrData2 = this.Top5.map((num, i) => {
+    const NumArrData2: any = this.Top5.map((num, i) => {
       return {
         name: `${num + 1}`,
         type: 'line',
@@ -432,14 +433,46 @@ export default class AnalysisPage extends Vue {
         },
       };
     });
+    const Day20200902 = new Date('2020-09-02').getTime();
 
+    const NumArrData2Map: any = {};
     // 计算
-    this.SnapshotData.forEach((item: any) => {
+    this.SnapshotData.forEach((item: any, index: number) => {
       // 2222222222222
-      this.Top5.forEach((num, index) => {
-        const user = item.Data[item.Data.length - num - 1] || { amount: 0 }; // 倒序的
-        NumArrData2[index].data.push(user.amount);
-      });
+      {
+        this.Top5.forEach((num, index) => {
+          const user = item.Data[item.Data.length - num - 1] || { amount: 0 }; // 倒序的
+          NumArrData2[index].data.push(user.amount);
+        });
+        // 查找系统账户
+        if (item.ShowTime.getTime() < Day20200902) {
+          item.Data[item.Data.length - 1].label = '合约保险基金';
+          const date = DateFormat(item.ShowTime, 'yyyy-MM-dd');
+          // 18号那天（保存文件名称是2020-08-19），fusd奖励账户的资产排名到了第三位，也就是index===2；
+          if (date === '2020-08-19') {
+            item.Data[item.Data.length - 3].label = 'FUSD解锁账户';
+          } else {
+            item.Data[item.Data.length - 2].label = 'FUSD解锁账户';
+          }
+        }
+        item.Data.forEach((data: any) => {
+          if (!data.label) return;
+          const label = this.$AnalysisStore.SysName(data.label);
+          if (!NumArrData2Map[label]) {
+            NumArrData2Map[label] = {
+              name: label,
+              type: 'line',
+              data: [] as number[],
+              // 记录当前数据的开始和结束索引
+              _begin: index,
+              _end: index,
+            };
+            NumArrData2.push(NumArrData2Map[label]);
+          }
+          NumArrData2Map[label].data.push(data.amount);
+          NumArrData2Map[label]._end = index;
+        });
+      }
 
       // 111111111111 因为amount是从小到大排序的
       let NumIndex = 0;
@@ -471,6 +504,27 @@ export default class AnalysisPage extends Vue {
       sum[0].data.push(tempArr.reduce((a, b) => a.plus(b), new BigNumber(0)).toNumber());
       sum[1].data.push(tempArrCount.reduce((a, b) => a + b, 0));
     });
+
+    // 222222222
+    // 数据补齐
+    for (const label in NumArrData2Map) {
+      const mapData = NumArrData2Map[label];
+      // 不是系统数据
+      if (!('_begin' in mapData)) continue;
+      if (mapData._begin > 0) {
+        new Array(mapData._begin).fill(0).forEach((d, index) => {
+          mapData.data.unshift(NaN);
+        });
+      }
+      const diff = this.SnapshotData.length - 1 - mapData._end;
+      if (diff > 0) {
+        new Array(diff).fill(0).forEach((d, index) => {
+          mapData.data.push(NaN);
+        });
+      }
+      console.log(mapData);
+    }
+
     myChart.setOption({
       legend: {
         data: [...this.BtcNumber.map((num, i) => `${this.BtcNumber[i - 1] || 0}~${num}`), `${this.BtcNumber[this.BtcNumber.length - 1]}+`, '总资产'],
@@ -497,6 +551,9 @@ export default class AnalysisPage extends Vue {
     });
 
     myChart2.setOption({
+      legend: {
+        data: NumArrData2.map((i: any) => i.name),
+      },
       xAxis: {
         data: labelText,
       },
@@ -510,7 +567,7 @@ export default class AnalysisPage extends Vue {
     const NextDay = (Data: any) => {
       // 用户资产是备份前一天的。所以时间上是错开了一天。这里纠正回去
       const ShowTime = new Date(time);
-      this.SnapshotData.push({ FileName: DateFormat(ShowTime, 'MM-dd\r\nyyyy'), Data });
+      this.SnapshotData.push({ FileName: DateFormat(ShowTime, 'MM-dd\r\nyyyy'), Data, ShowTime });
       if (next.getTime() <= new Date(this.Times[1]).getTime()) {
         return this.GetData(queue, FileName.replace(/\//g, '-'));
       }

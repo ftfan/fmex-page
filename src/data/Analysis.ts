@@ -60,6 +60,14 @@ class Store extends Data {
     if (!res) return null;
     return res;
   }
+
+  SysName(name: string) {
+    if (name === 'Futures Insurance Fund') return '合约保险基金';
+    if (name === 'Fee income') return '合约手续费收入';
+    if (name === 'Account with Unrealised PNL') return '合约未实现盈亏账户';
+    if (name === 'xxxxxdsadsadsad') return 'FUSD解锁账户';
+    return name;
+  }
 }
 
 export const AnalysisStore = new Store();

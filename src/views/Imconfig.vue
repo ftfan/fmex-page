@@ -317,6 +317,7 @@ export default class ImconfigPage extends Vue {
 
   // 采样数据
   ArrayFilter(arr: any[], num: number) {
+    if (!arr.length) return;
     const diffOut = arr.length / num; // 每隔 这么多个，留下一个
     if (diffOut <= 1) return;
     let ii = 0;
@@ -329,7 +330,10 @@ export default class ImconfigPage extends Vue {
         return;
       }
     });
+
+    const last = arr[arr.length - 1];
     arr.splice(ii, arr.length - ii);
+    arr[arr.length - 1] = last; // 一定把最后一条数据放进去，有头有尾
   }
 
   get report() {
@@ -860,23 +864,24 @@ export default class ImconfigPage extends Vue {
 
     this.SnapshotData.forEach((item) => {
       item.data.forEach((data) => {
+        const sum = data[key];
         // 计算K线
         const kline = KlineData[data.Price];
         if (!kline) {
           KlineData[data.Price] = {
-            low: data[key],
-            high: data[key],
-            open: data[key],
-            close: data[key],
+            low: sum,
+            high: sum,
+            open: sum,
+            close: sum,
             price: data.Price,
             details: [data],
           };
           arr.push(KlineData[data.Price]);
           return;
         }
-        kline.low = Math.min(kline.low, data[key]);
-        kline.high = Math.max(kline.high, data[key]);
-        kline.close = data[key];
+        kline.low = Math.min(kline.low, sum);
+        kline.high = Math.max(kline.high, sum);
+        kline.close = sum;
         kline.details.push(data);
 
         this.detailMax = Math.max(this.detailMax, data.Price);
@@ -977,7 +982,7 @@ export default class ImconfigPage extends Vue {
     // 将数组内相邻的相同数据剔除
     let lastBtcSum = -1;
     const lastDetail = last.details.filter((item) => {
-      if (item.BtcSum === lastBtcSum) return false;
+      if (item[key] === lastBtcSum) return false;
       lastBtcSum = item[key];
       return true;
     });

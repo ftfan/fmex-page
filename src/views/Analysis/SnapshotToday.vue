@@ -209,13 +209,6 @@ export default class AnalysisPage extends Vue {
     return this;
   }
 
-  SysName(name: string) {
-    if (name === 'Futures Insurance Fund') return '合约保险基金';
-    if (name === 'Fee income') return '合约手续费收入';
-    if (name === 'Account with Unrealised PNL') return '合约未实现盈亏账户';
-    return name;
-  }
-
   // fusd解锁账号
   get TotalInfo() {
     if (this.SnapshotData.length === 0 || this.SnapshotDataPre.length === 0) return null;
@@ -499,7 +492,7 @@ export default class AnalysisPage extends Vue {
     }
     Data.forEach((item: any) => {
       item.amount = parseFloat(item.amount);
-      item.label = this.SysName(item.label);
+      item.label = this.$AnalysisStore.SysName(item.label);
     });
     Data.sort((a: any, b: any) => b.amount - a.amount);
     this.SnapshotData = Data;
@@ -530,7 +523,7 @@ export default class AnalysisPage extends Vue {
     }
     Data.forEach((item: any) => {
       item.amount = parseFloat(item.amount);
-      item.label = this.SysName(item.label);
+      item.label = this.$AnalysisStore.SysName(item.label);
     });
     Data.sort((a: any, b: any) => b.amount - a.amount);
     this.SnapshotDataPre = Data;
