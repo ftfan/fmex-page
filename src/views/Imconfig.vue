@@ -8,10 +8,62 @@
       <p v-if="$AppStore.localState.ApiInfo.DataKey !== report">无当前账号设置权限</p>
     </div>
 
-    <v-btn-toggle color="primary" dark dense v-model="IsUSD">
-      <v-btn>币本位维度查看</v-btn>
-      <v-btn>U本位维度查看</v-btn>
+    <v-btn-toggle color="primary" dark tile dense v-model="IsUSD">
+      <v-btn>币本位查看</v-btn>
+      <v-btn>U本位查看</v-btn>
     </v-btn-toggle>
+
+    <!-- <v-dialog v-model="TipDialog" fullscreen hide-overlay transition="dialog-bottom-transition">
+      <template v-slot:activator="{ on, attrs }">
+        <v-btn style="float:right" color="primary" dark v-bind="attrs" dense tile v-on="on">当前策略解析</v-btn>
+      </template>
+      <v-card>
+        <v-toolbar dark color="primary">
+          <v-toolbar-title>策略解析</v-toolbar-title>
+          <v-spacer></v-spacer>
+          <v-toolbar-items>
+            <v-btn dark text @click="TipDialog = false">关闭</v-btn>
+          </v-toolbar-items>
+        </v-toolbar>
+        <v-list three-line subheader>
+          <v-subheader>多空方向分析</v-subheader>
+          <v-list-item>
+            <v-list-item-content>
+              <v-list-item-title>Content filtering</v-list-item-title>
+              <v-list-item-subtitle>Set the content filtering level to restrict apps that can be downloaded</v-list-item-subtitle>
+            </v-list-item-content>
+          </v-list-item>
+          <v-list-item>
+            <v-list-item-content>
+              <v-list-item-title>Password</v-list-item-title>
+              <v-list-item-subtitle>Require password for purchase or use password to restrict purchase</v-list-item-subtitle>
+            </v-list-item-content>
+          </v-list-item>
+        </v-list>
+        <v-divider></v-divider>
+        <v-list three-line subheader>
+          <v-subheader>General</v-subheader>
+          <v-list-item>
+            <v-list-item-action>
+              <v-checkbox v-model="notifications"></v-checkbox>
+            </v-list-item-action>
+            <v-list-item-content>
+              <v-list-item-title>Notifications</v-list-item-title>
+              <v-list-item-subtitle>Notify me about updates to apps or games that I downloaded</v-list-item-subtitle>
+            </v-list-item-content>
+          </v-list-item>
+          <v-list-item>
+            <v-list-item-action>
+              <v-checkbox v-model="sound"></v-checkbox>
+            </v-list-item-action>
+            <v-list-item-content>
+              <v-list-item-title>Sound</v-list-item-title>
+              <v-list-item-subtitle>Auto-update apps at any time. Data charges may apply</v-list-item-subtitle>
+            </v-list-item-content>
+          </v-list-item>
+        </v-list>
+      </v-card>
+    </v-dialog> -->
     <v-tabs color="primary" v-model="ViewMode" dark>
       <v-tab>最近24小时</v-tab>
       <v-tab>查看所有</v-tab>
@@ -55,14 +107,15 @@
         </v-list-item>
         <v-list-item dense>
           <v-list-item-content>
-            <v-icon color="primary" @click="params.OrderRule.push({ Price: 0, Position: 0, Next: { Type: 'L7', Position: 0, Price: 0 } })">mdi-plus-circle</v-icon>
+            <v-icon color="primary" @click="params.OrderRule.push({ Price: 0, Position: 0, Next: { Type: '', Position: 0, Price: 0 } })">mdi-plus-circle</v-icon>
           </v-list-item-content>
         </v-list-item>
 
         <v-dialog v-model="settingDailogSub">
-          <v-item-group>
+          <v-item-group style="background-color:#ffffff">
             <v-container>
               <v-row>
+                <v-card-text>函数模型，不懂的请选择最后一个，切勿乱选，影响收益</v-card-text>
                 <v-col v-for="item in RuleTypes" :key="item" cols="6" md="2">
                   <v-card class="d-flex align-center" height="100">
                     <div
@@ -84,7 +137,7 @@
 
         <v-text-field required v-model="params.Key" label="api key" type="text" outlined clearable></v-text-field>
         <v-text-field required v-model="params.Pwd" label="密码" type="password" outlined clearable></v-text-field>
-        <v-switch v-model="params.Runner" class="ma-2" label="策略运行"></v-switch>
+        <v-switch v-model="params.Runner" class="ma-2" label="策略开关（保存后生效）"></v-switch>
 
         <v-btn color="primary" class="mr-4" @click="RunderSetting">
           <v-icon>mdi-refresh</v-icon>
@@ -136,7 +189,7 @@
 
 <script lang="ts">
 import { Component, Vue, Watch } from 'vue-property-decorator';
-import { DateFormat, sleep } from '../lib/utils';
+import { clone, DateFormat, sleep } from '../lib/utils';
 import echarts from 'echarts';
 import urijs from 'urijs';
 import { debounce, throttle } from 'ts-debounce-throttle';
@@ -209,6 +262,7 @@ interface SnapshotData {
   components: {},
 })
 export default class ImconfigPage extends Vue {
+  TipDialog = false;
   get IsUSD() {
     return this.$AppStore.localState.IsUsdBenWei[this.report] || 0;
   }
@@ -235,6 +289,30 @@ export default class ImconfigPage extends Vue {
 
   BtcNumEnds = [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14];
   DataNums = [500, 1000, 3000, 6000, 12000, 24000];
+
+  TipDialogData = {
+    Prices: [] as Array<{ Title: string; Content: string }>,
+  };
+  @Watch('TipDialog')
+  async OnTipDialogChange() {
+    if (!this.TipDialog) return;
+    await this.$nextTick();
+    if (!this.serverparams) {
+      this.TipDialog = false;
+      this.$AppStore.Error('资源未加载完成');
+      return;
+    }
+    const Prices = [
+      { Title: '做多区间（持【多单】）', Content: '' },
+      { Title: '部分套保（持一倍以下【空单】）', Content: '' },
+      { Title: '对冲区间（持一倍【空单】）', Content: '' },
+      { Title: '做空区间（持一倍以上【空单】）', Content: '' },
+    ];
+    this.serverparams.PricePosition.forEach((item) => {
+      //
+    });
+    this.TipDialogData.Prices.splice(0, this.TipDialogData.Prices.length, ...Prices);
+  }
 
   @Watch('ViewMode', { immediate: true })
   OnViewModeChange() {
@@ -517,13 +595,13 @@ export default class ImconfigPage extends Vue {
       { Price: 12500, Position: 0, Next: { Type: 'L7', Position: 0, Price: 0 } },
       { Price: 13000, Position: -100, Next: { Type: 'L7', Position: 0, Price: 0 } },
     ],
-    OpenOrderMaxCount: 20, // 单边最多挂单数量
+    OpenOrderMaxCount: 15, // 单边最多挂单数量
     Runner: false,
     Key: Vue.AppStore.localState.UserKey,
     BasePrice: 11700,
     BasePriceWeight: 1,
     GridDiff: 1, // 挂单间隔
-    MaxStepVol: 100,
+    MaxStepVol: 1000,
     Reports: [],
     Time: 0,
     Pwd: '',
@@ -531,6 +609,8 @@ export default class ImconfigPage extends Vue {
     BakSetting: [],
     PricePosition: [],
   };
+
+  serverparams: UserParams | null = null;
   OrderRuleModel = [];
 
   detailValue = 0;
@@ -819,13 +899,13 @@ export default class ImconfigPage extends Vue {
       yAxisIndex: number;
       areaStyle: any;
     }
-    const btcsss: any = { name: '资产(BTC)', type: 'line', color: 'rgba(4, 100, 100, 0.4)', areaStyle: { color: 'rgba(4, 100, 100, 0.3)' }, key: 'BtcSum', y: 1 };
-    const usdsss: any = { name: '资产(USD)', type: 'line', color: 'rgba(4, 100, 100, 0.4)', areaStyle: { color: 'rgba(4, 100, 100, 0.3)' }, key: 'UsdSum', y: 1 };
+    const btcsss: any = { name: '资产(BTC)', type: 'line', color: 'rgba(4, 164, 204, 1)', areaStyle: { color: 'rgba(4, 164, 204, 0.2)' }, key: 'BtcSum', y: 1 };
+    const usdsss: any = { name: '资产(USD)', type: 'line', color: 'rgba(4, 164, 204, 1)', areaStyle: { color: 'rgba(4, 164, 204, 0.2)' }, key: 'UsdSum', y: 1 };
     console.log('IsUSD', this.IsUSD);
     const conf: any[] = [
       this.IsUSD ? usdsss : btcsss,
       { name: '24H均价', type: 'line', color: '#666666', key: 'p24h', y: 0 },
-      { name: 'BTC价格', type: 'line', color: 'rgba(4, 164, 204, 1)', key: 'Price', y: 0 },
+      { name: 'BTC价格', type: 'line', color: 'rgba(4, 100, 100, 0.5)', key: 'Price', y: 0 },
       { name: '持仓', type: 'line', color: 'rgba(255, 0, 150, 0.5)', areaStyle: { color: 'rgba(255, 0, 150, 0.2)' }, key: 'quantity', y: 2 },
       // { name: '目标持仓', type: 'line', color: '#ff9900', key: 'WantPos', y: 2 },
     ];
@@ -1021,8 +1101,9 @@ export default class ImconfigPage extends Vue {
           yAxisIndex: 1,
           type: 'line',
           data: lastDetail.map((item) => item[key]),
-          areaStyle: { color: 'rgba(4, 100, 100, 0.3)' },
-        },
+          color: 'rgba(4, 164, 204, 1)',
+          areaStyle: { color: 'rgba(4, 164, 204, 0.2)' },
+        } as any,
         // {
         //   name: '24H均价',
         //   type: 'line',
@@ -1056,7 +1137,8 @@ export default class ImconfigPage extends Vue {
   async GetParams() {
     const Data = await this.$AnalysisStore.GetJson(`https://fmex-database.oss-cn-qingdao.aliyuncs.com/runner/report/${this.report}/config`, true);
     if (!Data) return this.$AppStore.Error('配置文件加载失败，请刷新重试');
-    Object.assign(this.params, Data);
+    this.params = clone(Data);
+    this.serverparams = Data;
     this.loaded = true;
     this.params.Key = this.$AppStore.localState.UserKey;
     if (this.params.Reports.length === 0) return;

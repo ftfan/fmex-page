@@ -219,109 +219,62 @@ export default class AnalysisPage extends Vue {
     const FUSDIndex = this.FUSDDateIndex;
     const isBtc = this.UpCoinName === 'BTC';
     // 最新的资产表内对系统资产进行了标记
-    if (this.HasLabelTime || !isBtc) {
-      const sys = this.SnapshotData.filter((item) => item.label);
-      const sysSum = sys.map((a: any) => new BigNumber(a.amount)).reduce((a, b) => a.plus(b), new BigNumber(0));
+    const sys = this.SnapshotData.filter((item) => item.label);
+    const sysSum = sys.map((a: any) => new BigNumber(a.amount)).reduce((a, b) => a.plus(b), new BigNumber(0));
 
-      // 上一天的数据
-      const sysPre = this.SnapshotDataPre.filter((item) => item.label);
-      const sysPreMap: any = {};
-      sysPre.forEach((item) => {
-        sysPreMap[item.label] = item;
-      });
-      const sysPreSum = sysPre.map((a: any) => new BigNumber(a.amount)).reduce((a, b) => a.plus(b), new BigNumber(0));
+    // 上一天的数据
+    const sysPre = this.SnapshotDataPre.filter((item) => item.label);
+    const sysPreMap: any = {};
+    sysPre.forEach((item) => {
+      sysPreMap[item.label] = item;
+    });
+    const sysPreSum = sysPre.map((a: any) => new BigNumber(a.amount)).reduce((a, b) => a.plus(b), new BigNumber(0));
 
-      const sysInfo = sys.map((item) => ({
+    const sysInfo = sys.map((item) => ({
+      badge: {
+        content: this.ShowPre(new BigNumber(item.amount).minus(new BigNumber((sysPreMap[item.label] && sysPreMap[item.label].amount) || 0)).toNumber()),
+        color: 'success',
+        'offset-y': 14,
+        'offset-x': 20,
+      },
+      chip: { class: 'ma-2', color: 'success', small: true, outlined: true },
+      chipContent: `【${item.label}】 ${item.amount}`,
+    }));
+    if (sysInfo.length) {
+      sysInfo.push({
+        // 非系统账户合计
         badge: {
-          content: this.ShowPre(new BigNumber(item.amount).minus(new BigNumber((sysPreMap[item.label] && sysPreMap[item.label].amount) || 0)).toNumber()),
+          content: this.ShowPre(
+            lastSum
+              .minus(sysSum)
+              .minus(preSum.minus(sysPreSum))
+              .toNumber()
+          ),
           color: 'success',
           'offset-y': 14,
           'offset-x': 20,
         },
         chip: { class: 'ma-2', color: 'success', small: true, outlined: true },
-        chipContent: `【${item.label}】 ${item.amount}`,
-      }));
-      if (sysInfo.length) {
-        sysInfo.push({
-          // 非系统账户合计
-          badge: {
-            content: this.ShowPre(
-              lastSum
-                .minus(sysSum)
-                .minus(preSum.minus(sysPreSum))
-                .toNumber()
-            ),
-            color: 'success',
-            'offset-y': 14,
-            'offset-x': 20,
-          },
-          chip: { class: 'ma-2', color: 'success', small: true, outlined: true },
-          chipContent: `用户账户合计 ${lastSum.minus(sysSum).toNumber()}`,
-        });
-      }
-
-      return [
-        {
-          // 账户数量
-          badge: { content: this.ShowPre(last.length - pre.length), color: 'primary', 'offset-y': 14, 'offset-x': 20 },
-          chip: { class: 'ma-2', color: 'primary', small: true, outlined: true },
-          chipContent: `${this.UpCoinName} 账户数量 ${last.length}`,
-        },
-        // 系统账户
-        ...sysInfo,
-        {
-          // 合计
-          badge: { content: this.ShowPre(lastSum.minus(preSum).toNumber()), color: 'primary', 'offset-y': 14, 'offset-x': 20 },
-          chip: { class: 'ma-2', color: 'primary', small: true, outlined: true },
-          chipContent: `合计 ${lastSum.toNumber()}`,
-        },
-      ];
-    } else {
-      return [
-        {
-          // 账户数量
-          badge: { content: this.ShowPre(last.length - pre.length), color: 'primary', 'offset-y': 14, 'offset-x': 20 },
-          chip: { class: 'ma-2', color: 'primary', small: true, outlined: true },
-          chipContent: `${this.UpCoinName} 账户数量 ${last.length}`,
-        },
-        {
-          badge: { content: this.ShowPre(new BigNumber(last[0].amount).minus(new BigNumber(pre[0].amount)).toNumber()), color: 'success', 'offset-y': 14, 'offset-x': 20 },
-          chip: { class: 'ma-2', color: 'success', small: true, outlined: true },
-          chipContent: `【合约保险基金】 ${last[0].amount}`,
-        },
-        {
-          badge: { content: this.ShowPre(new BigNumber(last[FUSDIndex[0]].amount).minus(new BigNumber(pre[FUSDIndex[1]].amount)).toNumber()), color: 'success', 'offset-y': 14, 'offset-x': 20 },
-          chip: { class: 'ma-2', color: 'success', small: true, outlined: true },
-          chipContent: `【FUSD解锁账户】 ${last[FUSDIndex[0]].amount}`,
-        },
-        {
-          // 非系统账户合计
-          badge: {
-            content: this.ShowPre(
-              lastSum
-                .minus(last[0].amount)
-                .minus(last[FUSDIndex[0]].amount)
-                .minus(preSum.minus(pre[0].amount).minus(pre[FUSDIndex[0]].amount))
-                .toNumber()
-            ),
-            color: 'success',
-            'offset-y': 14,
-            'offset-x': 20,
-          },
-          chip: { class: 'ma-2', color: 'success', small: true, outlined: true },
-          chipContent: `用户账户合计 ${lastSum
-            .minus(last[0].amount)
-            .minus(last[FUSDIndex[0]].amount)
-            .toNumber()}`,
-        },
-        {
-          // 合计
-          badge: { content: this.ShowPre(lastSum.minus(preSum).toNumber()), color: 'primary', 'offset-y': 14, 'offset-x': 20 },
-          chip: { class: 'ma-2', color: 'primary', small: true, outlined: true },
-          chipContent: `合计 ${lastSum.toNumber()}`,
-        },
-      ];
+        chipContent: `用户账户合计 ${lastSum.minus(sysSum).toNumber()}`,
+      });
     }
+
+    return [
+      {
+        // 账户数量
+        badge: { content: this.ShowPre(last.length - pre.length), color: 'primary', 'offset-y': 14, 'offset-x': 20 },
+        chip: { class: 'ma-2', color: 'primary', small: true, outlined: true },
+        chipContent: `${this.UpCoinName} 账户数量 ${last.length}`,
+      },
+      // 系统账户
+      ...sysInfo,
+      {
+        // 合计
+        badge: { content: this.ShowPre(lastSum.minus(preSum).toNumber()), color: 'primary', 'offset-y': 14, 'offset-x': 20 },
+        chip: { class: 'ma-2', color: 'primary', small: true, outlined: true },
+        chipContent: `合计 ${lastSum.toNumber()}`,
+      },
+    ];
   }
 
   ShowPre(n: number) {
@@ -485,16 +438,13 @@ export default class AnalysisPage extends Vue {
     const next = new Date(timeDate.getTime() + 86400000);
     const FileName = DateFormat(next, 'yyyy/MM/dd');
     if (this.UpCoinName === 'USDT' && next.getTime() < new Date('2020-08-30').getTime()) return; // usdt 之前没数据。不用浪费请求
-    const Data = await this.$AnalysisStore.GetJson(this.BaseUrl + FileName);
+    const Data = await this.$AppStore.GetSnapshotDataByDate(this.UpCoinName, FileName);
     if (queue !== this.queue) return;
     if (!Data) {
       return this.GetData(queue, ++times);
     }
-    Data.forEach((item: any) => {
-      item.amount = parseFloat(item.amount);
-      item.label = this.$AnalysisStore.SysName(item.label);
-    });
     Data.sort((a: any, b: any) => b.amount - a.amount);
+
     this.SnapshotData = Data;
     // 去重
     const mapId: any = {};
@@ -516,16 +466,13 @@ export default class AnalysisPage extends Vue {
     const next = new Date(timeDate.getTime());
     const FileName = DateFormat(next, 'yyyy/MM/dd');
     if (this.UpCoinName === 'USDT' && next.getTime() < new Date('2020-08-30').getTime()) return; // usdt 之前没数据。不用浪费请求
-    const Data = await this.$AnalysisStore.GetJson(this.BaseUrl + FileName);
+    const Data = await this.$AppStore.GetSnapshotDataByDate(this.UpCoinName, FileName);
     if (queue !== this.queue) return;
     if (!Data) {
       return this.GetPreData(queue, ++times);
     }
-    Data.forEach((item: any) => {
-      item.amount = parseFloat(item.amount);
-      item.label = this.$AnalysisStore.SysName(item.label);
-    });
     Data.sort((a: any, b: any) => b.amount - a.amount);
+
     this.SnapshotDataPre = Data;
     // 去重
     const mapId: any = {};

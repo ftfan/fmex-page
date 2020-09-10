@@ -63,9 +63,9 @@
     <div class="data-analysis">
       <div style="padding-top:10px" class="echarts" ref="AnalysisPage"></div>
       <v-divider></v-divider>
-      <div style="padding-top:40px" class="echarts" ref="AnalysisNum"></div>
-      <v-divider></v-divider>
       <div style="padding-top:40px" class="echarts" ref="AnalysisPageTop5"></div>
+      <v-divider></v-divider>
+      <div style="padding-top:40px" class="echarts" ref="AnalysisNum"></div>
     </div>
   </div>
 </template>
@@ -116,10 +116,6 @@ export default class AnalysisPage extends Vue {
   dialog = false;
   // OnLoadData = ['用户资产数据'];
   SnapshotData: any[] = [];
-
-  get BaseUrl() {
-    return `https://fmex-database.oss-cn-qingdao.aliyuncs.com/fmex/api/broker/v3/zkp-assets/account/snapshot/${this.UpCoinName}/`;
-  }
 
   // 资产区间
   BtcNumber = [1, 10, 50];
@@ -194,6 +190,10 @@ export default class AnalysisPage extends Vue {
   @Watch('UpCoinName')
   async OnUpCoinNameChange() {
     this.SnapshotData = [];
+    if (myChart) myChart.clear();
+    if (myChart2) myChart2.clear();
+    if (myChart3) myChart3.clear();
+    this.RenderInit();
     this.GetData(++this.queue, this.Times[0]);
     this.Render();
   }
@@ -433,7 +433,6 @@ export default class AnalysisPage extends Vue {
         },
       };
     });
-    const Day20200902 = new Date('2020-09-02').getTime();
 
     const NumArrData2Map: any = {};
     // 计算
@@ -444,17 +443,7 @@ export default class AnalysisPage extends Vue {
           const user = item.Data[item.Data.length - num - 1] || { amount: 0 }; // 倒序的
           NumArrData2[index].data.push(user.amount);
         });
-        // 查找系统账户
-        if (item.ShowTime.getTime() < Day20200902) {
-          item.Data[item.Data.length - 1].label = '合约保险基金';
-          const date = DateFormat(item.ShowTime, 'yyyy-MM-dd');
-          // 18号那天（保存文件名称是2020-08-19），fusd奖励账户的资产排名到了第三位，也就是index===2；
-          if (date === '2020-08-19') {
-            item.Data[item.Data.length - 3].label = 'FUSD解锁账户';
-          } else {
-            item.Data[item.Data.length - 2].label = 'FUSD解锁账户';
-          }
-        }
+
         item.Data.forEach((data: any) => {
           if (!data.label) return;
           const label = this.$AnalysisStore.SysName(data.label);
@@ -581,15 +570,11 @@ export default class AnalysisPage extends Vue {
     const FileName = DateFormat(next, 'yyyy/MM/dd');
     if (times > 3) return NextDay([]); // 重试3次没数据，当做没数据处理
     if (this.UpCoinName === 'USDT' && next.getTime() < new Date('2020-08-30').getTime()) return NextDay([]); // usdt 之前没数据。不用浪费请求
-    const Data = await this.$AnalysisStore.GetJson(this.BaseUrl + FileName);
+    const Data = await this.$AppStore.GetSnapshotDataByDate(this.UpCoinName, FileName);
     if (queue !== this.queue) return Promise.resolve(false); // 这是一个已经丢弃掉的请求队列了。
     if (!Data) {
       return this.GetData(queue, time, ++times);
     }
-    Data.forEach((item: any) => {
-      item.amount = parseFloat(item.amount);
-    });
-    Data.sort((a: any, b: any) => a.amount - b.amount);
 
     return NextDay(Data);
   }

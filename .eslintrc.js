@@ -18,5 +18,6 @@ module.exports = {
     '@typescript-eslint/no-use-before-define': 'off',
     '@typescript-eslint/no-namespace': 'off',
     'no-async-promise-executor': 'off',
+    '@typescript-eslint/no-unused-vars': 'off',
   },
 };
