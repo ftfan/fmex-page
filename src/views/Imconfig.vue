@@ -377,7 +377,8 @@ export default class ImconfigPage extends Vue {
   DataFilter(data: SnapshotData[]) {
     const strs = this.ShowReports.map((item) => item.replace(/-/g, '/'));
     const Last24H = Date.now() - 86400000; // 24H
-    const LastChange = this.params.Time + 10 * 60 * 1000;
+    let LastChange = this.params.Time + 10 * 60 * 1000;
+    if (LastChange >= this.params.Time + 11 * 60 * 1000) LastChange = 0; // 数据太少。这项条件删除
 
     return data
       .map((item) => {
