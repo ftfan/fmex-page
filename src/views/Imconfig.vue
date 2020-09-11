@@ -103,23 +103,29 @@
         <span><strong>不使用</strong>最近24小时成交均价做区间参考</span>
         <br />
         <br /> -->
-        <v-list-item dense v-for="(item, index) in params.OrderRule" :key="index" active-class="text--accent-4">
-          <v-list-item-icon>
-            <v-text-field required style="width:80px" v-model.number="item.Price" :label="'价格' + (index + 1)" type="number"></v-text-field>
-          </v-list-item-icon>
-          <v-list-item-content>
-            <v-text-field required style="width:80px" v-model.number="item.Position" :label="'持仓(负为空)'" type="number"></v-text-field>
-          </v-list-item-content>
-          <v-list-item-action>
-            <v-icon color="error" @click="params.OrderRule.splice(index, 1)">mdi-close-circle</v-icon>
-            <v-icon v-if="index < params.OrderRule.length - 1" color="primary" @click="ChooseRule(item)">mdi-vector-radius</v-icon>
-          </v-list-item-action>
-        </v-list-item>
-        <v-list-item dense>
-          <v-list-item-content>
-            <v-icon color="primary" @click="params.OrderRule.push({ Price: 0, Position: 0, Next: { Type: '', Position: 0, Price: 0 } })">mdi-plus-circle</v-icon>
-          </v-list-item-content>
-        </v-list-item>
+        <v-btn-toggle color="primary" tile dense v-model="params.Hedging">
+          <v-btn>合约网格</v-btn>
+          <v-btn>USD本位 BTC对冲</v-btn>
+        </v-btn-toggle>
+        <template v-if="params.Hedging === 0">
+          <v-list-item dense v-for="(item, index) in params.OrderRule" :key="index" active-class="text--accent-4">
+            <v-list-item-icon>
+              <v-text-field required style="width:80px" v-model.number="item.Price" :label="'价格' + (index + 1)" type="number"></v-text-field>
+            </v-list-item-icon>
+            <v-list-item-content>
+              <v-text-field required style="width:80px" v-model.number="item.Position" :label="'持仓(负为空)'" type="number"></v-text-field>
+            </v-list-item-content>
+            <v-list-item-action>
+              <v-icon color="error" @click="params.OrderRule.splice(index, 1)">mdi-close-circle</v-icon>
+              <v-icon v-if="index < params.OrderRule.length - 1" color="primary" @click="ChooseRule(item)">mdi-vector-radius</v-icon>
+            </v-list-item-action>
+          </v-list-item>
+          <v-list-item dense>
+            <v-list-item-content>
+              <v-icon color="primary" @click="params.OrderRule.push({ Price: 0, Position: 0, Next: { Type: '', Position: 0, Price: 0 } })">mdi-plus-circle</v-icon>
+            </v-list-item-content>
+          </v-list-item>
+        </template>
 
         <v-dialog v-model="settingDailogSub">
           <v-item-group style="background-color:#ffffff">
@@ -145,16 +151,16 @@
         <v-text-field required v-model.number="params.OpenOrderMaxCount" label="挂单数量（单边，1~25）" type="number" outlined></v-text-field>
         <v-text-field required v-model.number="params.GridDiff" label="挂单间隔(USD，0.5的倍数)" type="number" outlined></v-text-field>
 
-        <v-text-field required v-model="params.Key" label="api key" type="text" outlined clearable></v-text-field>
-        <v-text-field required v-model="params.Pwd" label="密码" type="password" outlined clearable></v-text-field>
-        <v-switch v-model="params.Runner" class="ma-2" label="策略开关（保存后生效）"></v-switch>
+        <v-text-field v-if="$AppStore.localState.ApiInfo.DataKey === report" required v-model="params.Key" label="api key" type="text" outlined clearable></v-text-field>
+        <v-text-field v-if="$AppStore.localState.ApiInfo.DataKey === report" required v-model="params.Pwd" label="密码" type="password" outlined clearable></v-text-field>
+        <v-switch v-if="$AppStore.localState.ApiInfo.DataKey === report" v-model="params.Runner" class="ma-2" label="策略开关（保存后生效）"></v-switch>
 
-        <v-btn color="primary" class="mr-4" @click="RunderSetting">
+        <v-btn color="primary" v-if="params.Hedging === 0" class="mr-4" @click="RunderSetting">
           <v-icon>mdi-refresh</v-icon>
           预览策略视图
         </v-btn>
 
-        <div style="padding-bottom:20px;width:280px;height:300px;" ref="params"></div>
+        <div v-if="params.Hedging === 0" style="padding-bottom:20px;width:280px;height:300px;" ref="params"></div>
 
         <v-btn color="success" class="mr-4" @click="validate" v-if="$AppStore.localState.ApiInfo.DataKey === report">保存</v-btn>
         <v-btn color="error" class="mr-4" @click="deleteIt" v-if="$AppStore.localState.ApiInfo.DataKey === report">永久删除</v-btn>
@@ -261,6 +267,7 @@ export interface UserParams {
   Key: string;
   BakSetting: UserParams[]; // 链式记录上一次的配置
   PricePosition: number[][];
+  Hedging: number; // 是否是对冲策略
 }
 
 interface SnapshotData {
@@ -456,146 +463,151 @@ export default class ImconfigPage extends Vue {
     let err = '';
     let max = Infinity;
     let lastPrice = 0;
-    this.params.OrderRule.forEach((item, index) => {
-      const pos = `【价格${index + 1}】`;
-      if (err) return; // 已经定位错误了，以第一个错误为准
-      if (item.Price <= 0) return (err = `价格不能为 0 ${pos}`);
-      if (item.Position > max) return (err = `价格越大，持仓必须越小 ${pos}`);
-      if (item.Price === lastPrice) return (err = `价格不能重复 ${pos}`);
-      max = item.Position;
-      lastPrice = item.Price;
-      OrderRule.push(item);
-    });
+    if (this.params.Hedging === 0) {
+      this.params.OrderRule.forEach((item, index) => {
+        const pos = `【价格${index + 1}】`;
+        if (err) return; // 已经定位错误了，以第一个错误为准
+        if (item.Price <= 0) return (err = `价格不能为 0 ${pos}`);
+        if (item.Position > max) return (err = `价格越大，持仓必须越小 ${pos}`);
+        if (item.Price === lastPrice) return (err = `价格不能重复 ${pos}`);
+        max = item.Position;
+        lastPrice = item.Price;
+        OrderRule.push(item);
+      });
+    }
+
     if (!err) {
       if (this.params.MaxStepVol <= 0) err = `下单上限错误`;
       if (this.params.OpenOrderMaxCount <= 0) err = `单边挂单数量错误`;
       if (this.params.GridDiff < 0.5) err = `挂单间隔不能小于0.5`;
-      if (OrderRule.length < 2) err = '价格至少设置两个';
+      if (this.params.Hedging === 0 && OrderRule.length < 2) err = '价格至少设置两个';
     }
     if (err) return this.$AppStore.Error(err);
 
-    const myChart = echarts.init(this.$refs.params as any);
+    if (this.params.Hedging === 0) {
+      const myChart = echarts.init(this.$refs.params as any);
 
-    const MinPrice = OrderRule[0].Price;
-    const PriceDiff = OrderRule[OrderRule.length - 1].Price - MinPrice;
+      const MinPrice = OrderRule[0].Price;
+      const PriceDiff = OrderRule[OrderRule.length - 1].Price - MinPrice;
 
-    const PriceDiffCount = Math.ceil(PriceDiff / this.params.GridDiff);
+      const PriceDiffCount = Math.ceil(PriceDiff / this.params.GridDiff);
 
-    const xx = Array(PriceDiffCount + 1)
-      .join(',')
-      .split(',')
-      .map((item, index) => index * this.params.GridDiff + MinPrice);
+      const xx = Array(PriceDiffCount + 1)
+        .join(',')
+        .split(',')
+        .map((item, index) => index * this.params.GridDiff + MinPrice);
 
-    const yy: number[] = [];
-    const Map: { [index: string]: number } = {};
+      const yy: number[] = [];
+      const Map: { [index: string]: number } = {};
 
-    let bakRule: OrderRule | null = null;
-    OrderRule.forEach((rule) => {
-      if (!bakRule) {
+      let bakRule: OrderRule | null = null;
+      OrderRule.forEach((rule) => {
+        if (!bakRule) {
+          bakRule = rule;
+          return;
+        }
+        const perRule = bakRule;
         bakRule = rule;
-        return;
-      }
-      const perRule = bakRule;
-      bakRule = rule;
 
-      const center = perRule.Next;
-      // 仓位不符合规范
-      // if (center.Position <= perRule.Position || center.Position >= rule.Position || center.Price <= perRule.Price || center.Price >= rule.Price) {
-      center.Position = (perRule.Position + rule.Position) / 2;
-      center.Price = (rule.Price + perRule.Price) / 2;
-      switch (center.Type) {
-        case 'L':
-          center.Position = center.Position - (center.Position - perRule.Position) * -0.5;
-          center.Price = center.Price - (center.Price - rule.Price) * -0.5;
-          break;
-        case '7':
-          center.Position = center.Position - (center.Position - rule.Position) * -0.5;
-          center.Price = center.Price - (center.Price - perRule.Price) * -0.5;
-          break;
-      }
-      // }
-
-      const centerSum = center.Price * center.Position;
-      const beginSum = perRule.Price * perRule.Position;
-      const endSum = rule.Price * rule.Position;
-      const bc = beginSum / centerSum;
-      const ec = endSum / centerSum;
-
-      xx.forEach((item) => {
-        if (item < perRule.Price || item > rule.Price) return;
-        if (item === rule.Price) return yy.push(rule.Position);
-        if (item === center.Price) return yy.push(center.Position);
-        if (item === perRule.Price) return yy.push(perRule.Position);
-        let begin: { Price: number; Position: number } = perRule;
-        let end: { Price: number; Position: number } = center;
-        if (item > center.Price) {
-          begin = center;
-          end = rule;
+        const center = perRule.Next;
+        // 仓位不符合规范
+        // if (center.Position <= perRule.Position || center.Position >= rule.Position || center.Price <= perRule.Price || center.Price >= rule.Price) {
+        center.Position = (perRule.Position + rule.Position) / 2;
+        center.Price = (rule.Price + perRule.Price) / 2;
+        switch (center.Type) {
+          case 'L':
+            center.Position = center.Position - (center.Position - perRule.Position) * -0.5;
+            center.Price = center.Price - (center.Price - rule.Price) * -0.5;
+            break;
+          case '7':
+            center.Position = center.Position - (center.Position - rule.Position) * -0.5;
+            center.Price = center.Price - (center.Price - perRule.Price) * -0.5;
+            break;
         }
-        const p = (item - begin.Price) / (end.Price - begin.Price);
-        const pp = 0.5 + p * 1.5;
-        let add = 0;
-        const Line = () => p * (begin.Position - end.Position);
-        const PicL = () => ((2 - 1 / pp) / 1.5) * (begin.Position - end.Position);
-        const Pic7 = () => ((1 / (2.5 - pp) - 0.5) / 1.5) * (begin.Position - end.Position);
-        const str = center.Type.split('');
-        const bp = str[0];
-        const ep = str[str.length - 1];
-        if (center.Type === '') {
-          add = Line();
-        } else if ((item < center.Price && bp === '7') || (item > center.Price && ep === '7')) {
-          add = Pic7();
-        } else {
-          add = PicL();
-        }
-        const Position = begin.Position - add;
-        yy.push(Position > 0 ? Math.floor(Position) : Math.ceil(Position));
+        // }
+
+        const centerSum = center.Price * center.Position;
+        const beginSum = perRule.Price * perRule.Position;
+        const endSum = rule.Price * rule.Position;
+        const bc = beginSum / centerSum;
+        const ec = endSum / centerSum;
+
+        xx.forEach((item) => {
+          if (item < perRule.Price || item > rule.Price) return;
+          if (item === rule.Price) return yy.push(rule.Position);
+          if (item === center.Price) return yy.push(center.Position);
+          if (item === perRule.Price) return yy.push(perRule.Position);
+          let begin: { Price: number; Position: number } = perRule;
+          let end: { Price: number; Position: number } = center;
+          if (item > center.Price) {
+            begin = center;
+            end = rule;
+          }
+          const p = (item - begin.Price) / (end.Price - begin.Price);
+          const pp = 0.5 + p * 1.5;
+          let add = 0;
+          const Line = () => p * (begin.Position - end.Position);
+          const PicL = () => ((2 - 1 / pp) / 1.5) * (begin.Position - end.Position);
+          const Pic7 = () => ((1 / (2.5 - pp) - 0.5) / 1.5) * (begin.Position - end.Position);
+          const str = center.Type.split('');
+          const bp = str[0];
+          const ep = str[str.length - 1];
+          if (center.Type === '') {
+            add = Line();
+          } else if ((item < center.Price && bp === '7') || (item > center.Price && ep === '7')) {
+            add = Pic7();
+          } else {
+            add = PicL();
+          }
+          const Position = begin.Position - add;
+          yy.push(Position > 0 ? Math.floor(Position) : Math.ceil(Position));
+        });
       });
-    });
 
-    this.params.PricePosition = xx.map((x, index) => [x, yy[index]]);
+      this.params.PricePosition = xx.map((x, index) => [x, yy[index]]);
 
-    myChart.setOption({
-      tooltip: {
-        trigger: 'axis',
-        axisPointer: {
-          type: 'cross',
-          label: {
-            backgroundColor: '#6a7985',
+      myChart.setOption({
+        tooltip: {
+          trigger: 'axis',
+          axisPointer: {
+            type: 'cross',
+            label: {
+              backgroundColor: '#6a7985',
+            },
           },
         },
-      },
-      legend: {
-        data: ['仓位'],
-      },
-      grid: {
-        left: '20px',
-        right: '14px',
-        bottom: '40px',
-        containLabel: true,
-      },
-      xAxis: [{ type: 'category', boundaryGap: false }],
-      yAxis: [
-        {
-          type: 'value',
-          min: 'dataMin',
-          max: 'dataMax',
+        legend: {
+          data: ['仓位'],
         },
-      ],
-    });
+        grid: {
+          left: '20px',
+          right: '14px',
+          bottom: '40px',
+          containLabel: true,
+        },
+        xAxis: [{ type: 'category', boundaryGap: false }],
+        yAxis: [
+          {
+            type: 'value',
+            min: 'dataMin',
+            max: 'dataMax',
+          },
+        ],
+      });
 
-    myChart.setOption({
-      xAxis: {
-        data: xx,
-      },
-      series: [
-        {
-          name: '仓位',
-          type: 'bar',
-          data: yy,
+      myChart.setOption({
+        xAxis: {
+          data: xx,
         },
-      ],
-    });
+        series: [
+          {
+            name: '仓位',
+            type: 'bar',
+            data: yy,
+          },
+        ],
+      });
+    }
     return 'success';
   }
 
@@ -610,6 +622,7 @@ export default class ImconfigPage extends Vue {
   }
   ActiveRule: null | OrderRule = null;
   params: UserParams = {
+    Hedging: 1,
     OrderRule: [
       { Price: 11500, Position: 1000, Next: { Type: 'L7', Position: 0, Price: 0 } },
       { Price: 12500, Position: 0, Next: { Type: 'L7', Position: 0, Price: 0 } },
@@ -1157,8 +1170,10 @@ export default class ImconfigPage extends Vue {
   async GetParams() {
     const Data = await this.$AnalysisStore.GetJson(`https://fmex-database.oss-cn-qingdao.aliyuncs.com/runner/report/${this.report}/config`, true);
     if (!Data) return this.$AppStore.Error('配置文件加载失败，请刷新重试');
+    if (!('Hedging' in Data)) Data.Hedging = 1; // 旧数据设置为true
     this.params = clone(Data);
     this.serverparams = Data;
+    if (this.params.Hedging) this.$set(this.$AppStore.localState.IsUsdBenWei, this.params.ReportKey, 1); // U本位
     this.OnViewModeChange(); // 更新报表显示数据模型
     this.loaded = true;
     this.params.Key = this.$AppStore.localState.UserKey;

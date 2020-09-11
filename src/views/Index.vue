@@ -28,7 +28,7 @@
 
           <v-row>
             <v-col>
-              <v-btn color="success" @click="ViewOtherData('e6e53eb75ebbe4eae637898fee27dacc')">示例账号</v-btn>
+              <v-btn color="success" @click="ViewOtherData('6ecaf7a0eeafb2194382523779839cc1', 1)">示例账号</v-btn>
             </v-col>
           </v-row>
         </v-row>
@@ -93,7 +93,8 @@ export default class IndexPage extends Vue {
     this.validate(this.DataKeyTemp);
   }
 
-  ViewOtherData(DataKey: string) {
+  ViewOtherData(DataKey: string, val: number) {
+    this.$set(this.$AppStore.localState.IsUsdBenWei, DataKey, val);
     this.$router.push({ name: 'Imconfig', query: { DataKey } });
   }
 
