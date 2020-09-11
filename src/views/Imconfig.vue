@@ -8,9 +8,9 @@
       <p v-if="$AppStore.localState.ApiInfo.DataKey !== report">无当前账号设置权限</p>
     </div>
 
-    <v-btn-toggle color="primary" dark tile dense v-model="IsUSD">
-      <v-btn>币本位查看</v-btn>
-      <v-btn>U本位查看</v-btn>
+    <v-btn-toggle color="primary" tile dense v-model="IsUSD">
+      <v-btn>BTC本位</v-btn>
+      <v-btn>USD本位</v-btn>
     </v-btn-toggle>
 
     <!-- <v-dialog v-model="TipDialog" fullscreen hide-overlay transition="dialog-bottom-transition">
@@ -64,13 +64,23 @@
         </v-list>
       </v-card>
     </v-dialog> -->
-    <v-tabs color="primary" v-model="ViewMode" dark>
+    <!-- <v-tabs color="primary" v-model="ViewMode">
       <v-tab>最近24小时</v-tab>
       <v-tab>查看所有</v-tab>
       <v-tab>自定义查看</v-tab>
-    </v-tabs>
+    </v-tabs> -->
+    <v-btn-toggle color="primary" tile dense v-model="ViewMode">
+      <v-btn>最近24小时</v-btn>
+      <v-btn>最近视图</v-btn>
+      <v-btn>总视图</v-btn>
+      <v-btn>自定义视图</v-btn>
+    </v-btn-toggle>
 
-    <template v-if="ViewMode === 2">
+    <v-card-text>
+      {{ ViewModeText[ViewMode] }}
+    </v-card-text>
+
+    <template v-if="ViewMode === 3">
       <!-- 报表选择 -->
       <v-select v-model="ShowReports" :items="ReportsSelect" filled chips label="选择查看数据" multiple></v-select>
       <!-- 资产精度选择 -->
@@ -262,9 +272,11 @@ interface SnapshotData {
   components: {},
 })
 export default class ImconfigPage extends Vue {
+  ViewModeText = ['最近24小时策略形成的数据', '变更参数 10 分钟后至今，策略形成的数据', '该账号注册以来所有数据采样得出的视图', '自定义数据和采样精度，分析数据'];
   TipDialog = false;
   get IsUSD() {
-    return this.$AppStore.localState.IsUsdBenWei[this.report] || 0;
+    if (this.$AppStore.localState.IsUsdBenWei[this.report] === 0) return 0;
+    return 1;
   }
   set IsUSD(val) {
     this.$set(this.$AppStore.localState.IsUsdBenWei, this.report, val);
@@ -321,6 +333,12 @@ export default class ImconfigPage extends Vue {
       this.BtcNumEnd = this.BtcNumEnds[this.BtcNumEnds.length - 1];
       this.DataNum = this.DataNums[this.DataNums.length - 1];
     } else if (this.ViewMode === 1) {
+      // 获得最后变更参数的时间点
+      // const LastChange = this.params.Time;
+      this.ShowReports = this.ReportsSelect.slice(0);
+      this.BtcNumEnd = 6;
+      this.DataNum = this.DataNums[0];
+    } else if (this.ViewMode === 2) {
       this.ShowReports = this.ReportsSelect.slice(0);
       this.BtcNumEnd = 6;
       this.DataNum = this.DataNums[0];
@@ -352,6 +370,7 @@ export default class ImconfigPage extends Vue {
   DataFilter(data: SnapshotData[]) {
     const strs = this.ShowReports.map((item) => item.replace(/-/g, '/'));
     const Last24H = Date.now() - 86400000; // 24H
+    const LastChange = this.params.Time + 10 * 60 * 1000;
 
     return data
       .map((item) => {
@@ -372,6 +391,7 @@ export default class ImconfigPage extends Vue {
           const p = Math.floor(da[key] * s) / s;
           if (p === lastP) return;
           if (this.ViewMode === 0 && da.Ts < Last24H) return; // 查看最近24H的数据。
+          if (this.ViewMode === 1 && da.Ts < LastChange) return; // 查看最近一次修改参数后的数据
           lastP = p;
           const item = {
             Ts: da.Ts,
@@ -1139,6 +1159,7 @@ export default class ImconfigPage extends Vue {
     if (!Data) return this.$AppStore.Error('配置文件加载失败，请刷新重试');
     this.params = clone(Data);
     this.serverparams = Data;
+    this.OnViewModeChange(); // 更新报表显示数据模型
     this.loaded = true;
     this.params.Key = this.$AppStore.localState.UserKey;
     if (this.params.Reports.length === 0) return;

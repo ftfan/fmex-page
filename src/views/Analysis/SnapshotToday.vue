@@ -89,7 +89,6 @@ interface ShowDataOrigin {
 
 const DateMax = DateFormat(Date.now() - 86400000, 'yyyy-MM-dd'); // 只有昨日的数据。
 const DateMin = DateFormat(new Date(2020, 7 - 1, 8), 'yyyy-MM-dd');
-const Day20200902 = new Date('2020-09-02').getTime();
 
 const grid = {
   right: '50px',
@@ -185,11 +184,6 @@ export default class AnalysisPage extends Vue {
 
   get UpCoinName() {
     return this.$AnalysisStore.localState.Currency.toLocaleUpperCase();
-  }
-
-  // 2020-09-02.json 文件开始，也就是09-01那天的数据，开始标记系统账户
-  get HasLabelTime() {
-    return new Date(this.date).getTime() >= Day20200902;
   }
 
   get FUSDDateIndex() {
