@@ -668,6 +668,12 @@ export default class ImconfigPage extends Vue {
   SnapshotData: SnapshotData[] = [];
 
   mounted() {
+    if (this.IsAdmin) {
+      const find = Vue.AppStore.localState.AdminUsers.filter((item) => item.ReportKey === this.report)[0];
+      if (find) {
+        this.params.Key = find.ReportKey;
+      }
+    }
     this.mountedd();
   }
 
