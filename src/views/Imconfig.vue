@@ -668,12 +668,6 @@ export default class ImconfigPage extends Vue {
   SnapshotData: SnapshotData[] = [];
 
   mounted() {
-    if (this.IsAdmin) {
-      const find = Vue.AppStore.localState.AdminUsers.filter((item) => item.ReportKey === this.report)[0];
-      if (find) {
-        this.params.Key = find.ReportKey;
-      }
-    }
     this.mountedd();
   }
 
@@ -1196,6 +1190,12 @@ export default class ImconfigPage extends Vue {
     this.OnViewModeChange(); // 更新报表显示数据模型
     this.loaded = true;
     this.params.Key = this.$AppStore.localState.UserKey;
+    if (this.IsAdmin) {
+      const find = Vue.AppStore.localState.AdminUsers.filter((item) => item.ReportKey === this.report)[0];
+      if (find) {
+        this.params.Key = find.Key;
+      }
+    }
     if (this.params.Reports.length === 0) return;
     // this.Times[0] = this.Times[1] = this.params.Reports[this.params.Reports.length - 1];
     // 为空的时候，默认最后 5 条数据
@@ -1211,7 +1211,7 @@ export default class ImconfigPage extends Vue {
     const check = this.RunderSetting();
     if (check !== 'success') return;
     this.params.ReportKey = this.report;
-    this.$AppStore.localState.UserKey = this.params.Key;
+    // this.$AppStore.localState.UserKey = this.params.Key;
     const res = await FunApi.post('/grid/set-params', this.params).then((res) => res.data as CodeObj<any>);
     console.log(res);
     this.settingDailog = false;
