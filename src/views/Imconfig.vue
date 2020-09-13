@@ -126,6 +126,9 @@
             </v-list-item-content>
           </v-list-item>
         </template>
+        <template v-else>
+          <v-text-field style="margin-top:10px" required v-model.number="params.HedgingDiffVol" outlined label="持仓偏移量" type="number"></v-text-field>
+        </template>
 
         <v-dialog v-model="settingDailogSub">
           <v-item-group style="background-color:#ffffff">
@@ -268,6 +271,7 @@ export interface UserParams {
   BakSetting: UserParams[]; // 链式记录上一次的配置
   PricePosition: number[][];
   Hedging: number; // 是否是对冲策略
+  HedgingDiffVol: number;
 }
 
 interface SnapshotData {
@@ -292,7 +296,7 @@ export default class ImconfigPage extends Vue {
   loadeddata = false;
   settingDailog = false;
   settingDailogSub = false;
-  ViewMode = 1;
+  ViewMode = 2;
   modal = false;
   DateMax = DateMax;
   Times = [DateMax, DateMax];
@@ -484,6 +488,7 @@ export default class ImconfigPage extends Vue {
       if (this.params.Hedging === 0 && OrderRule.length < 2) err = '价格至少设置两个';
     }
     if (err) return this.$AppStore.Error(err);
+    if (!this.params.HedgingDiffVol) this.params.HedgingDiffVol = 0;
 
     if (this.params.Hedging === 0) {
       const myChart = echarts.init(this.$refs.params as any);
@@ -625,9 +630,8 @@ export default class ImconfigPage extends Vue {
   params: UserParams = {
     Hedging: 1,
     OrderRule: [
-      { Price: 11500, Position: 1000, Next: { Type: 'L7', Position: 0, Price: 0 } },
-      { Price: 12500, Position: 0, Next: { Type: 'L7', Position: 0, Price: 0 } },
-      { Price: 13000, Position: -100, Next: { Type: 'L7', Position: 0, Price: 0 } },
+      { Price: 4000, Position: -400, Next: { Type: 'L7', Position: 0, Price: 0 } },
+      { Price: 20000, Position: -2000, Next: { Type: 'L7', Position: 0, Price: 0 } },
     ],
     OpenOrderMaxCount: 15, // 单边最多挂单数量
     Runner: false,
@@ -642,6 +646,7 @@ export default class ImconfigPage extends Vue {
     ReportKey: '',
     BakSetting: [],
     PricePosition: [],
+    HedgingDiffVol: 0,
   };
 
   serverparams: UserParams | null = null;
@@ -1171,7 +1176,9 @@ export default class ImconfigPage extends Vue {
   async GetParams() {
     const Data = await this.$AnalysisStore.GetJson(`https://fmex-database.oss-cn-qingdao.aliyuncs.com/runner/report/${this.report}/config`, true);
     if (!Data) return this.$AppStore.Error('配置文件加载失败，请刷新重试');
-    if (!('Hedging' in Data)) Data.Hedging = 1; // 旧数据设置为true
+    if (!('Hedging' in Data)) Data.Hedging = 1; // 旧数据设置
+    if (!('HedgingDiffVol' in Data)) Data.HedgingDiffVol = 0; // 旧数据设置
+
     this.params = clone(Data);
     this.serverparams = Data;
     if (this.params.Hedging) this.$set(this.$AppStore.localState.IsUsdBenWei, this.params.ReportKey, 1); // U本位

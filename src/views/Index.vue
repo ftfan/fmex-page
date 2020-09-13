@@ -6,14 +6,14 @@
     </div>
     <div class="section">
       <v-container fluid>
-        <v-row dense>
+        <v-row dense style="width:100%;">
           <v-col v-for="(item, index) in Runners" :key="index">
             <v-card outlined :elevation="4">
               <v-list-item three-line>
                 <v-list-item-content>
                   <v-list-item-title class="headline mb-1">{{ item.Title }}</v-list-item-title>
                   <v-list-item-subtitle>{{ item.Des }}</v-list-item-subtitle>
-                  <v-list-item-subtitle v-if="$AppStore.localState.ApiInfo.DataKey">您的策略ID：{{ $AppStore.localState.ApiInfo.DataKey }}</v-list-item-subtitle>
+                  <v-list-item-subtitle v-if="$AppStore.localState.ApiInfo.DataKey">策略ID：{{ $AppStore.localState.ApiInfo.DataKey }}</v-list-item-subtitle>
                 </v-list-item-content>
               </v-list-item>
 
@@ -25,14 +25,14 @@
               </v-card-actions>
             </v-card>
           </v-col>
-
-          <v-row>
-            <v-col>
-              <v-btn color="success" @click="ViewOtherData('6ecaf7a0eeafb2194382523779839cc1', 1)">示例账号</v-btn>
-            </v-col>
-          </v-row>
         </v-row>
       </v-container>
+
+      <div style="margin-left:10px;">
+        <v-btn color="success" @click="ViewOtherData('6ecaf7a0eeafb2194382523779839cc1', 1)">示例：USD本位 年化 30%+</v-btn>
+        <br />
+        <v-btn style="margin-top:10px" color="success" @click="ViewOtherData('e6e53eb75ebbe4eae637898fee27dacc', 0)">示例：合约网格</v-btn>
+      </div>
 
       <v-dialog v-model="kkkkkkkkk">
         <v-form lazy-validation style="padding:20px;background-color:#ffffff;">
@@ -120,8 +120,8 @@ export default class IndexPage extends Vue {
 
   Runners = [
     {
-      Title: 'FMex合约网格',
-      Des: '在网格基础上，提供了各种参数配置，可配置出个性化策略',
+      Title: 'FMex合约对冲策略',
+      Des: '稳定日收益【万7】上下，有时【千1】以上收益、复利、USD 本位。BTC涨跌都盈利，资产不缩水。',
     },
   ];
 }
