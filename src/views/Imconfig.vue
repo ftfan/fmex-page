@@ -5,7 +5,7 @@
   <div class="page-index" v-else>
     <div class="center" style="padding-top: 20px;">
       <p>账号: {{ report }}</p>
-      <p v-if="$AppStore.localState.ApiInfo.DataKey !== report">无当前账号设置权限</p>
+      <p v-if="!IsAdmin">无当前账号设置权限</p>
     </div>
 
     <v-btn-toggle color="primary" tile dense v-model="IsUSD">
@@ -154,9 +154,9 @@
         <v-text-field required v-model.number="params.OpenOrderMaxCount" label="挂单数量（单边，1~25）" type="number" outlined></v-text-field>
         <v-text-field required v-model.number="params.GridDiff" label="挂单间隔(USD，0.5的倍数)" type="number" outlined></v-text-field>
 
-        <v-text-field v-if="$AppStore.localState.ApiInfo.DataKey === report" required v-model="params.Key" label="api key" type="text" outlined clearable></v-text-field>
-        <v-text-field v-if="$AppStore.localState.ApiInfo.DataKey === report" required v-model="params.Pwd" label="密码" type="password" outlined clearable></v-text-field>
-        <v-switch v-if="$AppStore.localState.ApiInfo.DataKey === report" v-model="params.Runner" class="ma-2" label="策略开关（保存后生效）"></v-switch>
+        <v-text-field v-if="IsAdmin" required v-model="params.Key" label="api key" type="text" outlined clearable></v-text-field>
+        <v-text-field v-if="IsAdmin" required v-model="params.Pwd" label="密码" type="password" outlined clearable></v-text-field>
+        <v-switch v-if="IsAdmin" v-model="params.Runner" class="ma-2" label="策略开关（保存后生效）"></v-switch>
 
         <v-btn color="primary" v-if="params.Hedging === 0" class="mr-4" @click="RunderSetting">
           <v-icon>mdi-refresh</v-icon>
@@ -165,8 +165,8 @@
 
         <div v-if="params.Hedging === 0" style="padding-bottom:20px;width:280px;height:300px;" ref="params"></div>
 
-        <v-btn color="success" class="mr-4" @click="validate" v-if="$AppStore.localState.ApiInfo.DataKey === report">保存</v-btn>
-        <v-btn color="error" class="mr-4" @click="deleteIt" v-if="$AppStore.localState.ApiInfo.DataKey === report">永久删除</v-btn>
+        <v-btn color="success" class="mr-4" @click="validate" v-if="IsAdmin">保存</v-btn>
+        <v-btn color="error" class="mr-4" @click="deleteIt" v-if="IsAdmin">永久删除</v-btn>
       </v-form>
     </v-dialog>
 
@@ -450,6 +450,11 @@ export default class ImconfigPage extends Vue {
     const key = this.$route.query.DataKey as string;
     if (!key) return 'e6e53eb75ebbe4eae637898fee27dacc';
     return key;
+  }
+  get IsAdmin() {
+    if (this.$AppStore.localState.ApiInfo.DataKey === this.report) return true;
+    if (this.$AppStore.localState.AdminUsers.filter((item) => item.ReportKey === this.report).length) return true;
+    return false;
   }
   @Watch('settingDailog')
   async OnSettingDailogChange() {

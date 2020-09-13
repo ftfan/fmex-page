@@ -22,6 +22,7 @@ const routes: Array<RouteConfig> = [
   { path: '/Analysis', name: 'Analysis', component: (s, j) => AsyncLoader(s, j, import('@/views/Analysis.vue')) },
   { path: '/Friend', name: 'Friend', component: (s, j) => AsyncLoader(s, j, import('@/views/Friend.vue')) },
   { path: '/Runner', name: 'Runner', component: (s, j) => AsyncLoader(s, j, import('@/views/Runner.vue')) },
+  { path: '/Admin', name: 'Admin', component: (s, j) => AsyncLoader(s, j, import('@/views/Admin.vue')) },
 ];
 
 const router = new VueRouter({

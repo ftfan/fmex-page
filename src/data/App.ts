@@ -28,6 +28,7 @@ class Store extends Data {
     },
     TimesCache: [] as string[],
     IsUsdBenWei: {} as { [index: string]: number },
+    AdminUsers: [] as Array<{ Key: string; ReportKey: string; Secret: string; Mark: string }>,
   };
 
   // 模块名称，【必须】不能重复
