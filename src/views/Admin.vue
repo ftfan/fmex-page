@@ -53,6 +53,8 @@ export default class ImconfigPage extends Vue {
     this.$router.push({ name: 'Imconfig', query: { DataKey: item.ReportKey } });
   }
   Del(item: any) {
+    const bool = prompt('确认删除？');
+    if (!bool) return;
     const index = Vue.AppStore.localState.AdminUsers.indexOf(item);
     Vue.AppStore.localState.AdminUsers.splice(index, 1);
   }
