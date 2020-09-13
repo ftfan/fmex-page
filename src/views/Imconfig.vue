@@ -69,7 +69,7 @@
       <v-tab>查看所有</v-tab>
       <v-tab>自定义查看</v-tab>
     </v-tabs> -->
-    <v-btn-toggle color="primary" tile dense v-model="ViewMode">
+    <v-btn-toggle color="primary" mandatory tile dense v-model="ViewMode">
       <v-btn>最近24小时</v-btn>
       <v-btn>最近视图</v-btn>
       <v-btn>总视图</v-btn>
@@ -103,7 +103,7 @@
         <span><strong>不使用</strong>最近24小时成交均价做区间参考</span>
         <br />
         <br /> -->
-        <v-btn-toggle color="primary" tile dense v-model="params.Hedging">
+        <v-btn-toggle color="primary" tile mandatory dense v-model="params.Hedging">
           <v-btn>合约网格</v-btn>
           <v-btn>USD本位 BTC对冲</v-btn>
         </v-btn-toggle>
@@ -1176,7 +1176,7 @@ export default class ImconfigPage extends Vue {
   async GetParams() {
     const Data = await this.$AnalysisStore.GetJson(`https://fmex-database.oss-cn-qingdao.aliyuncs.com/runner/report/${this.report}/config`, true);
     if (!Data) return this.$AppStore.Error('配置文件加载失败，请刷新重试');
-    if (!('Hedging' in Data)) Data.Hedging = 1; // 旧数据设置
+    if (!('Hedging' in Data)) Data.Hedging = 0; // 旧数据设置
     if (!('HedgingDiffVol' in Data)) Data.HedgingDiffVol = 0; // 旧数据设置
 
     this.params = clone(Data);
