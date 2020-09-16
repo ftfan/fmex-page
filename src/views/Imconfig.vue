@@ -1159,8 +1159,11 @@ export default class ImconfigPage extends Vue {
 
   async GetData(index: number, times = 1): Promise<any> {
     if (times > 5) return;
-    const FileName = this.params.Reports[index];
+    let FileName = this.params.Reports[index];
     if (!FileName) return;
+    const TodayStr = DateFormat(new Date(), 'yyyy/MM/dd');
+    // 今日的数据，要获取最新的
+    if (FileName.match(TodayStr)) FileName = `${FileName}?t=${Date.now()}`;
     const Data = await this.$AnalysisStore.GetData(`https://fmex-database.oss-cn-qingdao.aliyuncs.com` + FileName);
     if (!Data) {
       return this.GetData(index, ++times);
