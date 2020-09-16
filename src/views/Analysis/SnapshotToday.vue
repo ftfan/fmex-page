@@ -30,6 +30,7 @@
         </v-badge>
       </div>
     </template>
+    <v-parallax class="parallax20200916" @click="ToLink('https://foss.imconfig.com/images/2020-09-16.png')" height="50" src="https://foss.imconfig.com/images/2020-09-16.png"></v-parallax>
     <div class="data-analysis">
       <div :style="CanvasStyle" v-for="(item, index) in ShowDataOrigin" :key="index" v-show="$AnalysisStore.localState.UserSNChooseHistory.indexOf(index) > -1" ref="echartref"></div>
     </div>
@@ -516,8 +517,17 @@ export default class AnalysisPage extends Vue {
     this.date = nextDay;
     this.mountedd();
   }
+  ToLink(url: string) {
+    location.href = url;
+  }
 }
 </script>
+<style lang="scss">
+.parallax20200916 .v-parallax__image-container img {
+  width: 100%;
+  top: -1050px;
+}
+</style>
 
 <style lang="scss" scoped>
 .data-analysis {
