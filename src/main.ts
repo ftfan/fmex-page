@@ -2,6 +2,7 @@ import Vue from 'vue';
 import App from './App.vue';
 import router, { LogEvent } from './router';
 import '@/assets/main.scss';
+import '@/lib/uses';
 
 Vue.config.productionTip = false;
 import '@/data/App';
