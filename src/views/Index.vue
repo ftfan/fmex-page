@@ -29,9 +29,9 @@
       </v-container>
 
       <div style="margin-left:10px;">
-        <v-btn color="success" @click="ViewOtherData('6ecaf7a0eeafb2194382523779839cc1', 1)">示例：USD本位 年化 30%+</v-btn>
+        <v-btn color="success" @click="ViewOtherData('6ecaf7a0eeafb2194382523779839cc1', 1)">示例：U本位</v-btn>
         <br />
-        <v-btn style="margin-top:10px" color="success" @click="ViewOtherData('e6e53eb75ebbe4eae637898fee27dacc', 0)">示例：合约网格</v-btn>
+        <v-btn style="margin-top:10px" color="success" @click="ViewOtherData('e6e53eb75ebbe4eae637898fee27dacc', 0)">示例：B本位</v-btn>
       </div>
 
       <v-dialog v-model="kkkkkkkkk">
@@ -120,8 +120,8 @@ export default class IndexPage extends Vue {
 
   Runners = [
     {
-      Title: 'FMex合约对冲策略',
-      Des: '稳定日收益【万7】上下，有时【千1】以上收益、复利、USD 本位。BTC涨跌都盈利，资产不缩水。',
+      Title: 'FMex合约策略',
+      Des: '以网格为基础的策略，可自定义参数',
     },
   ];
 }
