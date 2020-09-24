@@ -98,10 +98,12 @@ export default class BtcVolPrice extends Vue {
     close();
     const minLast24 = res2.data[0].id;
     res1.data = res1.data.filter((item) => item.id < minLast24);
+    const max3m = res1.data[res1.data.length - 1].id + 180;
+    // 相隔必须是3分钟。否则删除3分钟内多计算的
+    res2.data = res2.data.filter((item) => item.id >= max3m);
     this.SnapshotData2 = res1.data.concat(res2.data);
     this.Render2();
   }
-
   Render2() {
     if (!myChart2) return;
     const arr24 = new Array(24).fill(0).map((v, i) => i + 1);
@@ -163,6 +165,7 @@ export default class BtcVolPrice extends Vue {
         LastUsd.data[index2] = new BigNumber(item.base_vol / 10000).plus(LastUsd.data[index2] || 0).toNumber();
       }
     });
+
     // console.log(TodayStrArr, LastStrArr, CurrentUsd, CurrentBtc, LastUsd, LastBtc);
     // CurrentBtc.markPoint.data.push({
     //   symbol: 'pin',
@@ -176,7 +179,7 @@ export default class BtcVolPrice extends Vue {
     sum24 = Math.floor(sum24 / 10000) / 10000;
     myChart2.setOption({
       title: {
-        text: [`    ·  单位： 亿USD`, `    ·  ${sum} (昨日交易额)`, `    ·  ${lastSum} (今日交易额)`, `    ·  ${sum24} (最近24小时交易额)`].join('\r\n'),
+        text: [`    ·  单位： 亿USD`, `    ·  ${sum} (今日交易额)`, `    ·  ${lastSum} (昨日交易额)`, `    ·  ${sum24} (最近24小时交易额)`].join('\r\n'),
       },
       xAxis: {
         data: xAxis,
