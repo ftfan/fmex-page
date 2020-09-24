@@ -25,6 +25,7 @@ import { DateFormat } from '../../lib/utils';
 import { FMexWss } from '../../lib/wss';
 import { FMex } from '@/api/FMex';
 import { PageLoading } from '@/lib/page-loading';
+import BigNumber from 'bignumber.js';
 
 const DateMax = DateFormat(Date.now(), 'yyyy-MM-dd');
 const DateMin = DateFormat(new Date(2020, 7 - 1, 13), 'yyyy-MM-dd');
@@ -155,11 +156,11 @@ export default class BtcVolPrice extends Vue {
       const index = TodayStrArr.indexOf(timestr);
       const index2 = LastStrArr.indexOf(timestr);
       if (index > -1) {
-        CurrentBtc.data[index] = (CurrentBtc.data[index] || 0) + item.quote_vol;
-        CurrentUsd.data[index] = (CurrentUsd.data[index] || 0) + item.base_vol / 10000;
+        CurrentBtc.data[index] = new BigNumber(item.quote_vol).plus(CurrentBtc.data[index] || 0).toNumber();
+        CurrentUsd.data[index] = new BigNumber(item.base_vol / 10000).plus(CurrentUsd.data[index] || 0).toNumber();
       } else if (index2 > -1) {
-        LastBtc.data[index2] = (LastBtc.data[index2] || 0) + item.quote_vol;
-        LastUsd.data[index2] = (LastUsd.data[index2] || 0) + item.base_vol / 10000;
+        LastBtc.data[index2] = new BigNumber(item.quote_vol).plus(LastBtc.data[index] || 0).toNumber();
+        LastUsd.data[index] = new BigNumber(item.base_vol / 10000).plus(LastUsd.data[index] || 0).toNumber();
       }
     });
     // console.log(TodayStrArr, LastStrArr, CurrentUsd, CurrentBtc, LastUsd, LastBtc);

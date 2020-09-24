@@ -190,6 +190,7 @@ export default class AnalysisPage extends Vue {
 
   @Watch('UpCoinName')
   async OnUpCoinNameChange() {
+    if (this.$route.query.tab !== '1') return; // 不是当前页面
     this.SnapshotData = [];
     if (myChart) myChart.clear();
     if (myChart2) myChart2.clear();
