@@ -159,8 +159,8 @@ export default class BtcVolPrice extends Vue {
         CurrentBtc.data[index] = new BigNumber(item.quote_vol).plus(CurrentBtc.data[index] || 0).toNumber();
         CurrentUsd.data[index] = new BigNumber(item.base_vol / 10000).plus(CurrentUsd.data[index] || 0).toNumber();
       } else if (index2 > -1) {
-        LastBtc.data[index2] = new BigNumber(item.quote_vol).plus(LastBtc.data[index] || 0).toNumber();
-        LastUsd.data[index] = new BigNumber(item.base_vol / 10000).plus(LastUsd.data[index] || 0).toNumber();
+        LastBtc.data[index2] = new BigNumber(item.quote_vol).plus(LastBtc.data[index2] || 0).toNumber();
+        LastUsd.data[index2] = new BigNumber(item.base_vol / 10000).plus(LastUsd.data[index2] || 0).toNumber();
       }
     });
     // console.log(TodayStrArr, LastStrArr, CurrentUsd, CurrentBtc, LastUsd, LastBtc);
