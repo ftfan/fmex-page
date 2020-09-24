@@ -2,21 +2,29 @@
   background-color: #fff;
   position: fixed;
   z-index: 100;
-  opacity: 1;
+  opacity: 0.8;
   transition: all 0.4s ease-in-out;
+  pointer-events: none;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
   &.hide {
     opacity: 0;
-    pointer-events: none;
+    // pointer-events: none;
+  }
+  #page-loader-model-text {
+    top: 36%;
+    width: 100%;
+    position: absolute;
+    color: $color-primary;
+    text-align: center;
   }
   .spinner {
     position: absolute;
     top: 0;
     left: 0;
-    right: 0;
+    right: 56px;
     bottom: 0;
     width: 32px;
     height: 32px;

@@ -1,12 +1,17 @@
-class LoadingClose {}
+class LoadingClose {
+  text = '';
+  constructor(text = '') {
+    this.text = text;
+  }
+}
 
 const el = document.getElementById('page-loader-model')!;
+const text = document.getElementById('page-loader-model-text')!;
 const data: LoadingClose[] = [];
 
-export const PageLoading = () => {
-  const close = new LoadingClose();
+export const PageLoading = (text = '') => {
+  const close = new LoadingClose(text);
   DataPush(close);
-
   return () => DataPop(close);
 };
 
@@ -25,5 +30,6 @@ function CheckData() {
     el.className = 'hide';
   } else {
     el.className = '';
+    text.innerHTML = data[data.length - 1].text;
   }
 }

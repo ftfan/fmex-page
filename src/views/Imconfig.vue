@@ -76,9 +76,9 @@
       <v-btn>自定义视图</v-btn>
     </v-btn-toggle>
 
-    <v-card-text>
+    <!-- <v-card-text>
       {{ ViewModeText[ViewMode] }}
-    </v-card-text>
+    </v-card-text> -->
 
     <template v-if="ViewMode === 3">
       <!-- 报表选择 -->
@@ -214,6 +214,7 @@ import urijs from 'urijs';
 import { debounce, throttle } from 'ts-debounce-throttle';
 import { FunApi } from '@/api/fun';
 import { CodeObj } from '@/lib/Code';
+import { PageLoading } from '@/lib/page-loading';
 let myChart: echarts.ECharts | null = null;
 let myChart2: echarts.ECharts | null = null;
 let myChart3: echarts.ECharts | null = null;
@@ -311,7 +312,7 @@ export default class ImconfigPage extends Vue {
   DataNum = 3000; // 每日数据采样数量
 
   BtcNumEnds = [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14];
-  DataNums = [500, 1000, 3000, 6000, 12000, 24000];
+  DataNums = [500, 1000, 2000, 3000, 4000, 5000];
 
   TipDialogData = {
     Prices: [] as Array<{ Title: string; Content: string }>,
@@ -1164,10 +1165,13 @@ export default class ImconfigPage extends Vue {
     const TodayStr = DateFormat(new Date(), 'yyyy/MM/dd');
     // 今日的数据，要获取最新的
     if (FileName.match(TodayStr)) FileName = `${FileName}?t=${Date.now()}`;
+    const close = PageLoading(`获取报表:${FileName}`);
     const Data = await this.$AnalysisStore.GetData(`https://fmex-database.oss-cn-qingdao.aliyuncs.com` + FileName);
+    close();
     if (!Data) {
       return this.GetData(index, ++times);
     }
+    this.ArrayFilter(Data, 5000); // 数据太大，取样一下
     this.SnapshotData.unshift({
       FileName,
       data: Data,
@@ -1182,7 +1186,9 @@ export default class ImconfigPage extends Vue {
   }
 
   async GetParams() {
+    const close = PageLoading(`获取账号配置`);
     const Data = await this.$AnalysisStore.GetJson(`https://fmex-database.oss-cn-qingdao.aliyuncs.com/runner/report/${this.report}/config`, true);
+    close();
     if (!Data) return this.$AppStore.Error('配置文件加载失败，请刷新重试');
     if (!('Hedging' in Data)) Data.Hedging = 0; // 旧数据设置
     if (!('HedgingDiffVol' in Data)) Data.HedgingDiffVol = 0; // 旧数据设置

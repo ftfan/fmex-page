@@ -12,7 +12,7 @@ function AsyncLoader(resolve: any, reject: any, component: Promise<any>) {
       alert('资源加载失败，请稍后再试');
       reject('net error');
     })
-    .finally(PageLoading());
+    .finally(PageLoading('页面切换中，加载异步依赖'));
 }
 
 const routes: Array<RouteConfig> = [

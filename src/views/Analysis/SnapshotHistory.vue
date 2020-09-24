@@ -76,6 +76,7 @@ import echarts from 'echarts';
 import { DateFormat, BigNumShowStr } from '../../lib/utils';
 import BigNumber from 'bignumber.js';
 import { debounce, throttle } from 'ts-debounce-throttle';
+import { PageLoading } from '@/lib/page-loading';
 const DateMax = DateFormat(Date.now() - 86400000, 'yyyy-MM-dd'); // 只有昨日的数据。
 const DateMin = DateFormat(new Date(2020, 7 - 1, 8), 'yyyy-MM-dd');
 const GetTimes = () => {
@@ -193,9 +194,7 @@ export default class AnalysisPage extends Vue {
     if (myChart) myChart.clear();
     if (myChart2) myChart2.clear();
     if (myChart3) myChart3.clear();
-    this.RenderInit();
-    this.GetData(++this.queue, this.Times[0]);
-    this.Render();
+    this.mountedd();
   }
 
   decrement() {
@@ -213,7 +212,7 @@ export default class AnalysisPage extends Vue {
 
   async mountedd() {
     this.RenderInit();
-    this.GetData(++this.queue, this.Times[0]);
+    await this.GetData(++this.queue, this.Times[0]);
   }
 
   RenderInit() {
@@ -570,7 +569,9 @@ export default class AnalysisPage extends Vue {
     const FileName = DateFormat(next, 'yyyy/MM/dd');
     if (times > 3) return NextDay([]); // 重试3次没数据，当做没数据处理
     if (this.UpCoinName === 'USDT' && next.getTime() < new Date('2020-08-30').getTime()) return NextDay([]); // usdt 之前没数据。不用浪费请求
+    const close = PageLoading(`努力请求: ${this.UpCoinName} ${FileName}`);
     const Data = await this.$AppStore.GetSnapshotDataByDate(this.UpCoinName, FileName);
+    close();
     if (queue !== this.queue) return Promise.resolve(false); // 这是一个已经丢弃掉的请求队列了。
     if (!Data) {
       return this.GetData(queue, time, ++times);

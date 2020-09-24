@@ -38,7 +38,7 @@ Vue.config.errorHandler = function(err, vm, info) {
   );
 };
 
-const close = PageLoading();
+const close = PageLoading('正在启动程序');
 new Vue({
   router,
   vuetify,

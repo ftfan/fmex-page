@@ -1,18 +1,19 @@
 <template>
   <div>
-    <v-dialog ref="dialog" v-model="modal" color="primary" :return-value.sync="Dates" persistent>
-      <template v-slot:activator="{ on, attrs }">
-        <v-text-field v-model="Dates" label="日期选择" prepend-icon="mdi-calendar-range" readonly v-bind="attrs" v-on="on"></v-text-field>
-      </template>
-      <v-date-picker v-model="Dates" range scrollable :min="DateMin" :max="DateMax">
-        <v-spacer></v-spacer>
-        <v-btn text color="primary" @click="modal = false">取消</v-btn>
-        <v-btn text color="primary" @click="Submit">确定</v-btn>
-      </v-date-picker>
-    </v-dialog>
-
     <div class="data-analysis">
-      <div ref="BtcVolPrice"></div>
+      <div class="canvass" ref="BtcVolPriceToday"></div>
+
+      <v-dialog ref="dialog" v-model="modal" color="primary" :return-value.sync="Dates" persistent>
+        <template v-slot:activator="{ on, attrs }">
+          <v-text-field v-model="Dates" label="日期选择" prepend-icon="mdi-calendar-range" readonly v-bind="attrs" v-on="on"></v-text-field>
+        </template>
+        <v-date-picker v-model="Dates" range scrollable :min="DateMin" :max="DateMax">
+          <v-spacer></v-spacer>
+          <v-btn text color="primary" @click="modal = false">取消</v-btn>
+          <v-btn text color="primary" @click="Submit">确定</v-btn>
+        </v-date-picker>
+      </v-dialog>
+      <div class="canvass" ref="BtcVolPrice"></div>
     </div>
   </div>
 </template>
@@ -23,6 +24,7 @@ import echarts from 'echarts';
 import { DateFormat } from '../../lib/utils';
 import { FMexWss } from '../../lib/wss';
 import { FMex } from '@/api/FMex';
+import { PageLoading } from '@/lib/page-loading';
 
 const DateMax = DateFormat(Date.now(), 'yyyy-MM-dd');
 const DateMin = DateFormat(new Date(2020, 7 - 1, 13), 'yyyy-MM-dd');
@@ -36,6 +38,7 @@ const GetTimes = () => {
 };
 
 let myChart: echarts.ECharts | null = null;
+let myChart2: echarts.ECharts | null = null;
 const map: any = {};
 
 @Component({
@@ -53,6 +56,7 @@ export default class BtcVolPrice extends Vue {
   loading = true;
   // OnLoadData = ['用户资产数据'];
   SnapshotData: any[] = [];
+  SnapshotData2: FMex.CandelRes[] = [];
 
   BaseUrl = 'https://fmex-database.oss-cn-qingdao.aliyuncs.com/fmex/v2/market/all-tickers/';
   FmexCurrent = 'https://api.fmex.com/v2/market/all-tickers';
@@ -80,10 +84,161 @@ export default class BtcVolPrice extends Vue {
   async mountedd() {
     this.GetData(++this.queue, this.Times[0]);
     this.RenderInit();
+    this.RunderToday();
+  }
+
+  async RunderToday() {
+    if (this.SnapshotData2.length) return this.Render2();
+    this.SnapshotData2 = [];
+    const now = Date.now();
+    const close = PageLoading(`正在努力连接 wss://api.fmex.com/v2/ws`);
+    // 获取到最近3天的数据（M1只能获取到最近24小时的）
+    const [res1, res2] = await Promise.all([FMexWss.req('candle', FMex.Resolution.M3, 'btcusd_p', 1440, now), FMexWss.req('candle', FMex.Resolution.M1, 'btcusd_p', 1440, now)]);
+    close();
+    const minLast24 = res2.data[0].id;
+    res1.data = res1.data.filter((item) => item.id < minLast24);
+    this.SnapshotData2 = res1.data.concat(res2.data);
+    this.Render2();
+  }
+
+  Render2() {
+    if (!myChart2) return;
+    const arr24 = new Array(24).fill(0).map((v, i) => i + 1);
+    const CurrentBtc = {
+      name: `交易量(今)`,
+      yAxisIndex: 1,
+      type: 'line',
+      data: arr24.map((i) => NaN),
+      color: `rgba(4, 204, 164, 1)`,
+    };
+    const LastBtc = {
+      name: `交易量(昨)`,
+      yAxisIndex: 1,
+      type: 'line',
+      data: arr24.map((i) => NaN),
+      color: `rgba(4, 204, 164, 0.3)`,
+    };
+    const CurrentUsd = {
+      name: `交易额(今)`,
+      yAxisIndex: 0,
+      type: 'line',
+      data: arr24.map((i) => NaN),
+      color: `rgba(4, 164, 204, 1)`,
+    };
+    const LastUsd = {
+      name: `交易额(昨)`,
+      yAxisIndex: 0,
+      type: 'line',
+      data: arr24.map((i) => NaN),
+      color: `rgba(4, 164, 204, 0.3)`,
+    };
+    const TodayStr = DateFormat(new Date(), 'yyyy-MM-dd');
+    const LastStr = DateFormat(Date.now() - 86400000, 'yyyy-MM-dd');
+    const TodayStrArr: string[] = [];
+    const LastStrArr: string[] = [];
+    const xAxis = arr24.map((val) => {
+      val = val - 1;
+      let str = `${val}`;
+      if (val < 10) str = `0${val}`;
+      TodayStrArr.push(TodayStr + ` ${str}`);
+      LastStrArr.push(LastStr + ` ${str}`);
+      return str;
+    });
+
+    let sum24 = 0;
+    const timer24 = Date.now() - 86400000;
+
+    this.SnapshotData2.forEach((item) => {
+      const time = item.id * 1000;
+      if (time > timer24) sum24 = sum24 + item.base_vol; // 统计最近24小时
+      const timestr = DateFormat(time, 'yyyy-MM-dd hh');
+      const index = TodayStrArr.indexOf(timestr);
+      const index2 = LastStrArr.indexOf(timestr);
+      if (index > -1) {
+        CurrentBtc.data[index] = (CurrentBtc.data[index] || 0) + item.quote_vol;
+        CurrentUsd.data[index] = (CurrentUsd.data[index] || 0) + item.base_vol / 10000;
+      } else if (index2 > -1) {
+        LastBtc.data[index2] = (LastBtc.data[index2] || 0) + item.quote_vol;
+        LastUsd.data[index2] = (LastUsd.data[index2] || 0) + item.base_vol / 10000;
+      }
+    });
+    // console.log(TodayStrArr, LastStrArr, CurrentUsd, CurrentBtc, LastUsd, LastBtc);
+    // CurrentBtc.markPoint.data.push({
+    //   symbol: 'pin',
+    //   symbolSize: 40,
+    //   name: '最新价格',
+    //   coord: [xAxis[xAxis.length - 1], curPrice],
+    //   value: curPrice,
+    // });
+    const sum = Math.floor(CurrentUsd.data.reduce((a, b) => (a || 0) + (b || 0), 0)) / 10000;
+    const lastSum = Math.floor(LastUsd.data.reduce((a, b) => (a || 0) + (b || 0), 0)) / 10000;
+    sum24 = Math.floor(sum24 / 10000) / 10000;
+    myChart2.setOption({
+      title: {
+        text: [`    ·  单位： 亿USD`, `    ·  ${sum} (昨日交易额)`, `    ·  ${lastSum} (今日交易额)`, `    ·  ${sum24} (最近24小时交易额)`].join('\r\n'),
+      },
+      xAxis: {
+        data: xAxis,
+      },
+      series: [CurrentUsd, LastUsd, CurrentBtc, LastBtc],
+    });
   }
 
   RenderInit() {
     this.SnapshotData = [];
+    myChart2 = echarts.init(this.$refs.BtcVolPriceToday as any);
+    myChart2.setOption({
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: {
+          type: 'cross',
+        },
+      },
+      grid: {
+        right: '90px',
+        left: '50px',
+        bottom: '80px',
+        top: '140px',
+      },
+      legend: {
+        data: ['交易额(今)', '交易额(昨)', '交易量(今)', '交易量(昨)'],
+        selected: {
+          '交易额(今)': true,
+          '交易额(昨)': true,
+          '交易量(今)': false,
+          '交易量(昨)': false,
+        },
+        top: '70px',
+      },
+      title: {
+        text: ``,
+        top: '10px',
+        textStyle: {
+          color: `rgba(4, 164, 204, 1)`,
+          fontWeight: 'normal',
+          fontSize: 14,
+        },
+      },
+      xAxis: [{ type: 'category', boundaryGap: false }],
+      yAxis: [
+        {
+          type: 'value',
+          position: 'right',
+          name: '万USD',
+          axisLabel: {
+            formatter: '{value}',
+          },
+        },
+        {
+          type: 'value',
+          position: 'left',
+          name: 'BTC',
+          axisLabel: {
+            formatter: '{value}',
+          },
+        },
+      ],
+    });
     myChart = echarts.init(this.$refs.BtcVolPrice as any);
     myChart.setOption({
       tooltip: {
@@ -125,7 +280,7 @@ export default class BtcVolPrice extends Vue {
       dataZoom: [
         {
           show: true,
-          start: 80,
+          start: 50,
           end: 100,
         },
       ],
@@ -297,7 +452,9 @@ export default class BtcVolPrice extends Vue {
     if (times > 5) return;
     const FileName = time.replace(/-/g, '/');
     // this.OnLoadData.push(`加载 ${FileName} ${times > 1 ? times : ''}`);
+    const close = PageLoading(`正在请求备份的数据：${FileName}`);
     const Data = await this.$AnalysisStore.GetJson(this.BaseUrl + FileName);
+    close();
     if (queue !== this.queue) return Promise.resolve(false); // 这是一个已经丢弃掉的请求队列了。
     if (!Data) {
       return this.GetData(queue, time, ++times);
@@ -370,7 +527,7 @@ export default class BtcVolPrice extends Vue {
 
 <style lang="scss" scoped>
 .data-analysis {
-  div {
+  .canvass {
     width: 100%;
     height: 500px;
   }

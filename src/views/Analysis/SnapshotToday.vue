@@ -86,6 +86,7 @@ import { SnapshotItem, Snapshot } from '../../types/fmex';
 import { DateFormat, BigNumShowStr } from '../../lib/utils';
 import axios from 'axios';
 import BigNumber from 'bignumber.js';
+import { PageLoading } from '@/lib/page-loading';
 
 const ToDayStr = DateFormat(Date.now(), 'yyyy-MM-dd');
 
@@ -439,7 +440,9 @@ export default class AnalysisPage extends Vue {
     const next = new Date(timeDate.getTime() + 86400000);
     const FileName = DateFormat(next, 'yyyy/MM/dd');
     if (this.UpCoinName === 'USDT' && next.getTime() < new Date('2020-08-30').getTime()) return; // usdt 之前没数据。不用浪费请求
+    const close = PageLoading(`获取数据: ${this.UpCoinName} ${FileName}`);
     const Data = await this.$AppStore.GetSnapshotDataByDate(this.UpCoinName, FileName);
+    close();
     if (queue !== this.queue) return;
     if (!Data) {
       return this.GetData(queue, ++times);
@@ -467,7 +470,9 @@ export default class AnalysisPage extends Vue {
     const next = new Date(timeDate.getTime());
     const FileName = DateFormat(next, 'yyyy/MM/dd');
     if (this.UpCoinName === 'USDT' && next.getTime() < new Date('2020-08-30').getTime()) return; // usdt 之前没数据。不用浪费请求
+    const close = PageLoading(`正在获取前一天的数据，用于比对`);
     const Data = await this.$AppStore.GetSnapshotDataByDate(this.UpCoinName, FileName);
+    close();
     if (queue !== this.queue) return;
     if (!Data) {
       return this.GetPreData(queue, ++times);
@@ -502,10 +507,12 @@ export default class AnalysisPage extends Vue {
     };
 
     if (this.$AnalysisStore.sessionState.snapshot[id]) return End(this.$AnalysisStore.sessionState.snapshot[id]); // 使用缓存
+    const close = PageLoading(`正在连接：https://fmex.com/api/broker/v3/`);
     const res = await axios
       .get(`https://fmex.com/api/broker/v3/zkp-assets/account/snapshot?currencyName=${this.UpCoinName.toLocaleUpperCase()}${idStr}`)
       .then((res) => res.data)
       .catch(() => null);
+    close();
     console.log(res);
     if (!res || res.status !== 'ok') {
       this.OnLoadData[this.OnLoadData.length - 1] = `${this.OnLoadData[this.OnLoadData.length - 1]} 加载失败`;
