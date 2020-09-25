@@ -21,7 +21,7 @@
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
 import echarts from 'echarts';
-import { DateFormat } from '../../lib/utils';
+import { DateFormat, EchartsUtilsToolbox } from '../../lib/utils';
 import { FMexWss } from '../../lib/wss';
 import { FMex } from '@/api/FMex';
 import { PageLoading } from '@/lib/page-loading';
@@ -198,6 +198,7 @@ export default class BtcVolPrice extends Vue {
           type: 'cross',
         },
       },
+      toolbox: EchartsUtilsToolbox,
       grid: {
         right: '90px',
         left: '50px',
@@ -251,6 +252,7 @@ export default class BtcVolPrice extends Vue {
           type: 'cross',
         },
       },
+      toolbox: EchartsUtilsToolbox,
       grid: {
         right: '90px',
         left: '50px',
@@ -274,11 +276,12 @@ export default class BtcVolPrice extends Vue {
           '24H成交量': false,
           '24H成交额': true,
         },
+        top: '24px',
       },
       title: {
         text: ``,
-        subtext: `24小时成交走势 ${this.Times[0]} ~ ${this.Times[1]}`,
-        top: 36,
+        subtext: `成交走势${this.Times[0]}~${this.Times[1]}`,
+        top: '0px',
       },
       xAxis: [{ type: 'category', boundaryGap: false }],
       dataZoom: [

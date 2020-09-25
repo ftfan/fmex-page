@@ -21,7 +21,7 @@
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
 import echarts from 'echarts';
-import { DateFormat } from '../../lib/utils';
+import { ArrayFilter, DateFormat, EchartsUtilsToolbox } from '../../lib/utils';
 import { PageLoading } from '@/lib/page-loading';
 
 const DateMax = DateFormat(Date.now(), 'yyyy-MM-dd');
@@ -92,18 +92,21 @@ export default class HoldAmount extends Vue {
           type: 'cross',
         },
       },
+      toolbox: EchartsUtilsToolbox,
       grid: {
         right: '50px',
         left: '50px',
         bottom: '80px',
       },
       legend: {
-        data: ['日均', '最小', '最大'],
+        data: ['未平仓量'],
+        // data: ['量', '最小', '最大'],
+        top: '24px',
       },
       title: {
         text: ``,
-        subtext: `${this.Times[0]} 至 ${this.Times[1]} 每日未平仓趋势分析`,
-        top: 4,
+        subtext: `${this.Times[0]}~${this.Times[1]}未平仓趋势`,
+        top: '0px',
       },
       dataZoom: [
         {
@@ -135,18 +138,20 @@ export default class HoldAmount extends Vue {
           type: 'cross',
         },
       },
+      toolbox: EchartsUtilsToolbox,
       grid: {
         right: '50px',
         left: '50px',
         bottom: '80px',
       },
       legend: {
-        data: ['未平仓合约'],
+        data: ['未平仓量'],
+        top: '24px',
       },
       title: {
         text: ``,
         subtext: `近3日未平仓张数`,
-        top: 4,
+        top: '0px',
       },
       dataZoom: [
         {
@@ -177,35 +182,38 @@ export default class HoldAmount extends Vue {
     if (!myChart) return;
     if (!myChart2) return;
     const AmountsAvo = {
-      name: `日均`,
+      name: `未平仓量`,
       type: 'line',
       smooth: true,
       data: [] as number[],
       color: `rgba(4, 164, 204, 1)`,
-    };
-    const AmountsMin = {
-      name: `最小`,
-      type: 'line',
-      smooth: true,
-      data: [] as number[],
-      color: `rgba(4, 164, 204, 0.6)`,
       areaStyle: {
-        color: `rgba(255, 255, 255, 1)`,
+        color: `rgba(4, 164, 204, 0.2)`,
       },
     };
-    const AmountsMax = {
-      name: `最大`,
-      type: 'line',
-      smooth: true,
-      data: [] as number[],
-      color: `rgba(4, 164, 204, 0.6)`,
-      areaStyle: {
-        color: `rgba(4, 164, 204, 0.4)`,
-      },
-    };
+    // const AmountsMin = {
+    //   name: `最小`,
+    //   type: 'line',
+    //   smooth: true,
+    //   data: [] as number[],
+    //   color: `rgba(4, 164, 204, 0.6)`,
+    //   areaStyle: {
+    //     color: `rgba(255, 255, 255, 1)`,
+    //   },
+    // };
+    // const AmountsMax = {
+    //   name: `最大`,
+    //   type: 'line',
+    //   smooth: true,
+    //   data: [] as number[],
+    //   color: `rgba(4, 164, 204, 0.6)`,
+    //   areaStyle: {
+    //     color: `rgba(4, 164, 204, 0.4)`,
+    //   },
+    // };
     const xAxisTotal: string[] = [];
     const Amounts = {
-      name: `未平仓合约`,
+      name: `未平仓量`,
       type: 'bar',
       data: [] as number[],
       color: `rgba(4, 164, 204, 0.4)`,
@@ -217,30 +225,39 @@ export default class HoldAmount extends Vue {
     const Last5Day = this.FullData.length - 3;
     this.FullData.map((items: any, index) => {
       if (!items.length) return;
-      xAxisTotal.push(items[0].TimeStr.replace(/\r\n(.*)/, ''));
-      let min = Infinity;
-      let max = 0;
-      let sum = 0;
+      // xAxisTotal.push(items[0].TimeStr.replace(/\r\n(.*)/, ''));
+      const min = Infinity;
+      const max = 0;
+      const sum = 0;
       items.forEach((item: any) => {
         const val = item.BTCUSD_P / 10000;
         if (index >= Last5Day) {
           xAxis.push(item.TimeStr);
           Amounts.data.push(val);
         }
+        // min = Math.min(val, min);
+        // max = Math.max(val, max);
+        // sum += val;
 
-        min = Math.min(val, min);
-        max = Math.max(val, max);
-        sum += val;
+        xAxisTotal.push(item.TimeStr);
+        AmountsAvo.data.push(val);
       });
-      AmountsAvo.data.push(Math.floor((sum / items.length) * 10000) / 10000);
-      AmountsMin.data.push(min);
-      AmountsMax.data.push(max);
+
+      // ArrayFilter(items, 1440);
+      // items.forEach((item: any) => {
+      //   const val = item.BTCUSD_P / 10000;
+      //   xAxisTotal.push(item.TimeStr);
+      //   AmountsAvo.data.push(val);
+      // });
+      // AmountsAvo.data.push(Math.floor((sum / items.length) * 10000) / 10000);
+      // AmountsMin.data.push(min);
+      // AmountsMax.data.push(max);
     });
     myChart.setOption({
       xAxis: {
         data: xAxisTotal,
       },
-      series: [AmountsAvo, AmountsMax, AmountsMin],
+      series: [AmountsAvo],
     });
     myChart2.setOption({
       xAxis: {

@@ -83,7 +83,7 @@
 import { Component, Vue, Watch } from 'vue-property-decorator';
 import { EchartsBar } from '@/lib/echarts-render';
 import { SnapshotItem, Snapshot } from '../../types/fmex';
-import { DateFormat, BigNumShowStr } from '../../lib/utils';
+import { DateFormat, BigNumShowStr, EchartsUtilsToolbox } from '../../lib/utils';
 import axios from 'axios';
 import BigNumber from 'bignumber.js';
 import { PageLoading } from '@/lib/page-loading';
@@ -118,6 +118,7 @@ const CreateNumChoose = (num: number, index: number) => {
             trigger: 'axis',
             axisPointer: { type: 'shadow' },
           },
+          toolbox: EchartsUtilsToolbox,
           title: {
             subtext: `账户资产 < ${num} ${vm.UpCoinName} 的${database.length}个账户`,
           },
@@ -133,6 +134,7 @@ const CreateNumChoose = (num: number, index: number) => {
           },
           series: [
             {
+              name: `资产`,
               data: database.map((item) => item.amount),
               type: 'bar',
             },
@@ -152,6 +154,7 @@ const CreateNumChoose = (num: number, index: number) => {
             trigger: 'axis',
             axisPointer: { type: 'shadow' },
           },
+          toolbox: EchartsUtilsToolbox,
           title: {
             subtext: `账户资产 >= ${num} ${vm.UpCoinName} 的${database.length}个账户`,
           },
@@ -167,6 +170,7 @@ const CreateNumChoose = (num: number, index: number) => {
           },
           series: [
             {
+              name: `资产`,
               data: database.map((item) => item.amount),
               type: 'bar',
             },
@@ -306,6 +310,7 @@ export default class AnalysisPage extends Vue {
             trigger: 'axis',
             axisPointer: { type: 'shadow' },
           },
+          toolbox: EchartsUtilsToolbox,
           title: {
             subtext: '账户资产 TOP:50',
           },
@@ -321,6 +326,7 @@ export default class AnalysisPage extends Vue {
           },
           series: [
             {
+              name: `资产`,
               data: database.map((item) => item.amount),
               type: 'bar',
               markPoint: {
@@ -352,6 +358,7 @@ export default class AnalysisPage extends Vue {
             trigger: 'axis',
             axisPointer: { type: 'shadow' },
           },
+          toolbox: EchartsUtilsToolbox,
           title: {
             subtext: `账户资产排名 50~${vm.SnapshotData.length}`,
           },
@@ -367,6 +374,7 @@ export default class AnalysisPage extends Vue {
           },
           series: [
             {
+              name: `资产`,
               data: database.map((item) => item.amount),
               type: 'bar',
             },
@@ -423,6 +431,8 @@ export default class AnalysisPage extends Vue {
   }
 
   async mountedd() {
+    this.SnapshotData = [];
+    this.SnapshotDataPre = [];
     await this.GetData(++this.queue);
     this.Render();
   }

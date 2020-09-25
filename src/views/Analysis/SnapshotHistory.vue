@@ -73,7 +73,7 @@
 <script lang="ts">
 import { Component, Vue, Watch } from 'vue-property-decorator';
 import echarts from 'echarts';
-import { DateFormat, BigNumShowStr } from '../../lib/utils';
+import { DateFormat, BigNumShowStr, EchartsUtilsToolbox } from '../../lib/utils';
 import BigNumber from 'bignumber.js';
 import { debounce, throttle } from 'ts-debounce-throttle';
 import { PageLoading } from '@/lib/page-loading';
@@ -231,20 +231,22 @@ export default class AnalysisPage extends Vue {
           },
         },
       },
+      toolbox: EchartsUtilsToolbox,
       legend: {
+        top: '24px',
         data: [...this.BtcNumber.map((num, i) => `${this.BtcNumber[i - 1] || 0}~${num}`), `${this.BtcNumber[this.BtcNumber.length - 1]}+`, '总资产'],
       },
       grid: {
         left: '20px',
         right: '14px',
         bottom: '3%',
-        // top: '40px',
+        top: '80px',
         containLabel: true,
       },
       title: {
         text: ``,
         subtext: `账户资产趋势`,
-        top: 4,
+        top: '0',
       },
       xAxis: [{ type: 'category', boundaryGap: false }],
       yAxis: [
@@ -269,6 +271,7 @@ export default class AnalysisPage extends Vue {
           },
         },
       },
+      toolbox: EchartsUtilsToolbox,
       legend: {
         data: this.Top5.map((val) => val + 1 + ''),
         selected: {
@@ -278,18 +281,19 @@ export default class AnalysisPage extends Vue {
           4: false,
           5: false,
         },
+        top: '24px',
       },
       grid: {
         left: '20px',
         right: '14px',
         bottom: '3%',
-        top: '130px',
+        top: '120px',
         containLabel: true,
       },
       title: {
         text: ``,
         subtext: `TOP${this.Top5.length} 资产 与系统资产 历史`,
-        top: 60,
+        top: '0px',
       },
       xAxis: [{ type: 'category', boundaryGap: false }],
       yAxis: [
@@ -318,8 +322,10 @@ export default class AnalysisPage extends Vue {
           },
         },
       },
+      toolbox: EchartsUtilsToolbox,
       legend: {
         data: [...this.BtcNumber.map((num, i) => `${this.BtcNumber[i - 1] || 0}~${num}`), `${this.BtcNumber[this.BtcNumber.length - 1]}+`, '合计'],
+        top: '24px',
       },
       grid: {
         left: '20px',
@@ -331,7 +337,7 @@ export default class AnalysisPage extends Vue {
       title: {
         text: ``,
         subtext: `账户数量趋势`,
-        top: 4,
+        top: '0px',
       },
       xAxis: [{ type: 'category', boundaryGap: false }],
       yAxis: [

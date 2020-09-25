@@ -1165,7 +1165,7 @@ export default class ImconfigPage extends Vue {
     const TodayStr = DateFormat(new Date(), 'yyyy/MM/dd');
     // 今日的数据，要获取最新的
     if (FileName.match(TodayStr)) FileName = `${FileName}?t=${Date.now()}`;
-    const close = PageLoading(`获取报表:${FileName}`);
+    const close = PageLoading(`获取报表:${TodayStr}`);
     const Data = await this.$AnalysisStore.GetData(`https://fmex-database.oss-cn-qingdao.aliyuncs.com` + FileName);
     close();
     if (!Data) {

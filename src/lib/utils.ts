@@ -71,3 +71,38 @@ export const BigNumShowStr = (num: number) => {
   if (num < 1000000000) return Math.floor(num / 10000000) / 10 + '亿';
   return Math.floor(num / 100000000) + '亿';
 };
+
+// echarts 的工具开放
+export const EchartsUtilsToolbox = {
+  show: true,
+  feature: {
+    dataZoom: {
+      yAxisIndex: 'none',
+    },
+    dataView: { readOnly: false },
+    magicType: { type: ['line', 'bar'] },
+    restore: {},
+    saveAsImage: {},
+  },
+};
+
+// 对数组进行数据采样
+export const ArrayFilter = (arr: any[], num: number) => {
+  if (!arr.length) return;
+  const diffOut = arr.length / num; // 每隔 这么多个，留下一个
+  if (diffOut <= 1) return;
+  let ii = 0;
+  const map: any = {};
+  arr.forEach((i, index) => {
+    map[Math.floor(index * diffOut)] = true;
+    // 无需修改的有效数据
+    if (map[index]) {
+      arr[ii++] = i;
+      return;
+    }
+  });
+
+  const last = arr[arr.length - 1];
+  arr.splice(ii, arr.length - ii);
+  arr[arr.length - 1] = last; // 一定把最后一条数据放进去，有头有尾
+};
