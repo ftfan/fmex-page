@@ -26,6 +26,7 @@ import { FMexWss } from '../../lib/wss';
 import { FMex } from '@/api/FMex';
 import { PageLoading } from '@/lib/page-loading';
 import BigNumber from 'bignumber.js';
+import { debounce, throttle } from 'ts-debounce-throttle';
 
 const DateMax = DateFormat(Date.now(), 'yyyy-MM-dd');
 const DateMin = DateFormat(new Date(2020, 7 - 1, 13), 'yyyy-MM-dd');
@@ -41,6 +42,7 @@ const GetTimes = () => {
 let myChart: echarts.ECharts | null = null;
 let myChart2: echarts.ECharts | null = null;
 const map: any = {};
+const Xarray = new Array((24 * 60) / 3).fill(0).map((v, i) => i * 3);
 
 @Component({
   components: {},
@@ -58,6 +60,7 @@ export default class BtcVolPrice extends Vue {
   // OnLoadData = ['用户资产数据'];
   SnapshotData: any[] = [];
   SnapshotData2: FMex.CandelRes[] = [];
+  SnapshotData3: FMex.CandelRes[] = [];
 
   BaseUrl = 'https://fmex-database.oss-cn-qingdao.aliyuncs.com/fmex/v2/market/all-tickers/';
   FmexCurrent = 'https://api.fmex.com/v2/market/all-tickers';
@@ -93,73 +96,136 @@ export default class BtcVolPrice extends Vue {
     this.SnapshotData2 = [];
     const now = Date.now();
     const close = PageLoading(`正在努力连接 wss://api.fmex.com/v2/ws`);
+
+    FMexWss.sub('candle', FMex.Resolution.M3, 'btcusd_p').ondata((res) => {
+      const item2 = this.SnapshotData2[this.SnapshotData2.length - 1];
+      if (item2) {
+        if (item2.id === res.id) {
+          Object.assign(item2, res);
+          console.log('merge to SnapshotData2', res);
+        } else {
+          this.SnapshotData2.push(res);
+          console.log('push to SnapshotData2', res);
+        }
+      }
+      this.Render2();
+    });
+    FMexWss.sub('candle', FMex.Resolution.M1, 'btcusd_p').ondata((res) => {
+      const item3 = this.SnapshotData3[this.SnapshotData3.length - 1];
+      if (item3) {
+        if (item3.id === res.id) {
+          Object.assign(item3, res);
+          console.log('merge to SnapshotData3', res);
+        } else {
+          this.SnapshotData3.push(res);
+          console.log('push to SnapshotData3', res);
+        }
+      }
+      this.Render2();
+    });
+
+    FMexWss.req('candle', FMex.Resolution.M1, 'btcusd_p', 1440, now).then((res) => {
+      this.SnapshotData3 = res.data;
+      this.Render2();
+    });
+
     // 获取到最近3天的数据（M1只能获取到最近24小时的）
-    const [res1, res2] = await Promise.all([FMexWss.req('candle', FMex.Resolution.M3, 'btcusd_p', 1440, now), FMexWss.req('candle', FMex.Resolution.M1, 'btcusd_p', 1440, now)]);
+    const [res1] = await Promise.all([FMexWss.req('candle', FMex.Resolution.M3, 'btcusd_p', 1440, now)]);
+
+    // FMexWss.req('candle', FMex.Resolution.M1, 'btcusd_p', 1440, now)
     close();
-    const minLast24 = res2.data[0].id;
-    res1.data = res1.data.filter((item) => item.id < minLast24);
-    const max3m = res1.data[res1.data.length - 1].id + 180;
+    // const minLast24 = res2.data[0].id;
+    // res1.data = res1.data.filter((item) => item.id < minLast24);
+    // const max3m = res1.data[res1.data.length - 1].id + 180;
     // 相隔必须是3分钟。否则删除3分钟内多计算的
-    res2.data = res2.data.filter((item) => item.id >= max3m);
-    this.SnapshotData2 = res1.data.concat(res2.data);
+    // res2.data = res2.data.filter((item) => item.id >= max3m);
+    // this.SnapshotData2 = res1.data.concat(res2.data);
+    this.SnapshotData2 = res1.data;
     this.Render2();
   }
-  Render2() {
+  Render2 = throttle(function(this: BtcVolPrice) {
     if (!myChart2) return;
-    const arr24 = new Array(24).fill(0).map((v, i) => i + 1);
+    if (!this.SnapshotData2.length) return;
     const CurrentBtc = {
-      name: `交易量(今)`,
+      name: `交易额`,
       yAxisIndex: 1,
       type: 'line',
-      data: arr24.map((i) => NaN),
+      data: Xarray.map((i) => NaN),
       color: `rgba(4, 204, 164, 1)`,
+      markPoint: {
+        data: [] as any[],
+      },
     };
     const LastBtc = {
-      name: `交易量(昨)`,
+      name: `交易额(昨)`,
       yAxisIndex: 1,
       type: 'line',
-      data: arr24.map((i) => NaN),
+      data: Xarray.map((i) => NaN),
       color: `rgba(4, 204, 164, 0.3)`,
+      markPoint: {
+        data: [] as any[],
+      },
     };
     const CurrentUsd = {
-      name: `交易额(今)`,
+      name: `交易量`,
       yAxisIndex: 0,
       type: 'line',
-      data: arr24.map((i) => NaN),
+      data: Xarray.map((i) => NaN),
       color: `rgba(4, 164, 204, 1)`,
+      markPoint: {
+        data: [] as any[],
+      },
     };
     const LastUsd = {
-      name: `交易额(昨)`,
+      name: `交易量(昨)`,
       yAxisIndex: 0,
       type: 'line',
-      data: arr24.map((i) => NaN),
+      data: Xarray.map((i) => NaN),
       color: `rgba(4, 164, 204, 0.3)`,
+      markPoint: {
+        data: [] as any[],
+      },
     };
-    const TodayStr = DateFormat(new Date(), 'yyyy-MM-dd');
-    const LastStr = DateFormat(Date.now() - 86400000, 'yyyy-MM-dd');
+    const theDateOfNow = Date.now();
+    const TodayStr = DateFormat(theDateOfNow, 'yyyy-MM-dd');
+    const LastStr = DateFormat(theDateOfNow - 86400000, 'yyyy-MM-dd');
     const TodayStrArr: string[] = [];
     const LastStrArr: string[] = [];
-    const xAxis = arr24.map((val) => {
-      val = val - 1;
-      let str = `${val}`;
-      if (val < 10) str = `0${val}`;
-      TodayStrArr.push(TodayStr + ` ${str}`);
-      LastStrArr.push(LastStr + ` ${str}`);
-      return str;
+    const xAxis = Xarray.map((val) => {
+      let hh: any = Math.floor(val / 60); // 小时
+      let mm: any = val % 60;
+      if (hh < 10) hh = `0${hh}`;
+      if (mm < 10) mm = `0${mm}`;
+      const end = `${hh}:${mm}`;
+      TodayStrArr.push(TodayStr + ' ' + end);
+      LastStrArr.push(LastStr + ' ' + end);
+      return end;
     });
 
     let sum24 = 0;
-    const timer24 = Date.now() - 86400000;
+    const timer24 = theDateOfNow - 86400000;
+
+    // 使用 SnapshotData3 计算出 最近24小时的交易量
+    let SnapshotData3Last24H = 0;
+    this.SnapshotData3.forEach((item) => {
+      const time = item.id * 1000;
+      if (time <= timer24) return;
+      SnapshotData3Last24H += item.base_vol;
+    });
+    SnapshotData3Last24H = Math.floor(SnapshotData3Last24H / 10000) / 10000;
+
+    let lastIndex = 0; // 记录今天的最后一个索引（后面的索引还没有数据。）
 
     this.SnapshotData2.forEach((item) => {
       const time = item.id * 1000;
       if (time > timer24) sum24 = sum24 + item.base_vol; // 统计最近24小时
-      const timestr = DateFormat(time, 'yyyy-MM-dd hh');
+      const timestr = DateFormat(time, 'yyyy-MM-dd hh:mm');
       const index = TodayStrArr.indexOf(timestr);
       const index2 = LastStrArr.indexOf(timestr);
       if (index > -1) {
         CurrentBtc.data[index] = new BigNumber(item.quote_vol).plus(CurrentBtc.data[index] || 0).toNumber();
         CurrentUsd.data[index] = new BigNumber(item.base_vol / 10000).plus(CurrentUsd.data[index] || 0).toNumber();
+        lastIndex = index;
       } else if (index2 > -1) {
         LastBtc.data[index2] = new BigNumber(item.quote_vol).plus(LastBtc.data[index2] || 0).toNumber();
         LastUsd.data[index2] = new BigNumber(item.base_vol / 10000).plus(LastUsd.data[index2] || 0).toNumber();
@@ -167,26 +233,77 @@ export default class BtcVolPrice extends Vue {
     });
 
     // console.log(TodayStrArr, LastStrArr, CurrentUsd, CurrentBtc, LastUsd, LastBtc);
-    // CurrentBtc.markPoint.data.push({
-    //   symbol: 'pin',
-    //   symbolSize: 40,
-    //   name: '最新价格',
-    //   coord: [xAxis[xAxis.length - 1], curPrice],
-    //   value: curPrice,
-    // });
-    const sum = Math.floor(CurrentUsd.data.reduce((a, b) => (a || 0) + (b || 0), 0)) / 10000;
-    const lastSum = Math.floor(LastUsd.data.reduce((a, b) => (a || 0) + (b || 0), 0)) / 10000;
+
+    let summ = new BigNumber(0);
+    LastUsd.data.forEach((item, index) => {
+      summ = summ.plus(item);
+      LastUsd.data[index] = summ.toNumber();
+    });
+    summ = new BigNumber(0);
+    LastBtc.data.forEach((item, index) => {
+      summ = summ.plus(item);
+      LastBtc.data[index] = summ.toNumber();
+    });
+    summ = new BigNumber(0);
+    CurrentUsd.data.forEach((item, index) => {
+      if (index > lastIndex) return;
+      summ = summ.plus(item);
+      CurrentUsd.data[index] = summ.toNumber();
+    });
+    summ = new BigNumber(0);
+    CurrentBtc.data.forEach((item, index) => {
+      if (index > lastIndex) return;
+      summ = summ.plus(item);
+      CurrentBtc.data[index] = summ.toNumber();
+    });
+
+    CurrentBtc.markPoint.data.push({
+      symbol: 'pin',
+      symbolSize: 40,
+      name: '',
+      coord: [xAxis[lastIndex], CurrentBtc.data[lastIndex]],
+      value: CurrentBtc.data[lastIndex],
+    });
+    CurrentUsd.markPoint.data.push({
+      symbol: 'pin',
+      symbolSize: 40,
+      name: '',
+      coord: [xAxis[lastIndex], CurrentUsd.data[lastIndex]],
+      value: CurrentUsd.data[lastIndex],
+    });
+    LastBtc.markPoint.data.push({
+      symbol: 'pin',
+      symbolSize: 40,
+      name: '',
+      coord: [xAxis[xAxis.length - 1], LastBtc.data[LastBtc.data.length - 1]],
+      value: LastBtc.data[LastBtc.data.length - 1],
+    });
+    LastUsd.markPoint.data.push({
+      symbol: 'pin',
+      symbolSize: 40,
+      name: '',
+      coord: [xAxis[xAxis.length - 1], LastUsd.data[LastUsd.data.length - 1]],
+      value: LastUsd.data[LastUsd.data.length - 1],
+    });
+
+    const sum = Math.floor(CurrentUsd.data[lastIndex]) / 10000;
+    const lastSum = Math.floor(LastUsd.data[LastUsd.data.length - 1]) / 10000;
     sum24 = Math.floor(sum24 / 10000) / 10000;
     myChart2.setOption({
       title: {
-        text: [`    ·  单位： 亿USD`, `    ·  ${sum} (今日交易额)`, `    ·  ${lastSum} (昨日交易额)`, `    ·  ${sum24} (最近24小时交易额)`].join('\r\n'),
+        text: [
+          `    ·  单位： 亿 USD (${DateFormat(theDateOfNow, 'yyyy-MM-dd hh:mm:ss')})`,
+          `    ·  ${sum} (今日)`,
+          `    ·  ${lastSum} (昨日)`,
+          `    ·  ${SnapshotData3Last24H || sum24} (最近24小时)`,
+        ].join('\r\n'),
       },
       xAxis: {
         data: xAxis,
       },
       series: [CurrentUsd, LastUsd, CurrentBtc, LastBtc],
     });
-  }
+  }, 1000);
 
   RenderInit() {
     this.SnapshotData = [];
@@ -206,12 +323,12 @@ export default class BtcVolPrice extends Vue {
         top: '140px',
       },
       legend: {
-        data: ['交易额(今)', '交易额(昨)', '交易量(今)', '交易量(昨)'],
+        data: ['交易量', '交易额', '交易量(昨)', '交易额(昨)'],
         selected: {
-          '交易额(今)': true,
-          '交易额(昨)': true,
-          '交易量(今)': false,
-          '交易量(昨)': false,
+          交易量: true,
+          交易额: false,
+          '交易量(昨)': true,
+          '交易额(昨)': false,
         },
         top: '70px',
       },
@@ -478,7 +595,6 @@ export default class BtcVolPrice extends Vue {
       return this.GetData(queue, DateFormat(next, 'yyyy-MM-dd'));
     }
     FMexWss.req('candle', FMex.Resolution.H1, 'btcusd_p', 1440, new Date(this.Times[1]).getTime()).then((res) => {
-      console.log(res);
       res.data.forEach((item) => {
         const time = item.id * 1000;
         if (time < MinTime) return; // 7-13之前还没开始记录数据，这些图画不了
