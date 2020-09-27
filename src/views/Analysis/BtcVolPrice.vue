@@ -292,10 +292,10 @@ export default class BtcVolPrice extends Vue {
     myChart2.setOption({
       title: {
         text: [
-          `    ·  单位： 亿 USD (${DateFormat(theDateOfNow, 'yyyy-MM-dd hh:mm:ss')})`,
-          `    ·  ${sum} (今日)`,
-          `    ·  ${lastSum} (昨日)`,
-          `    ·  ${SnapshotData3Last24H || sum24} (最近24小时)`,
+          `    ·  ${DateFormat(theDateOfNow, 'yyyy-MM-dd hh:mm:ss')}`,
+          `    ·  ${sum} 亿 USD (今日)`,
+          `    ·  ${lastSum} 亿 USD (昨日)`,
+          `    ·  ${SnapshotData3Last24H || sum24} 亿 USD (最近24小时)`,
         ].join('\r\n'),
       },
       xAxis: {
