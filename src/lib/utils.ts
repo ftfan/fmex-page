@@ -106,3 +106,6 @@ export const ArrayFilter = (arr: any[], num: number) => {
   arr.splice(ii, arr.length - ii);
   arr[arr.length - 1] = last; // 一定把最后一条数据放进去，有头有尾
 };
+
+const ua = window.navigator.userAgent.toLowerCase();
+export const IsWechat = ua.indexOf('micromessenger') !== -1;

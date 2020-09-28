@@ -23,6 +23,7 @@ const routes: Array<RouteConfig> = [
   { path: '/Friend', name: 'Friend', component: (s, j) => AsyncLoader(s, j, import('@/views/Friend.vue')) },
   { path: '/Runner', name: 'Runner', component: (s, j) => AsyncLoader(s, j, import('@/views/Runner.vue')) },
   { path: '/Admin', name: 'Admin', component: (s, j) => AsyncLoader(s, j, import('@/views/Admin.vue')) },
+  { path: '/Comment', name: 'Comment', component: (s, j) => AsyncLoader(s, j, import('@/views/Comment.vue')) },
 ];
 
 const router = new VueRouter({

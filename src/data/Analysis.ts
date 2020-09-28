@@ -33,7 +33,10 @@ class Store extends Data {
     time.setDate(time.getDate() + 1);
     date = DateFormat(time, 'yyyy-MM-dd');
     // 30号之前。目前仅有btc。
-    if (time.getTime() < new Date('2020-08-30').getTime()) return (this.localState.PlatformCurrency = ['btc']);
+    if (time.getTime() < new Date('2020-08-30').getTime()) {
+      this.localState.PlatformCurrencyCache[date] = ['btc'];
+      return (this.localState.PlatformCurrency = ['btc']);
+    }
     if (this.localState.PlatformCurrencyCache[date]) return (this.localState.PlatformCurrency = this.localState.PlatformCurrencyCache[date]);
     const res = await axios
       .get(`https://fmex-database.oss-cn-qingdao.aliyuncs.com/fmex/api/broker/v3/zkp-assets/platform/currency/${date.replace(/-/g, '/')}.json`)

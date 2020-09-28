@@ -21,10 +21,12 @@ import SnapshotToday from './Analysis/SnapshotToday.vue';
 import SnapshotHistory from './Analysis/SnapshotHistory.vue';
 import BtcVolPrice from './Analysis/BtcVolPrice.vue';
 import HoldAmount from './Analysis/HoldAmount.vue';
+import Platform from './Analysis/Platform.vue';
 import { LogEvent } from '../router';
+// import { IsWechat } from '@/lib/utils';
 
 @Component<AnalysisPage>({
-  components: { SnapshotToday, SnapshotHistory, BtcVolPrice, HoldAmount },
+  components: { SnapshotToday, SnapshotHistory, BtcVolPrice, HoldAmount, Platform },
   beforeRouteEnter: (to, from, next) => {
     next((vm) => {
       vm.tab = parseInt(to.query.tab as string, 10) || 0;
@@ -39,6 +41,7 @@ export default class AnalysisPage extends Vue {
     { Name: '资产走势', Component: SnapshotHistory },
     { Name: '交易量分析', Component: BtcVolPrice },
     { Name: '未平仓量', Component: HoldAmount },
+    // { Name: '钱包资产', Component: Platform },
   ];
 
   @Watch('tab')
@@ -55,7 +58,13 @@ export default class AnalysisPage extends Vue {
     });
 
     // 当前路由与tab不一致时才更新
-    if (String(tab) !== String(this.$route.query.tab)) this.$router.replace({ query });
+    if (String(tab) !== String(this.$route.query.tab)) {
+      // if (IsWechat) {
+      //   location.replace(`/?Analysis=${tab}/#/Analysis?tab=${tab}`);
+      // } else {
+      this.$router.replace({ query });
+      // }
+    }
     LogEvent(item.Name, 'click', 'tab', 1);
   }
 }

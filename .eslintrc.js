@@ -19,5 +19,6 @@ module.exports = {
     '@typescript-eslint/no-namespace': 'off',
     'no-async-promise-executor': 'off',
     '@typescript-eslint/no-unused-vars': 'off',
+    '@typescript-eslint/no-non-null-assertion': 'off',
   },
 };

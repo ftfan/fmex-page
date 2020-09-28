@@ -10,8 +10,12 @@ import '@/data/Analysis';
 import { PageLoading } from './lib/page-loading';
 
 import vuetify from './plugins/vuetify';
+import './plugins/vssue';
 import 'roboto-fontface/css/roboto/roboto-fontface.css';
 import '@mdi/font/css/materialdesignicons.css';
+import CurrencyCoin from '@/components/CurrencyCoin.vue';
+
+Vue.component('CurrencyCoin', CurrencyCoin);
 
 // 加载数据中心
 const requireComponent = (require as any).context('@/data', true, /[\w]+\.ts$/);

@@ -1,6 +1,7 @@
 <template>
   <div>
-    <v-select style="margin-top:10px" dense :items="$AnalysisStore.localState.PlatformCurrency" label="查看币种" v-model="$AnalysisStore.localState.Currency" outlined></v-select>
+    <CurrencyCoin></CurrencyCoin>
+
     <v-dialog ref="dialog" v-model="modal" color="primary" :return-value.sync="Dates" persistent>
       <template v-slot:activator="{ on, attrs }">
         <v-text-field v-model="Dates" label="日期选择" prepend-icon="mdi-calendar-range" readonly v-bind="attrs" v-on="on"></v-text-field>

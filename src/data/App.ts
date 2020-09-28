@@ -2,6 +2,9 @@ import Data from '@/lib/data';
 import Vue from 'vue';
 import { URIJS } from '@/lib/utils';
 const Day20200901 = new Date('2020-09-01').getTime();
+const Day20200923 = new Date('2020-09-23').getTime();
+const Day20200909 = new Date('2020-09-09').getTime();
+const Day20200828 = new Date('2020-08-28').getTime();
 
 class Store extends Data {
   readonly state = {
@@ -49,6 +52,17 @@ class Store extends Data {
   }
 
   async GetSnapshotDataByDate(coin: string, date: string) {
+    const datetime = date.replace(/\//g, '-');
+    const time = new Date(datetime).getTime();
+    // 当时还没有该币种
+    const conf = Vue.AnalysisStore.localState.PlatformCurrencyCache[datetime];
+    if (conf) {
+      if (conf.indexOf(coin.toLocaleLowerCase()) === -1) return null;
+    }
+    // 部分已知上架时间的币种
+    if (coin === 'TRX' && time < Day20200923) return null;
+    if (coin === 'ETH' && time < Day20200909) return null;
+    if (coin === 'USDT' && time < Day20200828) return null;
     const Data = await Vue.AnalysisStore.GetJson(`https://fmex-database.oss-cn-qingdao.aliyuncs.com/fmex/api/broker/v3/zkp-assets/account/snapshot/${coin}/${date}`);
     if (!Data) return Data;
     const ShowTime = new Date(date);
@@ -58,6 +72,7 @@ class Store extends Data {
     });
     Data.sort((a: any, b: any) => a.amount - b.amount);
 
+    // BTC 合约资产的 更多信息
     if (coin !== 'BTC') return Data;
 
     // 查找系统账户

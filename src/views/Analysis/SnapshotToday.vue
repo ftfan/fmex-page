@@ -1,6 +1,6 @@
 <template>
   <div>
-    <v-select style="margin-top:10px" dense :items="$AnalysisStore.localState.PlatformCurrency" small label="查看币种" v-model="$AnalysisStore.localState.Currency" outlined></v-select>
+    <CurrencyCoin></CurrencyCoin>
 
     <v-dialog ref="dialog" v-model="modal" color="primary" :return-value.sync="date" persistent>
       <template v-slot:activator="{ on, attrs }">
@@ -417,7 +417,6 @@ export default class AnalysisPage extends Vue {
 
   async SaveDate() {
     (this.$refs.dialog as any).save(this.date);
-    this.SnapshotData = [];
     this.mountedd();
   }
 

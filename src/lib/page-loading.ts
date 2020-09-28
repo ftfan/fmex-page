@@ -5,8 +5,8 @@ class LoadingClose {
   }
 }
 
-const el = document.getElementById('page-loader-model')!;
-const text = document.getElementById('page-loader-model-text')!;
+const el = document.getElementById('page-loader-model');
+const text = document.getElementById('page-loader-model-text');
 const data: LoadingClose[] = [];
 
 export const PageLoading = (text = '') => {
@@ -26,6 +26,8 @@ function DataPop(close: LoadingClose) {
 }
 
 function CheckData() {
+  if (!el) return;
+  if (!text) return;
   if (data.length === 0) {
     el.className = 'hide';
   } else {
