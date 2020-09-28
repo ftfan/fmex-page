@@ -19,4 +19,5 @@ Vue.use(Vssue, {
   clientSecret: '8db1d7aec1ad9c71f82c8218b4addec73b516d7c8663c7ba859d12e10139842d',
   // autoCreateIssue: true, // 允许自动创建issue
   prefix: '[FMexFun]',
+  locale: 'zh',
 });
