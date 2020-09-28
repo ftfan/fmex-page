@@ -411,7 +411,7 @@ export default class AnalysisPage extends Vue {
 
   @Watch('UpCoinName')
   async OnUpCoinNameChange() {
-    if (this.$route.query.tab !== '0') return; // 不是当前页面
+    if (this.$route.query.tab && this.$route.query.tab !== '0') return; // 不是当前页面
     this.mountedd();
   }
 
