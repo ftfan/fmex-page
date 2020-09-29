@@ -14,6 +14,8 @@ import './plugins/vssue';
 import 'roboto-fontface/css/roboto/roboto-fontface.css';
 import '@mdi/font/css/materialdesignicons.css';
 import CurrencyCoin from '@/components/CurrencyCoin.vue';
+import { IsWechat, sleep } from './lib/utils';
+import { LoadCloudApi } from './lib/bridge';
 
 Vue.component('CurrencyCoin', CurrencyCoin);
 
@@ -25,6 +27,10 @@ window.onerror = (message, source, lineno, colno, error) => {
   console.error(message, source, lineno, colno, error);
   LogEvent('Error', 'window', `${JSON.stringify({ message, source, lineno, colno, error })}`, 1);
 };
+
+// (require as any)(['vconsole'], (VConsole: any) => {
+//   (window as any).VConsole = new VConsole();
+// });
 
 Vue.config.errorHandler = function(err, vm, info) {
   console.error(err, vm, info);
@@ -42,12 +48,16 @@ Vue.config.errorHandler = function(err, vm, info) {
   );
 };
 
+if (IsWechat) {
+  LoadCloudApi();
+}
+
 const close = PageLoading('正在启动程序');
 new Vue({
   router,
   vuetify,
   render: (h) => h(App),
-  mounted() {
+  async mounted() {
     close();
   },
 }).$mount('#app');

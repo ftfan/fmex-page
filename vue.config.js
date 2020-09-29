@@ -15,4 +15,12 @@ module.exports = {
       .loader('url-loader')
       .tap((options) => Object.assign(options, { limit: -1 }));
   },
+  devServer: {
+    open: process.platform === 'darwin',
+    host: '0.0.0.0',
+    disableHostCheck: true,
+    port: 8080,
+    https: false,
+    hotOnly: false,
+  },
 };

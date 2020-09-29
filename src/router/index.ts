@@ -24,6 +24,7 @@ const routes: Array<RouteConfig> = [
   { path: '/Runner', name: 'Runner', component: (s, j) => AsyncLoader(s, j, import('@/views/Runner.vue')) },
   { path: '/Admin', name: 'Admin', component: (s, j) => AsyncLoader(s, j, import('@/views/Admin.vue')) },
   { path: '/Comment', name: 'Comment', component: (s, j) => AsyncLoader(s, j, import('@/views/Comment.vue')) },
+  { path: '/WechatTest', name: 'WechatTest', component: (s, j) => AsyncLoader(s, j, import('@/views/WechatTest.vue')) },
 ];
 
 const router = new VueRouter({

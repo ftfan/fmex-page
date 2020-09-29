@@ -1,0 +1,41 @@
+<template>
+  <div></div>
+</template>
+
+<script lang="ts">
+import { LoadCloudApi, LoadWxApi } from '@/lib/bridge';
+import { Component, Vue, Watch } from 'vue-property-decorator';
+
+@Component<WechatTest>({})
+export default class WechatTest extends Vue {
+  async created() {
+    await Promise.all([LoadCloudApi(), LoadWxApi()]);
+    // 初始化一个实例，声明要使用哪个小程序哪个云环境的资源
+    const c = new window.cloud.Cloud({
+      appid: 'wxc5709bd44205e738',
+      resourceAppid: 'wx647b8a5ba3cae7fa',
+      resourceEnv: 'fmex-i1c20',
+    });
+
+    // 初始化，等待授权关系校验通过以及目标云环境的 cloudbase_auth 函数返回授权
+    await c.init();
+    // alert(JSON.stringify(aaa));
+    const res = await window.cloud.getJSSDKSignature({
+      url: location.href,
+    });
+
+    window.wx.config({
+      appId: 'wxc5709bd44205e738', // 必填，公众号的唯一标识
+      timestamp: res.timestamp + '', // 必填，生成签名的时间戳
+      nonceStr: res.nonceStr, // 必填，生成签名的随机串
+      signature: res.signature, // 必填，签名
+      jsApiList: [
+        'onMenuShareTimeline', // 发送朋友圈权限
+        'onMenuShareAppMessage', // 分享好友权限
+        'hideAllNonBaseMenuItem', // 隐藏所有非基础菜单
+        'showMenuItems', // 显示菜单项
+      ],
+    });
+  }
+}
+</script>
