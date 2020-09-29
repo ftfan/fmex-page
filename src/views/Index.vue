@@ -119,10 +119,10 @@ export default class IndexPage extends Vue {
   }
 
   Runners = [
-    {
-      Title: 'FMex合约网格策略',
-      Des: '自定义倍数的网格策略。',
-    },
+    // {
+    //   Title: 'FMex合约网格策略',
+    //   Des: '自定义倍数的网格策略。',
+    // },
   ];
 }
 </script>
