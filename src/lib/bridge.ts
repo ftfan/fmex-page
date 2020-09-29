@@ -39,6 +39,6 @@ export const LoadCloudApi = async () => {
 let wxapi: any;
 export const LoadWxApi = async () => {
   if (wxapi) return wxapi;
-  wxapi = LoadScript('http://res.wx.qq.com/open/js/jweixin-1.6.0.js');
+  wxapi = LoadScript('https://res.wx.qq.com/open/js/jweixin-1.6.0.js');
   return wxapi;
 };
