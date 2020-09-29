@@ -28,11 +28,11 @@
         </v-row>
       </v-container>
 
-      <div style="margin-left:10px;">
+      <!-- <div style="margin-left:10px;">
         <v-btn color="success" @click="ViewOtherData('6ecaf7a0eeafb2194382523779839cc1', 1)">示例：U本位，8000~20000区间网格</v-btn>
         <br />
         <v-btn style="margin-top:10px" color="success" @click="ViewOtherData('e6e53eb75ebbe4eae637898fee27dacc', 0)">示例：B本位，做多网格</v-btn>
-      </div>
+      </div> -->
 
       <v-dialog v-model="kkkkkkkkk">
         <v-form lazy-validation style="padding:20px;background-color:#ffffff;">
