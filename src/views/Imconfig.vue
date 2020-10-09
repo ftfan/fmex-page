@@ -1171,7 +1171,9 @@ export default class ImconfigPage extends Vue {
     if (!Data) {
       return this.GetData(index, ++times);
     }
-    this.ArrayFilter(Data, 5000); // 数据太大，取样一下
+    const MaxNum = 30 * 3000; // 假设最大可以这么多数据。
+    const MaxPerNum = MaxNum / this.params.Reports.length;
+    this.ArrayFilter(Data, MaxPerNum); // 数据太大，取样一下
     this.SnapshotData.unshift({
       FileName,
       data: Data,

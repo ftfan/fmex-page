@@ -23,6 +23,7 @@ import { Component, Vue } from 'vue-property-decorator';
 import echarts from 'echarts';
 import { ArrayFilter, DateFormat, EchartsUtilsToolbox } from '../../lib/utils';
 import { PageLoading } from '@/lib/page-loading';
+import { DataParse } from '@/lib/data-parse';
 
 const DateMax = DateFormat(Date.now(), 'yyyy-MM-dd');
 const DateMin = DateFormat(new Date(2020, 7 - 1, 13), 'yyyy-MM-dd');
@@ -273,7 +274,9 @@ export default class HoldAmount extends Vue {
     const FileName = time.replace(/-/g, '/');
     // this.OnLoadData.push(`加载 ${FileName} ${times > 1 ? times : ''}`);
     const close = PageLoading(`获取数据: ${FileName}`);
-    const Data = await this.$AnalysisStore.GetJson(this.BaseUrl + FileName);
+    let Data = await this.$AnalysisStore.GetJson(this.BaseUrl + FileName);
+    Data = DataParse(Data); // 解析数据。
+
     close();
     if (queue !== this.queue) return Promise.resolve(false); // 这是一个已经丢弃掉的请求队列了。
     if (!Data) {
