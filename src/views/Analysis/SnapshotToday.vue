@@ -24,7 +24,8 @@
     </v-dialog>
 
     <template v-if="!loading && TotalInfo">
-      <div v-for="(item, index) in TotalInfo" :key="index">
+      <v-btn v-if="TotalInfo.length > 2" @click="ShowAll = !ShowAll" style="float:right;margin-right: 10px;" small color="primary">更多</v-btn>
+      <div v-for="(item, index) in TotalInfo.slice(0, ShowAll ? TotalInfo.length : 2)" :key="index">
         <v-badge v-bind="item.badge">
           <v-chip v-bind="item.chip">{{ item.chipContent }}</v-chip>
         </v-badge>
@@ -190,6 +191,8 @@ export default class AnalysisPage extends Vue {
   DateMin = DateMin;
   DateMax = DateMax;
 
+  ShowAll = false;
+
   get CanvasStyle() {
     return { width: window.outerWidth + 'px' };
   }
@@ -272,14 +275,15 @@ export default class AnalysisPage extends Vue {
         chip: { class: 'ma-2', color: 'primary', small: true, outlined: true },
         chipContent: `${this.UpCoinName} 账户数量 ${last.length}`,
       },
-      // 系统账户
-      ...sysInfo,
       {
         // 合计
         badge: { content: this.ShowPre(lastSum.minus(preSum).toNumber()), color: 'primary', 'offset-y': 14, 'offset-x': 20 },
         chip: { class: 'ma-2', color: 'primary', small: true, outlined: true },
         chipContent: `合计 ${lastSum.toNumber()}`,
       },
+
+      // 系统账户
+      ...sysInfo,
     ];
   }
 
