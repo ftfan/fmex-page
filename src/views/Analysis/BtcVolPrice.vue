@@ -34,7 +34,7 @@ const MinTime = new Date(DateMin).getTime();
 const GetTimes = () => {
   const now = new Date();
   const begin = new Date();
-  begin.setDate(now.getDate() - 30);
+  begin.setDate(now.getDate() - 7);
   if (begin.getTime() < MinTime) begin.setTime(MinTime); // 开始时间不得大于目前已有的基础时间（有数据的时间）
   return [DateFormat(begin, 'yyyy-MM-dd'), DateMax];
 };
@@ -51,7 +51,7 @@ export default class BtcVolPrice extends Vue {
   modal = false;
   DateMin = DateMin;
   DateMax = DateMax;
-  // 默认选中最近 30 天
+  // 默认选中最近 7 天
   Times = GetTimes();
   Dates = GetTimes();
 
@@ -404,7 +404,7 @@ export default class BtcVolPrice extends Vue {
       dataZoom: [
         {
           show: true,
-          start: 50,
+          start: 0,
           end: 100,
         },
       ],

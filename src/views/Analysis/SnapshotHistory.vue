@@ -42,7 +42,7 @@
           </v-chip>
           <br />
           的账户数量/资产统计
-          <v-range-slider style="margin-top:60px;" v-model="$AnalysisStore.localState.BtcRange" thumb-label="always" :step="0.1" min="0" max="50">
+          <v-range-slider style="margin-top:60px;" v-model="$AnalysisStore.localState.BtcRange" thumb-label="always" :step="0.01" min="0" max="50">
             <template v-slot:prepend>
               <v-icon color="primary" @click="decrement">
                 mdi-minus
@@ -102,7 +102,7 @@ export default class AnalysisPage extends Vue {
   DateMax = DateMax;
 
   get Ranges() {
-    if (this.UpCoinName === 'BTC') return [1, 2, 3, 4, 5, 8, 10, 15, 20, 25, 30, 40];
+    if (this.UpCoinName === 'BTC') return [0.01, 0.1, 1, 1.5, 2, 3, 4, 5, 8, 10, 15, 20];
     if (this.UpCoinName === 'USDT') return [1, 10, 50, 100, 200, 500, 1000, 2000, 5000, 10000];
     return [10, 50, 100, 500, 1000, 5000, 10000, 50000];
   }
@@ -446,11 +446,13 @@ export default class AnalysisPage extends Vue {
     this.SnapshotData.forEach((item: any, index: number) => {
       // 2222222222222
       {
+        // 前5的资产
         this.Top5.forEach((num, index) => {
-          const user = item.Data[item.Data.length - num - 1] || { amount: 0 }; // 倒序的
+          const user = item.Data[item.Data.length - num - 1] || { amount: NaN }; // 倒序的
           NumArrData2[index].data.push(user.amount);
         });
 
+        // 遍历数据，将有标签的数据记录下来。
         item.Data.forEach((data: any) => {
           if (!data.label) return;
           const label = this.$AnalysisStore.SysName(data.label);
@@ -458,16 +460,17 @@ export default class AnalysisPage extends Vue {
             NumArrData2Map[label] = {
               name: label,
               type: 'line',
-              data: [] as number[],
+              data: this.SnapshotData.map((i) => NaN),
               // 记录当前数据的开始和结束索引
-              _begin: index,
-              _end: index,
+              // _begin: index,
+              // _end: index,
             };
             NumArrData2.push(NumArrData2Map[label]);
           }
-          NumArrData2Map[label].data.push(data.amount);
-          NumArrData2Map[label]._end = index;
+          NumArrData2Map[label].data[index] = data.amount;
+          // NumArrData2Map[label]._end = index;
         });
+        // 遍历目前已有的标签数据，如果当前没有该标签数据，就设置为NaN
       }
 
       // 111111111111 因为amount是从小到大排序的
@@ -492,34 +495,34 @@ export default class AnalysisPage extends Vue {
         PutItem();
       });
       NumArrData.forEach((nad, index) => {
-        nad[0].data.push(tempArr[index].toNumber());
-        nad[1].data.push(tempArrCount[index]);
+        nad[0].data.push(tempArr[index].toNumber() || NaN);
+        nad[1].data.push(tempArrCount[index] || NaN);
       });
-      other[0].data.push(tempArr[tempArr.length - 1].toNumber());
-      other[1].data.push(tempArrCount[tempArrCount.length - 1]);
-      sum[0].data.push(tempArr.reduce((a, b) => a.plus(b), new BigNumber(0)).toNumber());
-      sum[1].data.push(tempArrCount.reduce((a, b) => a + b, 0));
+      other[0].data.push(tempArr[tempArr.length - 1].toNumber() || NaN);
+      other[1].data.push(tempArrCount[tempArrCount.length - 1] || NaN);
+      sum[0].data.push(tempArr.reduce((a, b) => a.plus(b), new BigNumber(0)).toNumber() || NaN);
+      sum[1].data.push(tempArrCount.reduce((a, b) => a + b, 0) || NaN);
     });
 
     // 222222222
     // 数据补齐
-    for (const label in NumArrData2Map) {
-      const mapData = NumArrData2Map[label];
-      // 不是系统数据
-      if (!('_begin' in mapData)) continue;
-      if (mapData._begin > 0) {
-        new Array(mapData._begin).fill(0).forEach((d, index) => {
-          mapData.data.unshift(NaN);
-        });
-      }
-      const diff = this.SnapshotData.length - 1 - mapData._end;
-      if (diff > 0) {
-        new Array(diff).fill(0).forEach((d, index) => {
-          mapData.data.push(NaN);
-        });
-      }
-      console.log(mapData);
-    }
+    // for (const label in NumArrData2Map) {
+    //   const mapData = NumArrData2Map[label];
+    //   // 不是系统数据
+    //   if (!('_begin' in mapData)) continue;
+    //   if (mapData._begin > 0) {
+    //     new Array(mapData._begin).fill(0).forEach((d, index) => {
+    //       mapData.data.unshift(NaN);
+    //     });
+    //   }
+    //   const diff = this.SnapshotData.length - 1 - mapData._end;
+    //   if (diff > 0) {
+    //     new Array(diff).fill(0).forEach((d, index) => {
+    //       mapData.data.push(NaN);
+    //     });
+    //   }
+    //   console.log(mapData);
+    // }
 
     myChart.setOption({
       legend: {

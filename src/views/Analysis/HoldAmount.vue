@@ -30,7 +30,7 @@ const DateMin = DateFormat(new Date(2020, 7 - 1, 13), 'yyyy-MM-dd');
 const GetTimes = () => {
   const now = new Date();
   const begin = new Date();
-  begin.setDate(now.getDate() - 30);
+  begin.setDate(now.getDate() - 15);
   const MinTime = new Date(DateMin).getTime();
   if (begin.getTime() < MinTime) begin.setTime(MinTime); // 开始时间不得大于目前已有的基础时间（有数据的时间）
   return [DateFormat(begin, 'yyyy-MM-dd'), DateMax];
@@ -46,7 +46,7 @@ export default class HoldAmount extends Vue {
   modal = false;
   DateMin = DateMin;
   DateMax = DateMax;
-  // 默认选中最近 30 天
+  // 默认选中最近 15 天
   Times = GetTimes();
   Dates = GetTimes();
 
