@@ -113,14 +113,14 @@ class Store extends Data {
     if (ShowTime.getTime() < Day20200901) {
       Data[Data.length - 1].label = '合约保险基金';
       // 19号那天（保存文件名称是2020-08-20），fusd奖励账户的资产排名到了第三位，也就是index===2；
-      if (date === '2020/08/20') {
-        Data[Data.length - 3].label = 'FUSD解锁账户';
-      } else {
-        Data[Data.length - 2].label = 'FUSD解锁账户';
-      }
+      // if (date === '2020/08/20') {
+      //   Data[Data.length - 3].label = 'FUSD解锁账户';
+      // } else {
+      //   Data[Data.length - 2].label = 'FUSD解锁账户';
+      // }
     }
-    if (['2020/09/01', '2020/09/02', '2020/09/03'].indexOf(date) > -1) Data[Data.length - 2].label = 'FUSD解锁账户';
-    if (['2020/09/04', '2020/09/05', '2020/09/06', '2020/09/07', '2020/09/08', '2020/09/09', '2020/09/10'].indexOf(date) > -1) Data[Data.length - 3].label = 'FUSD解锁账户';
+    // if (['2020/09/01', '2020/09/02', '2020/09/03'].indexOf(date) > -1) Data[Data.length - 2].label = 'FUSD解锁账户';
+    // if (['2020/09/04', '2020/09/05', '2020/09/06', '2020/09/07', '2020/09/08', '2020/09/09', '2020/09/10'].indexOf(date) > -1) Data[Data.length - 3].label = 'FUSD解锁账户';
 
     return Data;
   }

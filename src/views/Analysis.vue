@@ -41,7 +41,7 @@ export default class AnalysisPage extends Vue {
     { Name: '资产走势', Component: SnapshotHistory },
     { Name: '交易量分析', Component: BtcVolPrice },
     { Name: '未平仓量', Component: HoldAmount },
-    // { Name: '钱包资产', Component: Platform },
+    { Name: '钱包资产', Component: Platform },
   ];
 
   @Watch('tab')

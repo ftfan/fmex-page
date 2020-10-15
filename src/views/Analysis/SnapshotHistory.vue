@@ -2,65 +2,6 @@
   <div>
     <CurrencyCoin></CurrencyCoin>
 
-    <v-dialog ref="dialog" v-model="modal" color="primary" :return-value.sync="Dates" persistent>
-      <template v-slot:activator="{ on, attrs }">
-        <v-text-field v-model="Dates" label="日期选择" prepend-icon="mdi-calendar-range" readonly v-bind="attrs" v-on="on"></v-text-field>
-      </template>
-      <v-date-picker v-model="Dates" range scrollable :min="DateMin" :max="DateMax">
-        <v-spacer></v-spacer>
-        <v-btn text color="primary" @click="modal = false">取消</v-btn>
-        <v-btn text color="primary" @click="Submit">确定</v-btn>
-      </v-date-picker>
-    </v-dialog>
-
-    <v-dialog v-model="dialog">
-      <template v-slot:activator="{ on, attrs }">
-        <v-btn color="primary" style="top:80px" fixed top right small fab v-bind="attrs" v-on="on">
-          <v-icon>mdi-view-dashboard-outline</v-icon>
-        </v-btn>
-      </template>
-
-      <v-card>
-        <v-card-title class="headline grey lighten-2">
-          设置统计范围
-          <v-icon @click="dialog = false" style="position: absolute;right: 10px;top: 10px;">mdi-window-close</v-icon>
-        </v-card-title>
-
-        <v-card-text>
-          分析:
-          <br />
-          <v-chip class="ma-2" color="primary" small outlined>
-            <i class="txt-i">0</i> ~ <i class="txt-i">{{ $AnalysisStore.localState.BtcRange[0] }}</i> 个 {{ UpCoinName }}
-          </v-chip>
-          <br />
-          <v-chip class="ma-2" color="primary" small outlined>
-            <i class="txt-i">{{ $AnalysisStore.localState.BtcRange[0] }}</i> ~ <i class="txt-i">{{ $AnalysisStore.localState.BtcRange[1] }}</i> 个 {{ UpCoinName }}
-          </v-chip>
-          <br />
-          <v-chip class="ma-2" color="primary" small outlined>
-            <i class="txt-i">{{ $AnalysisStore.localState.BtcRange[1] }}</i> ~ <i class="txt-i">{{ 50 }}</i> 个 {{ UpCoinName }}
-          </v-chip>
-          <br />
-          的账户数量/资产统计
-          <v-range-slider style="margin-top:60px;" v-model="$AnalysisStore.localState.BtcRange" thumb-label="always" :step="0.01" min="0" max="50">
-            <template v-slot:prepend>
-              <v-icon color="primary" @click="decrement">
-                mdi-minus
-              </v-icon>
-            </template>
-
-            <template v-slot:append>
-              <v-icon color="primary" @click="increment">
-                mdi-plus
-              </v-icon>
-            </template>
-          </v-range-slider>
-
-          <v-chip class="ma-2" @click="TryClick(val)" v-for="val in Ranges" :key="val" :color="$AnalysisStore.localState.BtcRange.indexOf(val) > -1 ? 'primary' : 'success'" small>{{ val }}</v-chip>
-        </v-card-text>
-      </v-card>
-    </v-dialog>
-
     <div class="data-analysis">
       <div style="padding-top:10px" class="echarts" ref="AnalysisPage"></div>
       <v-divider></v-divider>
@@ -78,6 +19,7 @@ import { DateFormat, BigNumShowStr, EchartsUtilsToolbox } from '../../lib/utils'
 import BigNumber from 'bignumber.js';
 import { debounce, throttle } from 'ts-debounce-throttle';
 import { PageLoading } from '@/lib/page-loading';
+import { PageDataPush } from '@/lib/data-parse';
 const DateMax = DateFormat(Date.now() - 86400000, 'yyyy-MM-dd'); // 只有昨日的数据。
 const DateMin = DateFormat(new Date(2020, 7 - 1, 8), 'yyyy-MM-dd');
 const GetTimes = () => {
@@ -101,15 +43,6 @@ export default class AnalysisPage extends Vue {
   DateMin = DateMin;
   DateMax = DateMax;
 
-  get Ranges() {
-    if (this.UpCoinName === 'BTC') return [0.01, 0.1, 1, 1.5, 2, 3, 4, 5, 8, 10, 15, 20];
-    if (this.UpCoinName === 'USDT') return [1, 10, 50, 100, 200, 500, 1000, 2000, 5000, 10000];
-    return [10, 50, 100, 500, 1000, 5000, 10000, 50000];
-  }
-
-  value: number[] = [];
-  labelText: string[] = [];
-
   get UpCoinName() {
     return this.$AnalysisStore.localState.Currency.toLocaleUpperCase();
   }
@@ -119,75 +52,20 @@ export default class AnalysisPage extends Vue {
   // OnLoadData = ['用户资产数据'];
   SnapshotData: any[] = [];
 
-  // 资产区间
-  BtcNumber = [1, 10, 50];
-
-  Top5 = [0, 1, 2, 3, 4];
-
   // 默认选中最近100天
   Times = GetTimes();
   Dates = GetTimes();
   queue = 1; // 因为需要获取多个请求，这里设置个id。id不一样，后面就不请求了
 
-  @Watch('Times', { immediate: true, deep: true })
-  OnTimes1Change() {
-    this.$AnalysisStore.GetPlatformCurrency(this.Times[1]);
-  }
-
-  LastChangeIndex = 0; // $AnalysisStore.localState.BtcRange 最近在使用的索引
-  old = [...Vue.AnalysisStore.localState.BtcRange];
-
-  LabelOutput(item: { index: number; value: string }) {
-    if (item.index === 0) return item.value; // 第一个显示
-    if (item.index === this.SnapshotData.length - 1) return item.value; // 最后一个也显示
-    return '';
-  }
-
-  TryClick(val: number) {
-    const range = this.$AnalysisStore.localState.BtcRange;
-    if (range[1] < range[0]) {
-      const temp = range[1];
-      this.$set(range, 1, range[0]);
-      this.$set(range, 0, temp);
-    }
-    const diff1 = val - range[0];
-    const diff2 = -val + range[1];
-
-    if (diff1 > diff2) {
-      this.$set(range, 1, val);
-    } else {
-      this.$set(range, 0, val);
-    }
-  }
-
-  async Submit() {
-    (this.$refs.dialog as any).save(this.Dates);
-    const begin = new Date(this.Dates[0]);
-    const end = new Date(this.Dates[1]);
-    if (begin.getTime() > end.getTime()) {
-      const temp = begin.getTime();
-      begin.setTime(end.getTime());
-      end.setTime(temp);
-    }
-    this.Times = [DateFormat(begin, 'yyyy-MM-dd'), DateFormat(end, 'yyyy-MM-dd')];
-    this.OnUpCoinNameChange();
-  }
-
-  @Watch('$AnalysisStore.localState.BtcRange', { deep: true, immediate: true })
-  OnBtcRangeChange(val: number[]) {
-    if (val && val[0] === this.old[0]) {
-      this.LastChangeIndex = 1;
-    } else {
-      this.LastChangeIndex = 0;
-    }
-    this.old = [...this.$AnalysisStore.localState.BtcRange];
-    this.OnBtcRangeChanged();
-  }
-  OnBtcRangeChanged = debounce(function(this: AnalysisPage, val: number[]) {
-    this.BtcNumber[0] = this.$AnalysisStore.localState.BtcRange[0];
-    this.BtcNumber[1] = this.$AnalysisStore.localState.BtcRange[1];
-    this.Render();
-  }, 300);
+  PageDataConf = {
+    Symbol: 'btc',
+    Version: 0,
+    BeginTime: '2020-07-08',
+    EndTime: '',
+    DataParse: 'parse1',
+    Params: [{ Key: '' }],
+    Data: [] as any[],
+  };
 
   @Watch('UpCoinName')
   async OnUpCoinNameChange() {
@@ -199,26 +77,25 @@ export default class AnalysisPage extends Vue {
     this.mountedd();
   }
 
-  decrement() {
-    const val = new BigNumber(this.$AnalysisStore.localState.BtcRange[this.LastChangeIndex]).minus(0.1);
-    this.$set(this.$AnalysisStore.localState.BtcRange, this.LastChangeIndex, val.toNumber());
-  }
-  increment() {
-    const val = new BigNumber(this.$AnalysisStore.localState.BtcRange[this.LastChangeIndex]).plus(0.1);
-    this.$set(this.$AnalysisStore.localState.BtcRange, this.LastChangeIndex, val.toNumber());
-  }
-
   mounted() {
     this.mountedd();
   }
 
   async mountedd() {
     this.RenderInit();
-    await this.GetData(++this.queue, this.Times[0]);
+    await this.GetConfig();
+  }
+
+  async GetConfig() {
+    const res = await Vue.AnalysisStore.GetJson(`https://fmex-database.oss-cn-qingdao.aliyuncs.com/report/account/snapshot/${this.UpCoinName}`);
+    if (!res) return;
+    this.PageDataConf = res;
+    if (!this.PageDataConf.EndTime) return;
+    const next = DateFormat(new Date(this.PageDataConf.EndTime).getTime(), 'yyyy-MM-dd');
+    await this.GetData(++this.queue, next);
   }
 
   RenderInit() {
-    this.labelText = [];
     this.SnapshotData = [];
     myChart = echarts.init(this.$refs.AnalysisPage as any);
     myChart.setOption({
@@ -235,7 +112,7 @@ export default class AnalysisPage extends Vue {
       toolbox: EchartsUtilsToolbox,
       legend: {
         top: '24px',
-        data: [...this.BtcNumber.map((num, i) => `${this.BtcNumber[i - 1] || 0}~${num}`), `${this.BtcNumber[this.BtcNumber.length - 1]}+`, '总资产'],
+        data: [],
       },
       grid: {
         left: '20px',
@@ -274,7 +151,7 @@ export default class AnalysisPage extends Vue {
       },
       toolbox: EchartsUtilsToolbox,
       legend: {
-        data: this.Top5.map((val) => val + 1 + ''),
+        data: [],
         selected: {
           1: true,
           2: true,
@@ -293,7 +170,7 @@ export default class AnalysisPage extends Vue {
       },
       title: {
         text: ``,
-        subtext: `TOP${this.Top5.length} 资产 与系统资产 历史`,
+        subtext: `TOP5 资产 与系统资产 历史`,
         top: '0px',
       },
       xAxis: [{ type: 'category', boundaryGap: false }],
@@ -325,7 +202,7 @@ export default class AnalysisPage extends Vue {
       },
       toolbox: EchartsUtilsToolbox,
       legend: {
-        data: [...this.BtcNumber.map((num, i) => `${this.BtcNumber[i - 1] || 0}~${num}`), `${this.BtcNumber[this.BtcNumber.length - 1]}+`, '合计'],
+        data: [],
         top: '24px',
       },
       grid: {
@@ -355,218 +232,92 @@ export default class AnalysisPage extends Vue {
     if (!myChart2) return;
     if (!myChart3) return;
     const color = (i: number) => {
-      return 0.4 + (i / this.BtcNumber.length) * 0.6;
+      return 0.4 + (i / 5) * 0.6;
     };
 
-    this.value = this.SnapshotData.map((it) => it.Data.length);
-    const labelText = this.SnapshotData.map((it) => it.FileName);
-    // this.labelText = labelText.map((it) =>
-    //   it
-    //     .split('\r\n')
-    //     .reverse()
-    //     .join('-')
-    // );
-    // 1111111111111111
-    const NumArrData = this.BtcNumber.map((num, i) => {
-      return [
-        {
-          name: `${this.BtcNumber[i - 1] || 0}~${num}`,
-          type: 'line',
-          stack: `${this.UpCoinName}`,
-          data: [] as number[],
-          color: `rgba(4, 164, 204, ${color(i)})`,
-          areaStyle: {
-            color: `rgba(4, 164, 204, ${color(i)})`,
-          },
-        },
-        {
-          name: `${this.BtcNumber[i - 1] || 0}~${num}`,
-          type: 'line',
-          stack: `${this.UpCoinName}`,
-          data: [] as number[],
-          color: `rgba(4, 164, 204, ${color(i)})`,
-          areaStyle: {
-            color: `rgba(4, 164, 204, ${color(i)})`,
-          },
-        },
-      ];
-    });
-    const other = [
-      {
-        name: `${this.BtcNumber[this.BtcNumber.length - 1]}+`,
+    const labelText = this.PageDataConf.Data.map((item) => item[0].replace('-', '\r\n'));
+    const X1 = this.PageDataConf.Params.slice(1, 6).map((item) => item.Key);
+    const X2 = this.PageDataConf.Params.slice(6, 11).map((item) => item.Key);
+    const X3 = this.PageDataConf.Params.slice(11).map((item) => item.Key);
+    console.log(this.PageDataConf);
+    const Ys1 = X1.map((item, i) => {
+      const res = {
+        name: `${item}`,
         type: 'line',
-        stack: `${this.UpCoinName}`,
-        data: [] as number[],
-        color: `rgba(4, 164, 204, 1)`,
-        areaStyle: {
-          color: `rgba(4, 164, 204, 1)`,
-        },
-      },
-      {
-        name: `${this.BtcNumber[this.BtcNumber.length - 1]}+`,
-        type: 'line',
-        stack: `${this.UpCoinName}`,
-        data: [] as number[],
-        color: `rgba(4, 164, 204, 1)`,
-        areaStyle: {
-          color: `rgba(4, 164, 204, 1)`,
-        },
-      },
-    ];
-    const sum = [
-      {
-        name: `总资产`,
-        type: 'line',
-        data: [] as number[],
-        color: `rgba(4, 164, 204, 1)`,
-      },
-      {
-        name: `合计`,
-        type: 'line',
-        data: [] as number[],
-        color: `rgba(4, 164, 204, 1)`,
-      },
-    ];
-
-    // 2222222222222222222
-    const NumArrData2: any = this.Top5.map((num, i) => {
-      return {
-        name: `${num + 1}`,
-        type: 'line',
-        data: [] as number[],
+        stack: i < 4 ? `${this.UpCoinName}` : '', // 总资产不在叠加范围，单独
+        data: this.PageDataConf.Data.map((item) => item[i + 1]),
         color: `rgba(4, 164, 204, ${color(i)})`,
-        areaStyle: {
-          color: `rgba(4, 164, 204, ${color(i)})`,
-        },
       };
-    });
-
-    const NumArrData2Map: any = {};
-    // 计算
-    this.SnapshotData.forEach((item: any, index: number) => {
-      // 2222222222222
-      {
-        // 前5的资产
-        this.Top5.forEach((num, index) => {
-          const user = item.Data[item.Data.length - num - 1] || { amount: NaN }; // 倒序的
-          NumArrData2[index].data.push(user.amount);
+      if (i < 4) {
+        Object.assign(res, {
+          areaStyle: { color: `rgba(4, 164, 204, ${color(i)})` },
         });
-
-        // 遍历数据，将有标签的数据记录下来。
-        item.Data.forEach((data: any) => {
-          if (!data.label) return;
-          const label = this.$AnalysisStore.SysName(data.label);
-          if (!NumArrData2Map[label]) {
-            NumArrData2Map[label] = {
-              name: label,
-              type: 'line',
-              data: this.SnapshotData.map((i) => NaN),
-              // 记录当前数据的开始和结束索引
-              // _begin: index,
-              // _end: index,
-            };
-            NumArrData2.push(NumArrData2Map[label]);
-          }
-          NumArrData2Map[label].data[index] = data.amount;
-          // NumArrData2Map[label]._end = index;
-        });
-        // 遍历目前已有的标签数据，如果当前没有该标签数据，就设置为NaN
       }
-
-      // 111111111111 因为amount是从小到大排序的
-      let NumIndex = 0;
-      const tempArrCount = NumArrData.map(() => 0);
-      const tempArr = NumArrData.map(() => new BigNumber(0));
-      tempArr.push(new BigNumber(0)); // 其他，多余 10 BTC的账户
-      tempArrCount.push(0);
-      item.Data.forEach((val: any) => {
-        const PutItem = () => {
-          const NumRange = this.BtcNumber[NumIndex];
-          const max = NumIndex in this.BtcNumber ? NumRange : Infinity; // 如果找不到，那就去无限大。
-          const AddVal = (index: number) => {
-            tempArr[index] = tempArr[index].plus(val.amount);
-            tempArrCount[index]++;
-          };
-
-          if (val.amount < max) return AddVal(NumIndex);
-          NumIndex++;
-          PutItem();
-        };
-        PutItem();
-      });
-      NumArrData.forEach((nad, index) => {
-        nad[0].data.push(tempArr[index].toNumber() || NaN);
-        nad[1].data.push(tempArrCount[index] || NaN);
-      });
-      other[0].data.push(tempArr[tempArr.length - 1].toNumber() || NaN);
-      other[1].data.push(tempArrCount[tempArrCount.length - 1] || NaN);
-      sum[0].data.push(tempArr.reduce((a, b) => a.plus(b), new BigNumber(0)).toNumber() || NaN);
-      sum[1].data.push(tempArrCount.reduce((a, b) => a + b, 0) || NaN);
+      return res;
     });
-
-    // 222222222
-    // 数据补齐
-    // for (const label in NumArrData2Map) {
-    //   const mapData = NumArrData2Map[label];
-    //   // 不是系统数据
-    //   if (!('_begin' in mapData)) continue;
-    //   if (mapData._begin > 0) {
-    //     new Array(mapData._begin).fill(0).forEach((d, index) => {
-    //       mapData.data.unshift(NaN);
-    //     });
-    //   }
-    //   const diff = this.SnapshotData.length - 1 - mapData._end;
-    //   if (diff > 0) {
-    //     new Array(diff).fill(0).forEach((d, index) => {
-    //       mapData.data.push(NaN);
-    //     });
-    //   }
-    //   console.log(mapData);
-    // }
+    console.log(Ys1);
+    const Ys2 = X2.map((item, i) => {
+      const res = {
+        name: `${item}`,
+        type: 'line',
+        stack: i < 4 ? `${this.UpCoinName}` : '',
+        data: this.PageDataConf.Data.map((item) => item[i + 6]),
+        color: `rgba(4, 164, 204, ${color(i)})`,
+      };
+      if (i < 4) {
+        Object.assign(res, {
+          areaStyle: { color: `rgba(4, 164, 204, ${color(i)})` },
+        });
+      }
+      return res;
+    });
+    const Ys3 = X3.map((item, i) => {
+      const res = {
+        name: `${item}`,
+        type: 'line',
+        // stack: `${this.UpCoinName}`,
+        data: this.PageDataConf.Data.map((item) => item[i + 11]),
+      };
+      if (i < 4) {
+        Object.assign(res, {
+          color: `rgba(4, 164, 204, ${color(i)})`,
+          areaStyle: { color: `rgba(4, 164, 204, ${color(i)})` },
+        });
+      }
+      return res;
+    });
 
     myChart.setOption({
-      legend: {
-        data: [...this.BtcNumber.map((num, i) => `${this.BtcNumber[i - 1] || 0}~${num}`), `${this.BtcNumber[this.BtcNumber.length - 1]}+`, '总资产'],
-      },
-      xAxis: {
-        data: labelText,
-      },
-      yAxis: [
-        {
-          name: `单位: ${this.UpCoinName}`,
-        },
-      ],
-      series: [...NumArrData.map((item) => item[0]), other[0], sum[0]],
+      legend: { data: X1 },
+      xAxis: { data: labelText },
+      series: Ys1,
+      yAxis: [{ name: `单位: ${this.UpCoinName}` }],
     });
 
     myChart3.setOption({
-      legend: {
-        data: [...this.BtcNumber.map((num, i) => `${this.BtcNumber[i - 1] || 0}~${num}`), `${this.BtcNumber[this.BtcNumber.length - 1]}+`, '合计'],
-      },
-      xAxis: {
-        data: labelText,
-      },
-      series: [...NumArrData.map((item) => item[1]), other[1], sum[1]],
+      legend: { data: X2 },
+      xAxis: { data: labelText },
+      series: Ys2,
     });
 
     myChart2.setOption({
-      legend: {
-        data: NumArrData2.map((i: any) => i.name),
-      },
-      xAxis: {
-        data: labelText,
-      },
-      series: [...NumArrData2],
+      legend: { data: X3 },
+      xAxis: { data: labelText },
+      series: Ys3,
     });
   }
 
   async GetData(queue: number, time: string, times = 1): Promise<any> {
     if (queue !== this.queue) return Promise.resolve(false); // 这是一个已经丢弃掉的请求队列了。
-
+    const timeDate = new Date(time);
+    // 因为数据存储时，按照今天存储昨天的
+    const next = new Date(timeDate.getTime() + 86400000);
     const NextDay = (Data: any) => {
       // 用户资产是备份前一天的。所以时间上是错开了一天。这里纠正回去
-      const ShowTime = new Date(time);
-      this.SnapshotData.push({ FileName: DateFormat(ShowTime, 'MM-dd\r\nyyyy'), Data, ShowTime });
+      // const ShowTime = new Date(time);
+      // this.SnapshotData.push({ FileName: DateFormat(ShowTime, 'MM-dd\r\nyyyy'), Data, ShowTime });
+      this.PageDataConf.EndTime = DateFormat(next, 'yyyy-MM-dd');
+      PageDataPush(this.PageDataConf, Data);
       if (next.getTime() <= new Date(this.Times[1]).getTime()) {
         return this.GetData(queue, FileName.replace(/\//g, '-'));
       }
@@ -574,12 +325,9 @@ export default class AnalysisPage extends Vue {
       this.Render();
       return true;
     };
-    const timeDate = new Date(time);
-    // 因为数据存储时，按照今天存储昨天的
-    const next = new Date(timeDate.getTime() + 86400000);
+
     const FileName = DateFormat(next, 'yyyy/MM/dd');
     if (times > 3) return NextDay([]); // 重试3次没数据，当做没数据处理
-    if (this.UpCoinName === 'USDT' && next.getTime() < new Date('2020-08-30').getTime()) return NextDay([]); // usdt 之前没数据。不用浪费请求
     const close = PageLoading(`努力请求: ${this.UpCoinName} ${FileName}`);
     const Data = await this.$AppStore.GetSnapshotDataByDate(this.UpCoinName, FileName);
     close();

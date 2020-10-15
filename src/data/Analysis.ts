@@ -3,6 +3,7 @@ import Vue from 'vue';
 import { Snapshot } from '@/types/fmex';
 import axios from 'axios';
 import { DateFormat } from '@/lib/utils';
+import { SysName } from '@/lib/data-parse';
 
 class Store extends Data {
   readonly state = {};
@@ -65,11 +66,7 @@ class Store extends Data {
   }
 
   SysName(name: string) {
-    if (name === 'Futures Insurance Fund') return '合约保险基金';
-    if (name === 'Fee income') return '合约手续费收入';
-    if (name === 'Account with Unrealised PNL') return '合约未实现盈亏账户';
-    if (name === 'xxxxxdsadsadsad') return 'FUSD解锁账户';
-    return name;
+    return SysName(name);
   }
 }
 

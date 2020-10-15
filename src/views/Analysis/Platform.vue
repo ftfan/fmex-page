@@ -3,7 +3,11 @@
     <CurrencyCoin></CurrencyCoin>
 
     <div class="data-analysis">
-      <div style="padding-top:10px" class="echarts" ref="Platform"></div>
+      <div style="padding-top:10px" class="echarts" ref="AnalysisPage"></div>
+      <v-divider></v-divider>
+      <div style="padding-top:40px" class="echarts" ref="AnalysisPageTop5"></div>
+      <!-- <v-divider></v-divider>
+      <div style="padding-top:40px" class="echarts" ref="AnalysisNum"></div> -->
     </div>
   </div>
 </template>
@@ -15,27 +19,61 @@ import { DateFormat, BigNumShowStr, EchartsUtilsToolbox } from '../../lib/utils'
 import BigNumber from 'bignumber.js';
 import { debounce, throttle } from 'ts-debounce-throttle';
 import { PageLoading } from '@/lib/page-loading';
+import { PageDataPush, PageDataPush2 } from '@/lib/data-parse';
+const DateMax = DateFormat(Date.now() - 86400000, 'yyyy-MM-dd'); // 只有昨日的数据。
+const DateMin = DateFormat(new Date(2020, 7 - 1, 8), 'yyyy-MM-dd');
+const GetTimes = () => {
+  const now = new Date();
+  const begin = new Date();
+  begin.setDate(now.getDate() - 100);
+  const MinTime = new Date(DateMin).getTime();
+  if (begin.getTime() < MinTime) begin.setTime(MinTime); // 开始时间不得大于目前已有的基础时间（有数据的时间）
+  return [DateFormat(begin, 'yyyy-MM-dd'), DateMax];
+};
 
 let myChart: echarts.ECharts | null = null;
+let myChart2: echarts.ECharts | null = null;
+const myChart3: echarts.ECharts | null = null;
 
 @Component({
   components: {},
 })
-export default class Platform extends Vue {
+export default class AnalysisPlatfromPage extends Vue {
+  modal = false;
+  DateMin = DateMin;
+  DateMax = DateMax;
+
   get UpCoinName() {
     return this.$AnalysisStore.localState.Currency.toLocaleUpperCase();
   }
 
+  loading = true;
+  dialog = false;
+  // OnLoadData = ['用户资产数据'];
   SnapshotData: any[] = [];
 
   // 默认选中最近100天
+  Times = GetTimes();
+  Dates = GetTimes();
   queue = 1; // 因为需要获取多个请求，这里设置个id。id不一样，后面就不请求了
+
+  PageDataConf = {
+    Symbol: 'btc',
+    Version: 0,
+    BeginTime: '2020-07-12',
+    EndTime: '',
+    DataParse: 'parse1',
+    Params: [{ Key: 'snapshot_time' }, { Key: 'platform_total_amount' }, { Key: 'user_total_amount' }, { Key: 'assets_rate' }],
+    Data: [] as any[],
+  };
 
   @Watch('UpCoinName')
   async OnUpCoinNameChange() {
     if (this.$route.query.tab !== '4') return; // 不是当前页面
     this.SnapshotData = [];
     if (myChart) myChart.clear();
+    if (myChart2) myChart2.clear();
+    // if (myChart3) myChart3.clear();
     this.mountedd();
   }
 
@@ -44,17 +82,23 @@ export default class Platform extends Vue {
   }
 
   async mountedd() {
-    this.RenderInit();
-    const today = DateFormat(new Date(), 'yyyy-MM-dd');
-    this.$AnalysisStore.GetPlatformCurrency(today);
-    this.GetData(++this.queue, today);
+    // this.RenderInit();
+    await this.GetConfig();
+  }
+
+  async GetConfig() {
+    const res = await Vue.AnalysisStore.GetJson(`https://fmex-database.oss-cn-qingdao.aliyuncs.com/report/platform/snapshot/${this.UpCoinName}`);
+    if (!res) return;
+    this.PageDataConf = res;
+    if (!this.PageDataConf.EndTime) return;
+    const next = DateFormat(new Date(this.PageDataConf.EndTime).getTime(), 'yyyy-MM-dd');
+    await this.GetData(++this.queue, next);
   }
 
   RenderInit() {
     this.SnapshotData = [];
-    myChart = echarts.init(this.$refs.Platform as any);
+    myChart = echarts.init(this.$refs.AnalysisPage as any);
     myChart.setOption({
-      // color: ['#04a4cc'],
       tooltip: {
         trigger: 'axis',
         axisPointer: {
@@ -78,7 +122,7 @@ export default class Platform extends Vue {
       },
       title: {
         text: ``,
-        subtext: `钱包资产`,
+        subtext: `钱包资产趋势`,
         top: '0',
       },
       xAxis: [{ type: 'category', boundaryGap: false }],
@@ -90,118 +134,128 @@ export default class Platform extends Vue {
         },
       ],
     });
+
+    myChart2 = echarts.init(this.$refs.AnalysisPageTop5 as any);
+    myChart2.setOption({
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: {
+          type: 'cross',
+          label: {
+            backgroundColor: '#6a7985',
+          },
+        },
+      },
+      toolbox: EchartsUtilsToolbox,
+      legend: {
+        data: [],
+        bottom: '0',
+      },
+      grid: {
+        left: '20px',
+        right: '14px',
+        // bottom: '3%',
+        height: '300px',
+        top: '60px',
+        containLabel: true,
+      },
+      title: {
+        text: ``,
+        subtext: `具体钱包账户资产`,
+        top: '0px',
+      },
+      xAxis: [{ type: 'category', boundaryGap: false }],
+      yAxis: [
+        {
+          name: `单位: ${this.UpCoinName}`,
+          type: 'value',
+          axisLabel: { formatter: BigNumShowStr },
+          min: (value) => {
+            return Math.floor(value.min);
+          },
+          max: (value) => {
+            return Math.ceil(value.max);
+          },
+        },
+      ],
+    });
   }
 
   Render() {
+    (this.$refs.AnalysisPageTop5 as any).style.height = 400 + (20 * this.PageDataConf.Params.length - 4) + 'px';
+    this.RenderInit();
     if (!myChart) return;
-    // const xAxisTime: number[] = [];
-    // const address: string[] = [];
-    // this.SnapshotData.forEach((item: any) => {
-    //   // 先对数据进行排序
-    //   xAxisTime.push(item.snapshot_time);
-    //   item.platform_wallet_assets.forEach((addr: any) => {
-    //     address.push(addr.address);
-    //   });
-    // });
-    // const color = (i: number) => {
-    //   return 0.4 + (i / this.BtcNumber.length) * 0.6;
-    // };
+    if (!myChart2) return;
+    // if (!myChart3) return;
+    const color = (i: number) => {
+      return 0.4 + (i / 5) * 0.6;
+    };
 
-    // const labelText = this.SnapshotData.map((it) => it.FileName);
-    // const NumArrData = this.BtcNumber.map((num, i) => {
-    //   return [
-    //     {
-    //       name: `${this.BtcNumber[i - 1] || 0}~${num}`,
-    //       type: 'line',
-    //       stack: `${this.UpCoinName}`,
-    //       data: [] as number[],
-    //       color: `rgba(4, 164, 204, ${color(i)})`,
-    //       areaStyle: {
-    //         color: `rgba(4, 164, 204, ${color(i)})`,
-    //       },
-    //     },
-    //     {
-    //       name: `${this.BtcNumber[i - 1] || 0}~${num}`,
-    //       type: 'line',
-    //       stack: `${this.UpCoinName}`,
-    //       data: [] as number[],
-    //       color: `rgba(4, 164, 204, ${color(i)})`,
-    //       areaStyle: {
-    //         color: `rgba(4, 164, 204, ${color(i)})`,
-    //       },
-    //     },
-    //   ];
-    // });
-    // const other = [
-    //   {
-    //     name: `${this.BtcNumber[this.BtcNumber.length - 1]}+`,
-    //     type: 'line',
-    //     stack: `${this.UpCoinName}`,
-    //     data: [] as number[],
-    //     color: `rgba(4, 164, 204, 1)`,
-    //     areaStyle: {
-    //       color: `rgba(4, 164, 204, 1)`,
-    //     },
-    //   },
-    //   {
-    //     name: `${this.BtcNumber[this.BtcNumber.length - 1]}+`,
-    //     type: 'line',
-    //     stack: `${this.UpCoinName}`,
-    //     data: [] as number[],
-    //     color: `rgba(4, 164, 204, 1)`,
-    //     areaStyle: {
-    //       color: `rgba(4, 164, 204, 1)`,
-    //     },
-    //   },
-    // ];
-    // const sum = [
-    //   {
-    //     name: `总资产`,
-    //     type: 'line',
-    //     data: [] as number[],
-    //     color: `rgba(4, 164, 204, 1)`,
-    //   },
-    //   {
-    //     name: `合计`,
-    //     type: 'line',
-    //     data: [] as number[],
-    //     color: `rgba(4, 164, 204, 1)`,
-    //   },
-    // ];
+    const labelText = this.PageDataConf.Data.map((item) => DateFormat(item[0], 'yyyy-MM-dd').replace('-', '\r\n'));
+    const X1 = this.PageDataConf.Params.slice(1, 3).map((item) => item.Key);
+    const X2 = this.PageDataConf.Params.slice(4).map((item) => item.Key);
+    console.log(this.PageDataConf);
+    const Ys1 = X1.map((item, i) => {
+      const res = {
+        name: `${item}`,
+        type: 'line',
+        data: this.PageDataConf.Data.map((item) => item[i + 1]),
+      };
+      return res;
+    });
+    const Ys2 = X2.map((item, i) => {
+      const res = {
+        name: `${item}`,
+        type: 'line',
+        data: this.PageDataConf.Data.map((item) => item[i + 6]),
+      };
+      return res;
+    });
 
-    // myChart.setOption({
-    //   legend: {
-    //     data: [...this.BtcNumber.map((num, i) => `${this.BtcNumber[i - 1] || 0}~${num}`), `${this.BtcNumber[this.BtcNumber.length - 1]}+`, '总资产'],
-    //   },
-    //   xAxis: {
-    //     data: labelText,
-    //   },
-    //   yAxis: [
-    //     {
-    //       name: `单位: ${this.UpCoinName}`,
-    //     },
-    //   ],
-    //   series: [...NumArrData.map((item) => item[0]), other[0], sum[0]],
-    // });
+    myChart.setOption({
+      legend: { data: X1 },
+      xAxis: { data: labelText },
+      series: Ys1,
+      yAxis: [{ name: `单位: ${this.UpCoinName}` }],
+    });
+
+    myChart2.setOption({
+      legend: { data: X2 },
+      xAxis: { data: labelText },
+      series: Ys2,
+    });
   }
 
   async GetData(queue: number, time: string, times = 1): Promise<any> {
     if (queue !== this.queue) return Promise.resolve(false); // 这是一个已经丢弃掉的请求队列了。
-    if (times > 3) return; // 重试3次没数据，当做没数据处理
     const timeDate = new Date(time);
-    const FileName = time.replace(/-/g, '/');
+    // 因为数据存储时，按照今天存储昨天的
+    const next = new Date(timeDate.getTime() + 86400000);
+    const NextDay = (Data: any) => {
+      // 用户资产是备份前一天的。所以时间上是错开了一天。这里纠正回去
+      // const ShowTime = new Date(time);
+      // this.SnapshotData.push({ FileName: DateFormat(ShowTime, 'MM-dd\r\nyyyy'), Data, ShowTime });
+      this.PageDataConf.EndTime = DateFormat(next, 'yyyy-MM-dd');
+      PageDataPush2(this.PageDataConf, Data);
+      if (next.getTime() <= new Date(this.Times[1]).getTime()) {
+        return this.GetData(queue, FileName.replace(/\//g, '-'));
+      }
+      this.loading = false;
+      this.Render();
+      return true;
+    };
 
+    const FileName = DateFormat(next, 'yyyy/MM/dd');
+    if (times > 3) return NextDay([]); // 重试3次没数据，当做没数据处理
     const close = PageLoading(`努力请求: ${this.UpCoinName} ${FileName}`);
-    const Data = await Vue.AppStore.GetSnapshotDataByDateWallet(this.UpCoinName, FileName);
+    const Data = await this.$AppStore.GetSnapshotDataByDateWallet(this.UpCoinName, FileName);
     close();
     if (queue !== this.queue) return Promise.resolve(false); // 这是一个已经丢弃掉的请求队列了。
     if (!Data) {
       return this.GetData(queue, time, ++times);
     }
 
-    const next = new Date(timeDate.getTime() - 86400000);
-
-    return this.GetData(Data, DateFormat(next, 'yyyy-MM-dd'));
+    return NextDay(Data);
   }
 }
 </script>
