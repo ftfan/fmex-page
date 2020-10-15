@@ -3,6 +3,7 @@
     <div class="center">
       <h1 class="sitename">FMex.Fun</h1>
       <p><b>最近更新: </b>{{ BuildTime }}</p>
+      <p><a href="http://beian.miit.gov.cn" style="position:absolute;bottom:10px;left:0;right:0;display:block;margin: 10px auto;">闽ICP备15020324号-3</a></p>
     </div>
     <div class="section">
       <v-container fluid>

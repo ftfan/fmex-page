@@ -4,12 +4,7 @@
     <v-main>
       <router-view></router-view>
     </v-main>
-
-    <a v-if="IsBeiAn" href="http://beian.miit.gov.cn" style="display:block;margin: 10px auto;">
-      闽ICP备15020324号
-    </a>
-
-    <v-bottom-navigation v-if="!FMexFunApp && !IsBeiAn" v-model="bottomNav" color="primary" app grow>
+    <v-bottom-navigation v-if="!FMexFunApp" v-model="bottomNav" color="primary" app grow>
       <v-btn class="my-btn" @click="LinkTo('')">
         <span>FMex.fun</span>
         <v-icon>mdi-home</v-icon>
@@ -61,10 +56,6 @@ export default class App extends Vue {
     url = `/#/${url}`;
     // }
     location.href = url;
-  }
-
-  get IsBeiAn() {
-    return IsPC && location.href.match('https://fmex.fun');
   }
 
   CloseMsg(bol: boolean) {
