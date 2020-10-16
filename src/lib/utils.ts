@@ -108,7 +108,7 @@ export const ArrayFilter = (arr: any[], num: number) => {
 };
 
 const ua = window.navigator.userAgent.toLowerCase();
-export const IsWechat = ua.indexOf('micromessenger') !== -1;
+export const IsWechat = ua.indexOf('micromessenger') !== -1 && ua.indexOf('windowswechat') === -1;
 
 export function IsPC() {
   const userAgentInfo = navigator.userAgent;

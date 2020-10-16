@@ -3,12 +3,33 @@
     <CurrencyCoin></CurrencyCoin>
 
     <div class="data-analysis">
+      <div style="padding-top:10px" class="echarts" ref="echartref"></div>
+      <v-divider></v-divider>
       <div style="padding-top:10px" class="echarts" ref="AnalysisPage"></div>
       <v-divider></v-divider>
       <div style="padding-top:40px" class="echarts" ref="AnalysisPageTop5"></div>
       <!-- <v-divider></v-divider>
       <div style="padding-top:40px" class="echarts" ref="AnalysisNum"></div> -->
     </div>
+    <div style="padding: 10px;">
+      钱包地址详细信息：
+    </div>
+    <v-list-item three-line v-for="(item, index) in X2D" :key="index">
+      <v-list-item-content>
+        <v-list-item-title>
+          <v-avatar color="primary" size="36">
+            <span class="white--text headline">{{ index + 1 }}</span>
+          </v-avatar>
+          {{ NumberShow(Ys3[index]) }}
+        </v-list-item-title>
+        <v-list-item-subtitle @click="AddressShow(item.Key)">
+          {{ item.Key }}
+        </v-list-item-subtitle>
+        <v-list-item-subtitle>
+          <v-chip color="primary" small v-if="item.address_label" outlined>{{ item.address_label }}</v-chip>
+        </v-list-item-subtitle>
+      </v-list-item-content>
+    </v-list-item>
   </div>
 </template>
 
@@ -21,6 +42,7 @@ import { debounce, throttle } from 'ts-debounce-throttle';
 import { PageLoading } from '@/lib/page-loading';
 import { PageDataPush, PageDataPush2 } from '@/lib/data-parse';
 import { SetShareInfo } from '@/lib/bridge';
+import { EchartsBar } from '@/lib/echarts-render';
 const DateMax = DateFormat(Date.now() - 86400000, 'yyyy-MM-dd'); // 只有昨日的数据。
 const DateMin = DateFormat(new Date(2020, 7 - 1, 8), 'yyyy-MM-dd');
 const GetTimes = () => {
@@ -43,6 +65,18 @@ export default class AnalysisPlatfromPage extends Vue {
   modal = false;
   DateMin = DateMin;
   DateMax = DateMax;
+  BigNumShowStr = BigNumShowStr;
+  NumberShow(str: any) {
+    if (isNaN(str)) return '无记录';
+    return str + ' ' + this.UpCoinName;
+  }
+  AddressShow(str: string) {
+    if (this.UpCoinName === 'BTC') return (location.href = `https://btc.com/${str}`);
+    if (this.UpCoinName === 'ETH') return (location.href = `https://etherscan.io/address/${str}`);
+    if (this.UpCoinName === 'USDT') return (location.href = `https://etherscan.io/token/0xdac17f958d2ee523a2206206994597c13d831ec7?a=${str}`);
+    if (this.UpCoinName === 'TRX') return (location.href = `https://tronscan.org/#/address/${str}`);
+    // return str;
+  }
 
   get UpCoinName() {
     return this.$AnalysisStore.localState.Currency.toLocaleUpperCase();
@@ -52,6 +86,9 @@ export default class AnalysisPlatfromPage extends Vue {
   dialog = false;
   // OnLoadData = ['用户资产数据'];
   SnapshotData: any[] = [];
+
+  X2D: Array<{ Key: string; address_label: string }> = [];
+  Ys3: number[] = [];
 
   // 默认选中最近100天
   Times = GetTimes();
@@ -150,7 +187,7 @@ export default class AnalysisPlatfromPage extends Vue {
       toolbox: EchartsUtilsToolbox,
       legend: {
         data: [],
-        bottom: '0',
+        top: '30px',
       },
       grid: {
         left: '20px',
@@ -183,7 +220,7 @@ export default class AnalysisPlatfromPage extends Vue {
   }
 
   Render() {
-    (this.$refs.AnalysisPageTop5 as any).style.height = 400 + (20 * this.PageDataConf.Params.length - 4) + 'px';
+    (this.$refs.AnalysisPageTop5 as any).style.height = 400 + (5 * this.PageDataConf.Params.length - 4) + 'px';
     this.RenderInit();
     if (!myChart) return;
     if (!myChart2) return;
@@ -194,7 +231,9 @@ export default class AnalysisPlatfromPage extends Vue {
 
     const labelText = this.PageDataConf.Data.map((item) => DateFormat(item[0], 'yyyy-MM-dd').replace('-', '\r\n'));
     const X1 = this.PageDataConf.Params.slice(1, 3).map((item) => item.Key);
-    const X2 = this.PageDataConf.Params.slice(4).map((item) => item.Key);
+    const X2D = this.PageDataConf.Params.slice(4);
+    this.X2D = X2D as any;
+    const X2 = X2D.map((item, index) => index + 1 + '');
     console.log(this.PageDataConf);
     const Ys1 = X1.map((item, i) => {
       const res = {
@@ -212,6 +251,9 @@ export default class AnalysisPlatfromPage extends Vue {
       };
       return res;
     });
+    const last = this.PageDataConf.Data[this.PageDataConf.Data.length - 1];
+    const Ys3 = this.PageDataConf.Data[this.PageDataConf.Data.length - 1].slice(4);
+    this.Ys3 = Ys3;
 
     myChart.setOption({
       legend: { data: X1 },
@@ -224,8 +266,62 @@ export default class AnalysisPlatfromPage extends Vue {
       legend: { data: X2 },
       xAxis: { data: labelText },
       series: Ys2,
+      grid: {
+        top: 5 * this.PageDataConf.Params.length + 40 + 'px',
+      },
     });
-    SetShareInfo(`FMex钱包资产 ${this.UpCoinName}`, `${this.PageDataConf.BeginTime}至${this.PageDataConf.EndTime}\r\n钱包资产走势`);
+
+    EchartsBar(this.$refs.echartref as any, {
+      grid: {
+        right: '50px',
+        left: '50px',
+        bottom: '80px',
+        top: '80px',
+      },
+      color: ['#04a4cc'],
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: { type: 'shadow' },
+      },
+      toolbox: EchartsUtilsToolbox,
+      title: {
+        subtext: `${DateFormat(last[0], 'yyyy-MM-dd')} 钱包资产(具体 钱包地址 在页面底部备注)`,
+        top: '20px',
+      },
+      xAxis: {
+        type: 'category',
+        data: X2,
+        name: '地址',
+      },
+      yAxis: {
+        type: 'value',
+        name: `单位：${this.UpCoinName}`,
+        axisLabel: { formatter: BigNumShowStr },
+      },
+      series: [
+        {
+          name: `资产`,
+          data: Ys3,
+          type: 'bar',
+          markPoint: {
+            data: X2D.filter((i: any) => i.address_label).map((item: any) => {
+              const index = X2D.indexOf(item);
+              return {
+                symbolRotate: 45,
+                name: item.address_label,
+                coord: [X2[index], Ys3[index]],
+                value: item.address_label as any,
+              };
+            }),
+          },
+        },
+      ],
+    });
+    SetShareInfo(
+      `FMex钱包资产 ${this.UpCoinName}`,
+      `${this.PageDataConf.BeginTime}至${this.PageDataConf.EndTime}\r\n钱包资产走势`, //
+      `https://fmex.fun/#/Analysis?tab=4&Currency=${this.$AnalysisStore.localState.Currency}`
+    );
   }
 
   async GetData(queue: number, time: string, times = 1): Promise<any> {

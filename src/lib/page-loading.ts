@@ -12,6 +12,7 @@ const data: LoadingClose[] = [];
 export const PageLoading = (text = '') => {
   const close = new LoadingClose(text);
   DataPush(close);
+  setTimeout(() => DataPop(close), 5000);
   return () => DataPop(close);
 };
 

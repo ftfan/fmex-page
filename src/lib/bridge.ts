@@ -96,13 +96,6 @@ async function WxShareLoad() {
     // todo 登录成功后的业务
     const result = await win.cloudbase_login.useJSSDK(win.app, jsapi, false);
     console.log(result); //传入实例云开发、获取的能力列表、是否开启调试，装载SDK过程
-    win.wx.hideAllNonBaseMenuItem();
-    win.wx.showMenuItems({
-      menuList: [
-        'menuItem:share:appMessage', // 发送给朋友
-        'menuItem:share:timeline', // 分享到朋友圈
-      ],
-    });
     return true;
   })();
   return WxShareLoadReady;
@@ -112,13 +105,26 @@ export async function SetShareInfo(Title = '', Desc = '', Url = '', Img = '') {
   if (!IsWechat) return;
   const bool = await WxShareLoad();
   if (!bool) return;
+  Url = Url || location.href;
+  if (Url.match(/(.*?)#\/(.*?)\?/)) {
+    Url = Url + `&shareU=${window.uid}`;
+  } else {
+    Url = Url + `?shareU=${window.uid}`;
+  }
   const share = {
     Title: Title || 'FMex.Fun',
     Desc: Desc || '',
-    Url: Url || location.href,
+    Url,
     Img: Img || 'https://fmex.fun/favicon.png',
   };
   window.wx.ready(function() {
+    window.wx.hideAllNonBaseMenuItem();
+    window.wx.showMenuItems({
+      menuList: [
+        'menuItem:share:appMessage', // 发送给朋友
+        'menuItem:share:timeline', // 分享到朋友圈
+      ],
+    });
     //启动监听，准备成功后自动触发
     window.wx.updateAppMessageShareData({
       // 更新分享给朋友的链接

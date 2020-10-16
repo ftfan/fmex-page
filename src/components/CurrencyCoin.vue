@@ -12,5 +12,9 @@ import { Component, Vue, Watch } from 'vue-property-decorator';
 @Component({
   components: {},
 })
-export default class CurrencyCoin extends Vue {}
+export default class CurrencyCoin extends Vue {
+  created() {
+    if (this.$route.query.Currency) this.$AnalysisStore.localState.Currency = String(this.$route.query.Currency);
+  }
+}
 </script>

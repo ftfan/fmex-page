@@ -271,7 +271,11 @@ export default class HoldAmount extends Vue {
     const last = Amounts.data[Amounts.data.length - 1];
     const lastx = xAxis[xAxis.length - 1];
     if (!last) return;
-    SetShareInfo(`FMex未平仓张数 BTC永续`, `时间：${lastx.replace('\r\n', ' ')}\r\n未平仓：${last} 万张`);
+    SetShareInfo(
+      `FMex未平仓张数 BTC永续`,
+      `时间：${lastx.replace('\r\n', ' ')}\r\n未平仓：${last} 万张`, //
+      `https://fmex.fun/#/Analysis?tab=3`
+    );
   }
 
   async GetData(queue: number, time: string, times = 1): Promise<any> {

@@ -58,7 +58,11 @@ new Vue({
   vuetify,
   render: (h) => h(App),
   async mounted() {
-    SetShareInfo(`FMex.Fun`, '累趴下了~');
+    SetShareInfo(
+      `FMex.Fun`,
+      '累趴下了~', //
+      `https://fmex.fun/`
+    );
     close();
   },
 }).$mount('#app');

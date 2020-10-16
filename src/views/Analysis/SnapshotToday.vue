@@ -486,7 +486,11 @@ export default class AnalysisPage extends Vue {
     const num: any = this.TotalInfo[1];
     if (!account) return;
     if (!num) return;
-    SetShareInfo(`FMex账户资产 ${this.UpCoinName}`, `截至${this.date}日0点\r\n账户数量：${account.val}\r\n合计：${BigNumShowStr(num.val)} ${this.UpCoinName}`);
+    SetShareInfo(
+      `FMex账户资产 ${this.UpCoinName}`, // title
+      `截至${this.date}日0点\r\n账户数量：${account.val}\r\n合计：${BigNumShowStr(num.val)} ${this.UpCoinName}`, //
+      `https://fmex.fun/#/Analysis?tab=0&Currency=${this.$AnalysisStore.localState.Currency}`
+    );
   }
 
   // 获取前一天的数据（用于比较）

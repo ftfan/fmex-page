@@ -2,6 +2,7 @@ import Vue from 'vue';
 import VueRouter, { RouteConfig } from 'vue-router';
 import Index from '@/views/Index.vue';
 import { PageLoading } from '@/lib/page-loading';
+import { JsBridgeCloseMenu } from '@/lib/bridge';
 
 Vue.use(VueRouter);
 
@@ -38,6 +39,7 @@ export const LogEvent = (type: string, event: string, log: string, value: number
 };
 
 router.beforeEach((to, from, next) => {
+  JsBridgeCloseMenu();
   czc.push(['_trackPageview', to.fullPath, from ? location.origin + '/#' + from.fullPath : document.referrer]);
   next();
 });

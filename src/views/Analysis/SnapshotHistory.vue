@@ -85,7 +85,11 @@ export default class AnalysisPage extends Vue {
   async mountedd() {
     this.RenderInit();
     await this.GetConfig();
-    SetShareInfo(`FMex资产走势 ${this.UpCoinName}`, `${this.PageDataConf.BeginTime}至${this.PageDataConf.EndTime}\r\n账户资产走势`);
+    SetShareInfo(
+      `FMex资产走势 ${this.UpCoinName}`,
+      `${this.PageDataConf.BeginTime}至${this.PageDataConf.EndTime}\r\n账户资产走势`,
+      `https://fmex.fun/#/Analysis?tab=1&Currency=${this.$AnalysisStore.localState.Currency}`
+    );
   }
 
   async GetConfig() {

@@ -305,7 +305,15 @@ export default class BtcVolPrice extends Vue {
       series: [CurrentUsd, LastUsd, CurrentBtc, LastBtc],
     });
 
-    SetShareInfo(`FMex交易量 BTC永续`, [`${DateFormat(theDateOfNow, 'yyyy-MM-dd hh:mm:ss')}`, `${sum} 亿USD(今日)`, `${SnapshotData3Last24H || sum24} 亿USD(最近24小时)`].join('\r\n'));
+    SetShareInfo(
+      `FMex交易量 BTC永续`,
+      [
+        `${DateFormat(theDateOfNow, 'yyyy-MM-dd hh:mm:ss')}`, //
+        `${sum} 亿USD(今日)`,
+        `${SnapshotData3Last24H || sum24} 亿USD(最近24小时)`,
+      ].join('\r\n'),
+      `https://fmex.fun/#/Analysis?tab=2`
+    );
   }, 1000);
 
   RenderInit() {

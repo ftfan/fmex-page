@@ -75,15 +75,15 @@ class Store extends Data {
     if (this.FilterNullCoin(coin, time) === false) return null; // 部分已知上架时间的币种
     const Data = await Vue.AnalysisStore.GetJson(`https://fmex-database.oss-cn-qingdao.aliyuncs.com/fmex/broker/v3/zkp-assets/platform/snapshot/${coin}/${date}`);
     if (!Data) return null;
-    const res: SnapshotWallet = Data;
-    res.platform_total_amount = new BigNumber(res.platform_total_amount);
-    res.user_total_amount = new BigNumber(res.user_total_amount);
-    res.assets_rate = new BigNumber(res.assets_rate);
-    res.platform_wallet_assets.forEach((item: any) => {
-      item.amount = new BigNumber(item.amount);
-      // item.label = Vue.AnalysisStore.SysName(item.label);
-    });
-    res.platform_wallet_assets.sort((a, b) => a.amount.minus(b.amount).toNumber());
+    // const res: SnapshotWallet = Data;
+    // res.platform_total_amount = new BigNumber(res.platform_total_amount);
+    // res.user_total_amount = new BigNumber(res.user_total_amount);
+    // res.assets_rate = new BigNumber(res.assets_rate);
+    // res.platform_wallet_assets.forEach((item: any) => {
+    //   item.amount = new BigNumber(item.amount);
+    //   // item.label = Vue.AnalysisStore.SysName(item.label);
+    // });
+    // res.platform_wallet_assets.sort((a, b) => a.amount.minus(b.amount).toNumber());
     return Data;
   }
 
