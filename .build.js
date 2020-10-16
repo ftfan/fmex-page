@@ -29,16 +29,10 @@ const AppConfig = {
 };
 
 try {
-  // dist 后在根目录找
-  const UserConf = require('../my.config.js');
+  const UserConf = require('./my.config.js');
   Object.assign(AppConfig, UserConf);
 } catch (e) {
-  try {
-    const UserConf = require('./my.config.js');
-    Object.assign(AppConfig, UserConf);
-  } catch (e) {
-    //
-  }
+  //
 }
 
 function ForEachDist(dir) {
@@ -77,7 +71,7 @@ function TryUploadFile (fullpath, fullpath2, stats) {
   const md5 = fsHash.digest('hex');
   const md52 = fsHash2.digest('hex');
   if (md5 !== md52) return UploadFile(fullpath, fullpath2);
-  console.log('[相同文件]', fullpath);
+  // console.log('[相同文件]', fullpath);
 }
 
 function UploadFile (fullpath, fullpath2) {
