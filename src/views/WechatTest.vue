@@ -11,10 +11,6 @@ export default class WechatTest extends Vue {
   async created() {
     await LoadWxApi();
     await LoadCloudApi();
-    if (window.wx) {
-      (window as any).aaa = window.cloud;
-      window.cloud = window.wx.cloud;
-    }
 
     const urlSearch = new URLSearchParams(location.search);
     const accessToken = urlSearch.get('access_token');

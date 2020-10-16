@@ -48,9 +48,9 @@ Vue.config.errorHandler = function(err, vm, info) {
   );
 };
 
-if (IsWechat) {
-  LoadCloudApi();
-}
+// if (IsWechat) {
+//   LoadCloudApi();
+// }
 
 const close = PageLoading('正在启动程序');
 new Vue({

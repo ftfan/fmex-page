@@ -10,6 +10,7 @@
   "dependencies": {
     "@mdi/font": "^3.6.95",
     "@vssue/api-gitee-v5": "^1.4.4",
+    "ali-oss": "^6.11.2",
     "axios": "^0.19.2",
     "bignumber.js": "^9.0.0",
     "core-js": "^3.6.5",
@@ -25,6 +26,7 @@
     "vuetify": "^2.3.0"
   },
   "devDependencies": {
+    "@types/ali-oss": "^6.0.5",
     "@types/echarts": "^4.4.4",
     "@types/urijs": "^1.19.9",
     "@typescript-eslint/eslint-plugin": "^2.33.0",
