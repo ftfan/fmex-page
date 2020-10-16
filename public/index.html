@@ -21,14 +21,13 @@
     <link rel="icon" href="<%= BASE_URL %>favicon.ico" />
     <title>FMex.Fun</title>
     <script type="text/javascript">
-      // 强制使用 fmex.fun 域名
-      if (location.host === 'fmex.gitee.io') {
-        location.replace(location.href.replace('fmex.gitee.io', 'fmex.fun'));
-        return;
-      }
       window.__Build_Time = '__Build_Time__';
       window.__FMexFun_Version = parseInt('__FMexFun_Version__');
       console.log(new Date(window.__FMexFun_Version).toISOString());
+      // 强制使用 fmex.fun 域名
+      // if (location.host === 'fmex.gitee.io') {
+      //   location.replace(location.href.replace('fmex.gitee.io', 'fmex.fun'));
+      // }
     </script>
     <style>
       a[title='站长统计'] {
