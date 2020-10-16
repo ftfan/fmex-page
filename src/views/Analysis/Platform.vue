@@ -11,9 +11,7 @@
       <!-- <v-divider></v-divider>
       <div style="padding-top:40px" class="echarts" ref="AnalysisNum"></div> -->
     </div>
-    <div style="padding: 10px;">
-      钱包地址详细信息：
-    </div>
+    <div style="padding: 10px;">{{ LastDate }} 钱包地址详细信息：</div>
     <v-list-item three-line v-for="(item, index) in X2D" :key="index">
       <v-list-item-content>
         <v-list-item-title>
@@ -66,6 +64,7 @@ export default class AnalysisPlatfromPage extends Vue {
   DateMin = DateMin;
   DateMax = DateMax;
   BigNumShowStr = BigNumShowStr;
+  LastDate = '';
   NumberShow(str: any) {
     if (isNaN(str)) return '无记录';
     return str + ' ' + this.UpCoinName;
@@ -254,6 +253,7 @@ export default class AnalysisPlatfromPage extends Vue {
     const last = this.PageDataConf.Data[this.PageDataConf.Data.length - 1];
     const Ys3 = this.PageDataConf.Data[this.PageDataConf.Data.length - 1].slice(4);
     this.Ys3 = Ys3;
+    this.LastDate = DateFormat(last[0], 'yyyy-MM-dd');
 
     myChart.setOption({
       legend: { data: X1 },
@@ -285,7 +285,7 @@ export default class AnalysisPlatfromPage extends Vue {
       },
       toolbox: EchartsUtilsToolbox,
       title: {
-        subtext: `${DateFormat(last[0], 'yyyy-MM-dd')} 钱包资产(具体 钱包地址 在页面底部备注)`,
+        subtext: `${this.LastDate} 钱包资产(具体 钱包地址 在页面底部备注)`,
         top: '20px',
       },
       xAxis: {
