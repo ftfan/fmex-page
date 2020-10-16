@@ -246,7 +246,17 @@ export default class AnalysisPlatfromPage extends Vue {
     };
 
     const FileName = DateFormat(next, 'yyyy/MM/dd');
-    if (times > 3) return NextDay([]); // 重试3次没数据，当做没数据处理
+    if (times > 3) {
+      // 重试3次没数据，当做没数据处理
+      return NextDay({
+        snapshot_time: time,
+        platform_total_amount: '',
+        user_total_amount: '',
+        assets_rate: '',
+        platform_wallet_assets: [],
+      });
+    }
+
     const close = PageLoading(`努力请求: ${this.UpCoinName} ${FileName}`);
     const Data = await this.$AppStore.GetSnapshotDataByDateWallet(this.UpCoinName, FileName);
     close();
