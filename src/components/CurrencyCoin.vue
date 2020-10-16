@@ -1,5 +1,5 @@
 <template>
-  <v-btn-toggle style="margin: 20px 60px 20px 10px;width:80%;display:block;" dense color="primary" group v-model="$AnalysisStore.localState.Currency">
+  <v-btn-toggle style="margin: 20px 60px 20px 10px;width:80%;display:block;" dense color="primary" mandatory group v-model="$AnalysisStore.localState.Currency">
     <v-btn v-for="item in $AnalysisStore.localState.PlatformCurrency" :key="item" :value="item">
       {{ item }}
     </v-btn>

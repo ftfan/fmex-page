@@ -27,6 +27,7 @@ import { FMex } from '@/api/FMex';
 import { PageLoading } from '@/lib/page-loading';
 import BigNumber from 'bignumber.js';
 import { debounce, throttle } from 'ts-debounce-throttle';
+import { SetShareInfo } from '@/lib/bridge';
 
 const DateMax = DateFormat(Date.now(), 'yyyy-MM-dd');
 const DateMin = DateFormat(new Date(2020, 7 - 1, 13), 'yyyy-MM-dd');
@@ -303,6 +304,8 @@ export default class BtcVolPrice extends Vue {
       },
       series: [CurrentUsd, LastUsd, CurrentBtc, LastBtc],
     });
+
+    SetShareInfo(`FMex交易量 BTC永续`, [`${DateFormat(theDateOfNow, 'yyyy-MM-dd hh:mm:ss')}`, `${sum} 亿USD(今日)`, `${SnapshotData3Last24H || sum24} 亿USD(最近24小时)`].join('\r\n'));
   }, 1000);
 
   RenderInit() {

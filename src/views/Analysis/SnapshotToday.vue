@@ -88,6 +88,7 @@ import { DateFormat, BigNumShowStr, EchartsUtilsToolbox } from '../../lib/utils'
 import axios from 'axios';
 import BigNumber from 'bignumber.js';
 import { PageLoading } from '@/lib/page-loading';
+import { SetShareInfo } from '@/lib/bridge';
 
 const ToDayStr = DateFormat(Date.now(), 'yyyy-MM-dd');
 
@@ -267,6 +268,7 @@ export default class AnalysisPage extends Vue {
         chipContent: `用户账户合计 ${lastSum.minus(sysSum).toNumber()}`,
       });
     }
+    const val2 = lastSum.toNumber();
 
     return [
       {
@@ -274,12 +276,14 @@ export default class AnalysisPage extends Vue {
         badge: { content: this.ShowPre(last.length - pre.length), color: 'primary', 'offset-y': 14, 'offset-x': 20 },
         chip: { class: 'ma-2', color: 'primary', small: true, outlined: true },
         chipContent: `${this.UpCoinName} 账户数量 ${last.length}`,
+        val: last.length, // 给 分享用的
       },
       {
         // 合计
         badge: { content: this.ShowPre(lastSum.minus(preSum).toNumber()), color: 'primary', 'offset-y': 14, 'offset-x': 20 },
         chip: { class: 'ma-2', color: 'primary', small: true, outlined: true },
-        chipContent: `合计 ${lastSum.toNumber()}`,
+        chipContent: `合计 ${val2}`,
+        val: val2, // 给 分享用的
       },
 
       // 系统账户
@@ -473,7 +477,16 @@ export default class AnalysisPage extends Vue {
     });
     this.loading = false;
     this.SnapshotDataPre = [];
-    this.GetPreData(queue);
+    await this.GetPreData(queue);
+
+    // 更新分享信息
+    await this.$nextTick();
+    if (!this.TotalInfo) return;
+    const account: any = this.TotalInfo[0];
+    const num: any = this.TotalInfo[1];
+    if (!account) return;
+    if (!num) return;
+    SetShareInfo(`FMex账户资产 ${this.UpCoinName}`, `截至${this.date}日0点\r\n账户数量：${account.val}\r\n合计：${BigNumShowStr(num.val)} ${this.UpCoinName}`);
   }
 
   // 获取前一天的数据（用于比较）

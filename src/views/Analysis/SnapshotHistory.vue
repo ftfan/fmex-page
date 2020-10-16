@@ -20,6 +20,7 @@ import BigNumber from 'bignumber.js';
 import { debounce, throttle } from 'ts-debounce-throttle';
 import { PageLoading } from '@/lib/page-loading';
 import { PageDataPush } from '@/lib/data-parse';
+import { SetShareInfo } from '@/lib/bridge';
 const DateMax = DateFormat(Date.now() - 86400000, 'yyyy-MM-dd'); // 只有昨日的数据。
 const DateMin = DateFormat(new Date(2020, 7 - 1, 8), 'yyyy-MM-dd');
 const GetTimes = () => {
@@ -84,6 +85,7 @@ export default class AnalysisPage extends Vue {
   async mountedd() {
     this.RenderInit();
     await this.GetConfig();
+    SetShareInfo(`FMex资产走势 ${this.UpCoinName}`, `${this.PageDataConf.BeginTime}至${this.PageDataConf.EndTime}\r\n账户资产走势`);
   }
 
   async GetConfig() {

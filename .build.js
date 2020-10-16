@@ -41,7 +41,7 @@ function ForEachDist(dir) {
     const fullpath = path.join(dir, item);
     const fullpath2 = fullpath.replace('\\dist\\', '\\docs\\');
     const stats = fs.statSync(fullpath);
-    if (stats.isDirectory()){
+    if (stats.isDirectory()) {
       if (!fs.existsSync(fullpath2)) fs.mkdirSync(fullpath2);
       ForEachDist(fullpath);
     } else {
@@ -55,7 +55,7 @@ const Handler = new OSS(AppConfig.AliOss);
 Handler.useBucket(AppConfig.AliOss.bucket);
 doUpload();
 
-function TryUploadFile (fullpath, fullpath2, stats) {
+function TryUploadFile(fullpath, fullpath2, stats) {
   // 文件不存在
   if (!fs.existsSync(fullpath2)) return UploadFile(fullpath, fullpath2);
   const stats2 = fs.statSync(fullpath2);
@@ -74,39 +74,40 @@ function TryUploadFile (fullpath, fullpath2, stats) {
   // console.log('[相同文件]', fullpath);
 }
 
-function UploadFile (fullpath, fullpath2) {
+function UploadFile(fullpath, fullpath2) {
   console.log('-->', fullpath);
   const readStream = fs.createReadStream(fullpath);
   const writeStream = fs.createWriteStream(fullpath2);
   readStream.pipe(writeStream);
   // const ossurl = fullpath.replace(/(.*?)\\dist\\/, 'docs\\');
-  const ossurl = fullpath.replace(/(.*?)\\dist\\/, '');
   // 等待上传队列
-  Save(ossurl.replace(/\\/g, '/'), readStream);
+  uploadList.push(fullpath);
 }
 
-function Save(OssUrl, data) {
-  uploadList.push([OssUrl, data]);
-}
-async function doUpload(){
+async function doUpload() {
+  const uploadLists = uploadList.map((fullpath) => [fullpath.replace(/(.*?)\\dist\\/, '').replace(/\\/g, '/'), fs.createReadStream(fullpath)]);
   // 找出需要延后上传的
-  const lastUpload = uploadList.filter(item => ['index.html', 'version.js'].indexOf(item[0]) > -1);
-  const perUpload = uploadList.filter(item => lastUpload.indexOf(item) === -1);
+  const lastUpload = uploadLists.filter((item) => ['index.html', 'version.js'].indexOf(item[0]) > -1);
+  const perUpload = uploadLists.filter((item) => lastUpload.indexOf(item) === -1);
   // console.log(perUpload.map(i => i[0]));
-  await Promise.all(perUpload.map(item => {
-    console.log('--<', item[0]);
-    return Handler.putStream(item[0], item[1], {
-      headers: {
-        'Cache-Control': 'max-age=604800000', // 7天
-      }
-    });
-  }));
-  await Promise.all(lastUpload.map(item => {
-    console.log('--<', item[0]);
-    return Handler.putStream(item[0], item[1], {
-      headers: {
-        'Cache-Control': 'max-age=360000', // 6分钟
-      }
-    });
-  }));
+  await Promise.all(
+    perUpload.map((item) => {
+      console.log('--<', item[0]);
+      return Handler.putStream(item[0], item[1], {
+        headers: {
+          'Cache-Control': 'max-age=6048000000', // 70天
+        },
+      });
+    })
+  );
+  await Promise.all(
+    lastUpload.map((item) => {
+      console.log('--<', item[0]);
+      return Handler.putStream(item[0], item[1], {
+        headers: {
+          'Cache-Control': 'max-age=360000', // 6分钟
+        },
+      });
+    })
+  );
 }

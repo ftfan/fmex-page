@@ -3,7 +3,7 @@
 </template>
 
 <script lang="ts">
-import { LoadCloudApi, LoadWxApi } from '@/lib/bridge';
+import { LoadCloudApi, LoadWxApi, LoadWxh5Api } from '@/lib/bridge';
 import { Component, Vue, Watch } from 'vue-property-decorator';
 
 @Component<WechatTest>({})
@@ -11,105 +11,74 @@ export default class WechatTest extends Vue {
   async created() {
     await LoadWxApi();
     await LoadCloudApi();
-
-    const urlSearch = new URLSearchParams(location.search);
-    const accessToken = urlSearch.get('access_token');
-    const refreshToken = urlSearch.get('refresh_token');
-
-    /**
-     * 检查/发起登录
-     * 1. 函数会检查当前是否已登录（checkLogin）
-     * 2. 如果未登录，会 10s 后自动发起登录（startLogin）
-     * 3. 如果已登录，会初始化实例，使用指定的小程序云开发资源
-     */
-    const doLogin = async () => {
-      try {
-        const checkLoginOptions = {
-          provider: 'OfficialAccount',
-          appid: 'wxc5709bd44205e738',
-        };
-
-        if (urlSearch.get('oauthredirect') === '1') {
-          Object.assign(checkLoginOptions, {
-            accessToken: accessToken,
-            refreshToken: refreshToken,
-          });
-        }
-
-        console.log(`checkLogin options: `, checkLoginOptions);
-        const result = await window.cloud.checkLogin(checkLoginOptions);
-        console.log(`checkLogin result: `, result);
-
-        if (result.errCode === 0 && result.loggedIn) {
-          console.log(`checkLogin success`);
-          this.aaa();
-        } else {
-          console.log(`checkLogin with sdk errCode ${result.errCode} errMsg ${result.errMsg}, will start oauth in 10s`);
-
-          setTimeout(() => {
-            try {
-              window.cloud.startLogin({
-                provider: 'OfficialAccount',
-                appid: 'wxc5709bd44205e738',
-                scope: 'snsapi_base',
-                redirectUri: location.href,
-              });
-            } catch (e) {
-              console.error(`startLogin fail: ${e}`);
-              console.warn(`will start OfficialAccount OAuth login in 10s.`);
-            }
-          }, 10000);
-        }
-      } catch (e) {
-        console.error(e);
-      }
-    };
-
-    doLogin();
-  }
-
-  async aaa() {
-    // 初始化一个实例，声明要使用哪个小程序哪个云环境的资源
-    const c = new window.cloud.Cloud({
+    await LoadWxh5Api();
+    const win = window as any;
+    win.app = null;
+    win.uid = null;
+    win.db = null;
+    const init_result = win.cloudbase_login.init({
       appid: 'wxc5709bd44205e738',
       resourceAppid: 'wx647b8a5ba3cae7fa',
       resourceEnv: 'fmex-i1c20',
+      scope: 'snsapi_base', // 登录方式 snsapi_userinfo snsapi_base
     });
-    console.log(c);
 
-    // 初始化，等待授权关系校验通过以及目标云环境的 cloudbase_auth 函数返回授权
-    const result = await c.init();
-    console.log(result);
-    const res = await window.cloud.getJSSDKSignature({
-      url: location.href,
-    });
-    console.log(res);
-    window.wx.config({
-      appId: 'wxc5709bd44205e738', // 必填，公众号的唯一标识
-      timestamp: res.timestamp + '', // 必填，生成签名的时间戳
-      nonceStr: res.nonceStr, // 必填，生成签名的随机串
-      signature: res.signature, // 必填，签名
-      jsApiList: [
-        'onMenuShareTimeline', // 发送朋友圈权限
-        'onMenuShareAppMessage', // 分享好友权限
-        'hideAllNonBaseMenuItem', // 隐藏所有非基础菜单
-        'showMenuItems', // 显示菜单项
+    if (!init_result) {
+      // 初始化状态，如果为false则无条件，需要引入cloud-sdk
+      alert('没有引入cloud-sdk');
+      return;
+    }
+    // 初始化状态，如果为true则继续登录
+    const res = await win.cloudbase_login.doLogin();
+    // 公众号登录执行函数
+    if (res.code !== 0) {
+      console.log(res.info);
+      return;
+    }
+    // code=0则登录成功
+    win.app = res.info; //info可获取到云开发的实例
+    win.uid = res.msg; //msg可获取到用户的openid（临时功能）
+    win.db = win.app.database(); // 装载云开发数据库对象
+    const jsapi = [
+      'onMenuShareTimeline', // 发送朋友圈权限
+      'onMenuShareAppMessage', // 分享好友权限
+      'hideAllNonBaseMenuItem', // 隐藏所有非基础菜单
+      'showMenuItems', // 显示菜单项
+      'updateAppMessageShareData',
+      'updateTimelineShareData',
+    ];
+    // todo 登录成功后的业务
+    const result = await win.cloudbase_login.useJSSDK(win.app, jsapi, false);
+    console.log(result); //传入实例云开发、获取的能力列表、是否开启调试，装载SDK过程
+    win.wx.hideAllNonBaseMenuItem();
+    win.wx.showMenuItems({
+      menuList: [
+        'menuItem:share:appMessage', // 发送给朋友
+        'menuItem:share:timeline', // 分享到朋友圈
       ],
     });
     const share = {
       Title: 'Title',
       Desc: 'Desc',
-      Url: 'Url',
-      Img: 'Img',
+      Url: location.href,
+      Img: 'https://fmex.fun/favicon.png',
     };
-    window.wx.ready(() => {
-      window.wx.hideAllNonBaseMenuItem();
-      window.wx.showMenuItems({
-        menuList: [
-          'menuItem:share:appMessage', // 发送给朋友
-          'menuItem:share:timeline', // 分享到朋友圈
-        ],
+    win.wx.ready(function() {
+      //启动监听，准备成功后自动触发
+      win.wx.updateAppMessageShareData({
+        // 更新分享给朋友的链接
+        title: share.Title, // 分享标题
+        desc: share.Desc, // 分享描述
+        link: share.Url, // 分享链接，该链接域名或路径必须与当前页面对应的公众号JS安全域名一致
+        imgUrl: share.Img, // 分享图标
       });
+      win.wx.updateTimelineShareData({
+        // 更新分享给朋友圈的链接
+        title: share.Title, // 分享标题
+        link: share.Url, // 分享链接，该链接域名或路径必须与当前页面对应的公众号JS安全域名一致
+        imgUrl: share.Img, // 分享图标
+      });
+
       window.wx.onMenuShareTimeline({
         title: share.Title, // 分享标题
         desc: share.Desc,
@@ -117,7 +86,7 @@ export default class WechatTest extends Vue {
         imgUrl: share.Img, // 分享图标
         success: async (res: any) => {
           console.log(res);
-          if (res.errMsg === 'shareTimeline:ok') return alert('分享成功');
+          // if (res.errMsg === 'shareTimeline:ok') return alert('分享成功');
         },
       });
       window.wx.onMenuShareAppMessage({
@@ -127,7 +96,7 @@ export default class WechatTest extends Vue {
         imgUrl: share.Img, // 分享图标
         success: async (res: any) => {
           console.log(res);
-          if (res.errMsg === 'sendAppMessage:ok') return alert('分享成功');
+          // if (res.errMsg === 'sendAppMessage:ok') return alert('分享成功');
         },
       });
     });

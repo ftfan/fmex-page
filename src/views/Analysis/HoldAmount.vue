@@ -24,6 +24,7 @@ import echarts from 'echarts';
 import { ArrayFilter, DateFormat, EchartsUtilsToolbox } from '../../lib/utils';
 import { PageLoading } from '@/lib/page-loading';
 import { DataParse } from '@/lib/data-parse';
+import { SetShareInfo } from '@/lib/bridge';
 
 const DateMax = DateFormat(Date.now(), 'yyyy-MM-dd');
 const DateMin = DateFormat(new Date(2020, 7 - 1, 13), 'yyyy-MM-dd');
@@ -266,6 +267,11 @@ export default class HoldAmount extends Vue {
       },
       series: [Amounts],
     });
+
+    const last = Amounts.data[Amounts.data.length - 1];
+    const lastx = xAxis[xAxis.length - 1];
+    if (!last) return;
+    SetShareInfo(`FMex未平仓张数 BTC永续`, `时间：${lastx.replace('\r\n', ' ')}\r\n未平仓：${last} 万张`);
   }
 
   async GetData(queue: number, time: string, times = 1): Promise<any> {

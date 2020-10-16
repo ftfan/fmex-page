@@ -15,7 +15,7 @@ import 'roboto-fontface/css/roboto/roboto-fontface.css';
 import '@mdi/font/css/materialdesignicons.css';
 import CurrencyCoin from '@/components/CurrencyCoin.vue';
 import { IsWechat, sleep } from './lib/utils';
-import { LoadCloudApi } from './lib/bridge';
+import { LoadCloudApi, SetShareInfo } from './lib/bridge';
 
 Vue.component('CurrencyCoin', CurrencyCoin);
 
@@ -58,6 +58,7 @@ new Vue({
   vuetify,
   render: (h) => h(App),
   async mounted() {
+    SetShareInfo(`FMex.Fun`, '累趴下了~');
     close();
   },
 }).$mount('#app');
