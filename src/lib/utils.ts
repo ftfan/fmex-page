@@ -109,6 +109,7 @@ export const ArrayFilter = (arr: any[], num: number) => {
 
 const ua = window.navigator.userAgent.toLowerCase();
 export const IsWechat = ua.indexOf('micromessenger') !== -1 && ua.indexOf('windowswechat') === -1;
+export const OpenWechatShare = IsWechat && (location.host === 'fmex.fun' || location.host === 'www.fmex.fun');
 
 export function IsPC() {
   const userAgentInfo = navigator.userAgent;

@@ -14,8 +14,7 @@ import './plugins/vssue';
 import 'roboto-fontface/css/roboto/roboto-fontface.css';
 import '@mdi/font/css/materialdesignicons.css';
 import CurrencyCoin from '@/components/CurrencyCoin.vue';
-import { IsWechat, sleep } from './lib/utils';
-import { LoadCloudApi, SetShareInfo } from './lib/bridge';
+import { SetShareInfo } from './lib/bridge';
 
 Vue.component('CurrencyCoin', CurrencyCoin);
 

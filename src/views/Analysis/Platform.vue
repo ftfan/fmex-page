@@ -250,10 +250,16 @@ export default class AnalysisPlatfromPage extends Vue {
       };
       return res;
     });
-    const last = this.PageDataConf.Data[this.PageDataConf.Data.length - 1];
-    const Ys3 = this.PageDataConf.Data[this.PageDataConf.Data.length - 1].slice(4);
+    let last = this.PageDataConf.Data[this.PageDataConf.Data.length - 1];
+    let Ys3 = last.slice(4);
+    // 最后一个数据无数据，表示当天数据还未更新，显示前一天的数据
+    if (Ys3.filter((item: any) => isNaN(item)).length === Ys3.length) {
+      last = this.PageDataConf.Data[this.PageDataConf.Data.length - 2];
+      Ys3 = last.slice(4);
+    }
     this.Ys3 = Ys3;
-    this.LastDate = DateFormat(last[0], 'yyyy-MM-dd');
+
+    this.LastDate = DateFormat(last[0], 'yyyy年MM月dd日0点');
 
     myChart.setOption({
       legend: { data: X1 },
@@ -319,7 +325,7 @@ export default class AnalysisPlatfromPage extends Vue {
     });
     SetShareInfo(
       `FMex钱包资产 ${this.UpCoinName}`,
-      `${this.PageDataConf.BeginTime}至${this.PageDataConf.EndTime}\r\n钱包资产走势`, //
+      `${this.LastDate} ${this.UpCoinName}\r\n合计:${BigNumShowStr(last[1])}\r\n用户资产:${BigNumShowStr(last[2])}`, //
       `https://fmex.fun/#/Analysis?tab=4&Currency=${this.$AnalysisStore.localState.Currency}`
     );
   }

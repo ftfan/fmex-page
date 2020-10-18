@@ -1,4 +1,4 @@
-import { IsWechat } from './utils';
+import { IsWechat, OpenWechatShare } from './utils';
 import { LoadScript } from '@/lib/LoadScript';
 
 // 声明window变量
@@ -102,7 +102,7 @@ async function WxShareLoad() {
 }
 
 export async function SetShareInfo(Title = '', Desc = '', Url = '', Img = '') {
-  if (!IsWechat) return;
+  if (!OpenWechatShare) return;
   const bool = await WxShareLoad();
   if (!bool) return;
   Url = Url || location.href;

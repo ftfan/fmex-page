@@ -104,9 +104,7 @@ async function doUpload() {
     lastUpload.map((item) => {
       console.log('--<', item[0]);
       return Handler.putStream(item[0], item[1], {
-        headers: {
-          'Cache-Control': 'max-age=360000', // 6分钟
-        },
+        headers: {},
       });
     })
   );
