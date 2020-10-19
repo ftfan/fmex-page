@@ -4,7 +4,9 @@
   "private": true,
   "scripts": {
     "serve": "vue-cli-service serve",
-    "build": "vue-cli-service build && node .build",
+    "build": "vue-cli-service build",
+    "publish": "node .build",
+    "bp": "vue-cli-service build && node .build",
     "lint": "vue-cli-service lint"
   },
   "dependencies": {
@@ -49,6 +51,7 @@
     "vconsole": "^3.3.4",
     "vue-cli-plugin-vuetify": "~2.0.6",
     "vue-template-compiler": "^2.6.11",
-    "vuetify-loader": "^1.3.0"
+    "vuetify-loader": "^1.6.0",
+    "webpack-bundle-analyzer": "^3.9.0"
   }
 }

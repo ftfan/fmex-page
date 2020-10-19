@@ -1,3 +1,5 @@
+const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
+// const VuetifyLoaderPlugin = require('vuetify-loader/lib/plugin');
 module.exports = {
   publicPath: process.env.NODE_ENV === 'development' ? '/' : '/',
   outputDir: 'dist',
@@ -5,6 +7,13 @@ module.exports = {
   productionSourceMap: process.env.NODE_ENV === 'development',
 
   transpileDependencies: ['vuetify'],
+
+  configureWebpack: {
+    plugins: [
+      // new VuetifyLoaderPlugin(),
+      // new BundleAnalyzerPlugin(), //
+    ],
+  },
 
   chainWebpack: (config) => {
     config.plugins.delete('preload');
