@@ -325,7 +325,7 @@ export default class AnalysisPlatfromPage extends Vue {
     });
     SetShareInfo(
       `FMex钱包资产 ${this.UpCoinName}`,
-      `${this.LastDate} ${this.UpCoinName}\r\n合计:${BigNumShowStr(last[1])}\r\n用户资产:${BigNumShowStr(last[2])}`, //
+      `${this.LastDate}\r\n合计:${BigNumShowStr(last[1])}\r\n用户资产:${BigNumShowStr(last[2])}`, //
       `https://fmex.fun/#/Analysis?tab=4&Currency=${this.$AnalysisStore.localState.Currency}`
     );
   }

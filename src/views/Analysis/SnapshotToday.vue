@@ -97,8 +97,8 @@ interface ShowDataOrigin {
   Render: (vm: AnalysisPage) => any;
 }
 
-const DateMax = DateFormat(Date.now() - 86400000, 'yyyy-MM-dd'); // 只有昨日的数据。
-const DateMin = DateFormat(new Date(2020, 7 - 1, 8), 'yyyy-MM-dd');
+const DateMax = DateFormat(Date.now(), 'yyyy-MM-dd'); // 只有昨日的数据。
+const DateMin = DateFormat(new Date(2020, 7 - 1, 9), 'yyyy-MM-dd');
 
 const grid = {
   right: '50px',
@@ -202,18 +202,10 @@ export default class AnalysisPage extends Vue {
     return this.$AnalysisStore.localState.Currency.toLocaleUpperCase();
   }
 
-  get FUSDDateIndex() {
-    // 18号那天（保存文件名称是2020-08-19），fusd奖励账户的资产排名到了第三位，也就是index===2；
-    if (this.date === '2020-08-19') return [2, 1];
-
-    // 因为上面18号那天的原因，需要调整19号的前一天，也就是18号的数据
-    if (this.date === '2020-08-20') return [1, 2];
-    return [1, 1];
-  }
   get NextDayAble() {
     const date = new Date(this.date);
     const now = new Date(ToDayStr);
-    return date.getTime() < now.getTime() - 86400000;
+    return date.getTime() < now.getTime();
   }
   get thisNick() {
     return this;
@@ -226,7 +218,6 @@ export default class AnalysisPage extends Vue {
     const lastSum = last.map((a: any) => new BigNumber(a.amount)).reduce((a, b) => a.plus(b), new BigNumber(0));
     const pre = this.SnapshotDataPre;
     const preSum = pre.map((a: any) => new BigNumber(a.amount)).reduce((a, b) => a.plus(b), new BigNumber(0));
-    const FUSDIndex = this.FUSDDateIndex;
     const isBtc = this.UpCoinName === 'BTC';
     // 最新的资产表内对系统资产进行了标记
     const sys = this.SnapshotData.filter((item) => item.label);
@@ -455,7 +446,7 @@ export default class AnalysisPage extends Vue {
     if (times > 5) return;
     const timeDate = new Date(this.date);
     // 因为数据存储时，按照今天存储昨天的
-    const next = new Date(timeDate.getTime() + 86400000);
+    const next = new Date(timeDate.getTime());
     const FileName = DateFormat(next, 'yyyy/MM/dd');
     if (this.UpCoinName === 'USDT' && next.getTime() < new Date('2020-08-30').getTime()) return; // usdt 之前没数据。不用浪费请求
     const close = PageLoading(`获取数据: ${this.UpCoinName} ${FileName}`);
@@ -498,7 +489,7 @@ export default class AnalysisPage extends Vue {
     if (times > 5) return;
     const timeDate = new Date(this.date);
     // 因为数据存储时，按照今天存储昨天的
-    const next = new Date(timeDate.getTime());
+    const next = new Date(timeDate.getTime() - 86400000);
     const FileName = DateFormat(next, 'yyyy/MM/dd');
     if (this.UpCoinName === 'USDT' && next.getTime() < new Date('2020-08-30').getTime()) return; // usdt 之前没数据。不用浪费请求
     const close = PageLoading(`正在获取前一天的数据，用于比对`);
@@ -557,7 +548,7 @@ export default class AnalysisPage extends Vue {
     // 因为数据存储时，按照今天存储昨天的
     const next = new Date(timeDate.getTime() + num * 86400000);
     const nextDay = DateFormat(next, 'yyyy-MM-dd');
-    if (nextDay === DateFormat(Date.now(), 'yyyy-MM-dd')) return; // 不能设置成今天，没有数据
+    // if (nextDay === DateFormat(Date.now(), 'yyyy-MM-dd')) return; // 不能设置成今天，没有数据
     this.date = nextDay;
     this.mountedd();
   }

@@ -31,7 +31,7 @@ class Store extends Data {
 
   async GetPlatformCurrency(date: string) {
     const time = new Date(date);
-    time.setDate(time.getDate() + 1);
+    time.setDate(time.getDate());
     date = DateFormat(time, 'yyyy-MM-dd');
     // 30号之前。目前仅有btc。
     if (time.getTime() < new Date('2020-08-30').getTime()) {
