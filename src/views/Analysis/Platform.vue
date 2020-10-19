@@ -246,7 +246,7 @@ export default class AnalysisPlatfromPage extends Vue {
       const res = {
         name: `${item}`,
         type: 'line',
-        data: this.PageDataConf.Data.map((item) => item[i + 6]),
+        data: this.PageDataConf.Data.map((item) => item[i + 4]),
       };
       return res;
     });
@@ -316,7 +316,7 @@ export default class AnalysisPlatfromPage extends Vue {
                 symbolRotate: 45,
                 name: item.address_label,
                 coord: [X2[index], Ys3[index]],
-                value: item.address_label as any,
+                value: item.address_label.replace('——', '\r\n').replace(/(.*?) (.*?) /g, '$1 $2\r\n') as any,
               };
             }),
           },
