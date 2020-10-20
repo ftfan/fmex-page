@@ -93,7 +93,7 @@ export default class AnalysisPage extends Vue {
   }
 
   async GetConfig() {
-    const res = await Vue.AnalysisStore.GetJson(`https://fmex-database.oss-cn-qingdao.aliyuncs.com/report/account/snapshot/${this.UpCoinName}`);
+    const res = await Vue.AnalysisStore.GetJson(`https://foss.imconfig.com/report/account/snapshot/${this.UpCoinName}`);
     if (!res) return;
     this.PageDataConf = res;
     if (!this.PageDataConf.EndTime) return;

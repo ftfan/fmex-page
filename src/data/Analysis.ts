@@ -40,7 +40,7 @@ class Store extends Data {
     }
     if (this.localState.PlatformCurrencyCache[date]) return (this.localState.PlatformCurrency = this.localState.PlatformCurrencyCache[date]);
     const res = await axios
-      .get(`https://fmex-database.oss-cn-qingdao.aliyuncs.com/fmex/api/broker/v3/zkp-assets/platform/currency/${date.replace(/-/g, '/')}.json`)
+      .get(`https://foss.imconfig.com/fmex/api/broker/v3/zkp-assets/platform/currency/${date.replace(/-/g, '/')}.json`)
       .then((res) => res.data)
       .catch((e) => null);
     if (!res) {

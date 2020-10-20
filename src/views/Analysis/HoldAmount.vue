@@ -57,7 +57,7 @@ export default class HoldAmount extends Vue {
   FullData: any[] = [];
   queue = 1; // 因为需要获取多个请求，这里设置个id。id不一样，后面就不请求了
 
-  BaseUrl = 'https://fmex-database.oss-cn-qingdao.aliyuncs.com/fmex/api/contracts/web/v3/public/statistics/';
+  BaseUrl = 'https://foss.imconfig.com/fmex/api/contracts/web/v3/public/statistics/';
 
   mounted() {
     this.mountedd();

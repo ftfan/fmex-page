@@ -27,7 +27,7 @@
         console.log(new Date(window.__FMexFun_Version).toISOString());
       } catch (e) {}
       // 强制使用 fmex.fun 域名
-      if (location.host === 'fmex.gitee.io') {
+      if (location.host === 'fmex.gitee.io' && !location.href.match('Admin')) {
         location.replace(location.href.replace('fmex.gitee.io', 'fmex.fun'));
       }
     </script>

@@ -63,7 +63,7 @@ export default class BtcVolPrice extends Vue {
   SnapshotData2: FMex.CandelRes[] = [];
   SnapshotData3: FMex.CandelRes[] = [];
 
-  BaseUrl = 'https://fmex-database.oss-cn-qingdao.aliyuncs.com/fmex/v2/market/all-tickers/';
+  BaseUrl = 'https://foss.imconfig.com/fmex/v2/market/all-tickers/';
   FmexCurrent = 'https://api.fmex.com/v2/market/all-tickers';
   queue = 1; // 因为需要获取多个请求，这里设置个id。id不一样，后面就不请求了
 

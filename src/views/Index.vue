@@ -100,7 +100,7 @@ export default class IndexPage extends Vue {
   }
 
   async validate(key: string) {
-    const Data = await this.$AnalysisStore.GetJson(`https://fmex-database.oss-cn-qingdao.aliyuncs.com/runner/report/${key}/config`);
+    const Data = await this.$AnalysisStore.GetJson(`https://foss.imconfig.com/runner/report/${key}/config`);
     if (!Data) return this.$AppStore.Error('日志索引错误，未找到对应数据');
     this.$AppStore.localState.ApiInfo.DataKey = key;
     this.$router.push({ name: 'Imconfig', query: { DataKey: this.$AppStore.localState.ApiInfo.DataKey } });

@@ -12,8 +12,11 @@ const data: LoadingClose[] = [];
 export const PageLoading = (text = '') => {
   const close = new LoadingClose(text);
   DataPush(close);
-  setTimeout(() => DataPop(close), 5000);
-  return () => DataPop(close);
+  const timer = setTimeout(() => DataPop(close), 5000);
+  return () => {
+    clearTimeout(timer);
+    DataPop(close);
+  };
 };
 
 function DataPush(close: LoadingClose) {
@@ -22,7 +25,9 @@ function DataPush(close: LoadingClose) {
 }
 
 function DataPop(close: LoadingClose) {
-  data.splice(data.indexOf(close), 1);
+  const index = data.indexOf(close);
+  if (index === -1) return;
+  data.splice(index, 1);
   CheckData();
 }
 

@@ -394,7 +394,7 @@ export default class AnalysisPage extends Vue {
   SnapshotData: SnapshotItem[] = [];
   SnapshotDataPre: SnapshotItem[] = [];
   get BaseUrl() {
-    return `https://fmex-database.oss-cn-qingdao.aliyuncs.com/fmex/api/broker/v3/zkp-assets/account/snapshot/${this.UpCoinName}/`;
+    return `https://foss.imconfig.com/fmex/api/broker/v3/zkp-assets/account/snapshot/${this.UpCoinName}/`;
   }
 
   @Watch('dialog')

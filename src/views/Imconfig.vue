@@ -1166,7 +1166,7 @@ export default class ImconfigPage extends Vue {
     // 今日的数据，要获取最新的
     if (FileName.match(TodayStr)) FileName = `${FileName}?t=${Date.now()}`;
     const close = PageLoading(`获取报表:${TodayStr}`);
-    const Data = await this.$AnalysisStore.GetData(`https://fmex-database.oss-cn-qingdao.aliyuncs.com` + FileName);
+    const Data = await this.$AnalysisStore.GetData(`https://foss.imconfig.com` + FileName);
     close();
     if (!Data) {
       return this.GetData(index, ++times);
@@ -1189,7 +1189,7 @@ export default class ImconfigPage extends Vue {
 
   async GetParams() {
     const close = PageLoading(`获取账号配置`);
-    const Data = await this.$AnalysisStore.GetJson(`https://fmex-database.oss-cn-qingdao.aliyuncs.com/runner/report/${this.report}/config`, true);
+    const Data = await this.$AnalysisStore.GetJson(`https://foss.imconfig.com/runner/report/${this.report}/config`, true);
     close();
     if (!Data) return this.$AppStore.Error('配置文件加载失败，请刷新重试');
     if (!('Hedging' in Data)) Data.Hedging = 0; // 旧数据设置

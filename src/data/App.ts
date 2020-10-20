@@ -73,7 +73,7 @@ class Store extends Data {
     }
 
     if (this.FilterNullCoin(coin, time) === false) return null; // 部分已知上架时间的币种
-    const Data = await Vue.AnalysisStore.GetJson(`https://fmex-database.oss-cn-qingdao.aliyuncs.com/fmex/broker/v3/zkp-assets/platform/snapshot/${coin}/${date}`);
+    const Data = await Vue.AnalysisStore.GetJson(`https://foss.imconfig.com/fmex/broker/v3/zkp-assets/platform/snapshot/${coin}/${date}`);
     if (!Data) return null;
     // const res: SnapshotWallet = Data;
     // res.platform_total_amount = new BigNumber(res.platform_total_amount);
@@ -97,7 +97,7 @@ class Store extends Data {
       if (conf.indexOf(coin.toLocaleLowerCase()) === -1) return null;
     }
     if (this.FilterNullCoin(coin, time) === false) return null; // 部分已知上架时间的币种
-    const Data = await Vue.AnalysisStore.GetJson(`https://fmex-database.oss-cn-qingdao.aliyuncs.com/fmex/api/broker/v3/zkp-assets/account/snapshot/${coin}/${date}`);
+    const Data = await Vue.AnalysisStore.GetJson(`https://foss.imconfig.com/fmex/api/broker/v3/zkp-assets/account/snapshot/${coin}/${date}`);
     if (!Data) return Data;
     const ShowTime = new Date(date);
     Data.forEach((item: any) => {
